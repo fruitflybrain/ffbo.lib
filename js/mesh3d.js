@@ -93,14 +93,7 @@ function FFBOMesh3D(div_id, data, metadata) {
     highlight: false,
     animate: false});
 
-  this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
-  this.controls.rotateSpeed = 2.0;
-  this.controls.zoomSpeed = 1.0;
-  this.controls.panSpeed = 2.0;
-  this.controls.staticMoving = true;
-  this.controls.dynamicDampingFactor = 0.3;
-  this.controls.addEventListener('change', this.render.bind(this));
-
+  this.controls = this.initControls();
 
   this.lightsHelper = this.initLights();
 
@@ -232,6 +225,18 @@ function FFBOMesh3D(div_id, data, metadata) {
   }
   this._configureCallbacks();
 };
+
+FFBOMesh3D.prototype.initControls = function () {
+  controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+  controls.rotateSpeed = 2.0;
+  controls.zoomSpeed = 1.0;
+  controls.panSpeed = 2.0;
+  controls.staticMoving = true;
+  controls.dynamicDampingFactor = 0.3;
+  controls.addEventListener('change', this.render.bind(this));
+  return controls;
+}
+
 
 FFBOMesh3D.prototype.initLut = function () {
   this.maxColorNum = this._metadata.maxColorNum;
