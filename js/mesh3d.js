@@ -103,16 +103,13 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.controls.addEventListener('change', this.render.bind(this));
 
 
-  this.lightsHelper = this.initLights()
+  this.lightsHelper = this.initLights();
 
-
+  this.lut = this.initLut();
   /*
    * create color map
    */
-  this.maxColorNum = this._metadata.maxColorNum;
-  this.lut = new THREE.Lut( this._metadata.colormap, this.maxColorNum);
-  this.lut.setMin( 0 );
-  this.lut.setMax( 1 );
+
 
   this.loadingManager = new THREE.LoadingManager();
   this.loadingManager.onLoad = function() {
@@ -240,6 +237,14 @@ function FFBOMesh3D(div_id, data, metadata) {
   }
   this._configureCallbacks();
 };
+
+FFBOMesh3D.prototype.initLut = function () {
+  this.maxColorNum = this._metadata.maxColorNum;
+  lut = new THREE.Lut( this._metadata.colormap, this.maxColorNum);
+  lut.setMin( 0 );
+  lut.setMax( 1 );
+  return lut;
+}
 
 FFBOMesh3D.prototype.initLights = function() {
   lightsHelper = new FFBOLightsHelper( this );
