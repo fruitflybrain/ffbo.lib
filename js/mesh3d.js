@@ -69,10 +69,12 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this.mouse = new THREE.Vector2(-100000,-100000);
 
-  this.isAnim = false;
 
   this.settings = new PropertyManager({meshWireframe: true});
-  this._states = new PropertyManager({pinned: false, highlight: false});
+  this.states = new PropertyManager({
+    pinned: false,
+    highlight: false,
+    animate: false});
 
   this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
   this.controls.rotateSpeed = 2.0;
@@ -150,8 +152,12 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.isHighlight = false;
   this.highlightedObj = null;
 
+
+
   this._take_screenshot = false
+
   this.default_opacity = (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1;
+
   this.synapse_opacity = 1.0
   this.meshOscAmp = 0.0;
   this.non_highlightable_opacity = 0.1
@@ -479,7 +485,7 @@ FFBOMesh3D.prototype.addJson = function(json) {
 FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
   this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
   for(var key in this.meshDict){
-	if( this.meshDict[key].object.visible ){
+if( this.meshDict[key].object.visible ){
 	  if ( this.meshDict[key].minX < this.visibleBoundingBox.minX )
 		this.visibleBoundingBox.minX = this.meshDict[key].minX;
 	  if ( this.meshDict[key].maxX > this.visibleBoundingBox.maxX )
@@ -532,10 +538,10 @@ FFBOMesh3D.prototype.setAnim = function(data) {
       continue;
     this.animOpacity[key] = data[key];
   }
-  this.isAnim = true;
+  this.states.animate = true;
 }
 FFBOMesh3D.prototype.stopAnim = function() {
-  this.isAnim = false;
+  this.states.animate = false;
 }
 FFBOMesh3D.prototype.animate = function() {
 
@@ -965,7 +971,7 @@ var _saveImage = (function () {
 
 FFBOMesh3D.prototype.render = function() {
 
-  if (this.isAnim) {
+  if (this.states.animate) {
     for (var key in this.meshDict) {
       if (this.meshDict[key].object === undefined)
         continue;
