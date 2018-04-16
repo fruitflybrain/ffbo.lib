@@ -30,38 +30,6 @@ function FFBOMesh3D(div_id, data, metadata) {
       if ( (key in metadata) && (metadata[key] !== undefined) )
         this._metadata[key] = metadata[key]
 
-  this.div_id = div_id;
-
-  this.container = document.getElementById( div_id );
-  var height = this.container.clientHeight;
-  var width = this.container.clientWidth;
-
-  this.camera = new THREE.PerspectiveCamera( 20, width / height, 0.1, 20000 );
-  this.camera.position.z = 1800;
-
-    if(width<768 && width/height < 1){
-      this.camera.position.z = 3800;
-  }
-    if(width<768 && width/height >= 1){
-      this.camera.position.z =2600;
-    }
-
-  this.renderer = new THREE.WebGLRenderer();
-  this.renderer.setPixelRatio( window.devicePixelRatio );
-  this.renderer.setSize( width, height );
-  this.container.appendChild(this.renderer.domElement);
-
-  this.groups = {
-    front: new THREE.Object3D(), // for raycaster detection
-    back: new THREE.Object3D()
-  }
-
-  this.scenes = this.initScenes();
-
-
-  this.currentIntersected;
-
-  this.mouse = new THREE.Vector2(-100000,-100000);
 
   this.settings = new PropertyManager({
     defaultOpacity: (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1,
@@ -87,7 +55,27 @@ function FFBOMesh3D(div_id, data, metadata) {
     mouseOver: false,
     pinned: false,
     highlight: false,
-    animate: false});
+    animate: false
+  });
+
+  this.div_id = div_id;
+
+  this.container = document.getElementById( div_id );
+
+  this.camera = this.initCamera();
+
+  this.renderer = this.initRenderer();
+
+  this.groups = {
+    front: new THREE.Object3D(), // for raycaster detection
+    back: new THREE.Object3D()
+  }
+
+  this.scenes = this.initScenes();
+
+  this.currentIntersected;
+
+  this.mouse = new THREE.Vector2(-100000,-100000);
 
   this.controls = this.initControls();
 
@@ -100,8 +88,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.loadingManager = new THREE.LoadingManager();
   this.loadingManager.onLoad = function() {
     this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-      this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-  /*this.controls.target0 = new THREE.Vector3(-334, -120, 19);*/
+    this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
     this.controls.reset();
     this.groups.front.visible = true;
   }.bind(this);
@@ -190,6 +177,29 @@ function FFBOMesh3D(div_id, data, metadata) {
   this._configureCallbacks();
 };
 
+FFBOMesh3D.prototype.initCamera = function () {
+
+  var height = this.container.clientHeight;
+  var width = this.container.clientWidth;
+
+  camera = new THREE.PerspectiveCamera(20, width / height, 0.1, 20000);
+  camera.position.z = 1800;
+
+  if (width<768 && width/height < 1)
+    camera.position.z = 3800;
+  if (width<768 && width/height >= 1)
+    camera.position.z =2600;
+  return camera;
+}
+
+FFBOMesh3D.prototype.initRenderer = function () {
+  renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( this.container.clientWidth, this.container.clientHeight );
+  this.container.appendChild(renderer.domElement);
+  return renderer;
+}
+
 FFBOMesh3D.prototype.initControls = function () {
   controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
   controls.rotateSpeed = 2.0;
@@ -201,7 +211,6 @@ FFBOMesh3D.prototype.initControls = function () {
   return controls;
 }
 
-
 FFBOMesh3D.prototype.initPostProcessing = function () {
   var height = this.container.clientHeight;
   var width = this.container.clientWidth;
@@ -211,7 +220,7 @@ FFBOMesh3D.prototype.initPostProcessing = function () {
 
   this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
   this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
-//this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
+  //this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
 
   this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
   this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
@@ -1462,7 +1471,7 @@ FFBOMesh3D.prototype._getInfo = function (d) {
 FFBOMesh3D.prototype.getNeuronScreenPosition = function (id) {
 
   var vector = this.meshDict[id].position.clone()
-  canvasRect = this.renderer.domElement.getBoundingClientRect();
+  var canvasRect = this.renderer.domElement.getBoundingClientRect();
 
   // map to normalized device coordinate (NDC) space
   vector.project( this.camera );
