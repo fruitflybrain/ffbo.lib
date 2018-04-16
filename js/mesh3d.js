@@ -53,16 +53,25 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.renderer.setSize( width, height );
   this.container.appendChild(this.renderer.domElement);
 
-  this.scene = new THREE.Scene();
-  this.scene.background = null
-  this.scene.add( this.camera );
+  this.groups = {
+    front: new THREE.Object3D(), // for raycaster detection
+    back: new THREE.Object3D()
+  }
 
-  this.backscene = new THREE.Scene();
-  this.backscene.background = new THREE.Color(0x030305);
-  this.backscene.add( this.camera );
+  this.scenes = {
+    front: new THREE.Scene(),
+    back: new THREE.Scene()
+  }
 
-  this.meshGroup = new THREE.Object3D(); // for raycaster detection
-  this.backmeshGroup = new THREE.Object3D();
+  this.scenes.front.background = null
+  this.scenes.front.add( this.camera );
+
+  this.scenes.back.background = new THREE.Color(0x030305);
+  this.scenes.back.add( this.camera );
+
+  this.scenes.front.add( this.groups.front );
+  this.scenes.back.add( this.groups.back );
+
 
   this.currentIntersected;
 
@@ -110,10 +119,9 @@ function FFBOMesh3D(div_id, data, metadata) {
       this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
   /*this.controls.target0 = new THREE.Vector3(-334, -120, 19);*/
     this.controls.reset();
-    this.meshGroup.visible = true;
+    this.groups.front.visible = true;
   }.bind(this);
-  this.scene.add( this.meshGroup );
-  this.backscene.add( this.backmeshGroup );
+
 
   this.raycaster = new THREE.Raycaster();
   this.raycaster.linePrecision = 3;
@@ -156,12 +164,12 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this._take_screenshot = false
 
-  this.renderScene = new THREE.RenderPass( this.scene, this.camera );
+  this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
   this.renderScene.clear = false;
   this.renderScene.clearDepth = true;
 
-  this.backrenderScene = new THREE.RenderPass( this.backscene, this.camera);
-  this.backrenderSSAO = new THREE.SSAOPass( this.backscene, this.camera, width, height);
+  this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
+  this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
 //this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
 
   this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
@@ -250,52 +258,48 @@ FFBOMesh3D.prototype.initLut = function () {
 }
 
 FFBOMesh3D.prototype.initLights = function() {
-  lightsHelper = new FFBOLightsHelper( this );
+  lightsHelper = new FFBOLightsHelper( this.camera, this.controls, this.scenes.front );
 
   lightsHelper.addAmbientLight({
     intensity: 0.1,
-    scene: 'front',
     key: 'frontAmbient'
   });
 
   lightsHelper.addAmbientLight({
     intensity: 0.5,
-    scene: 'back',
+    scene: this.scenes.back,
     key: 'backAmbient'
   });
 
   lightsHelper.addDirectionalLight({
     intensity: 0.1,
     position: new THREE.Vector3(0, 0, 5000),
-    scene: 'front',
     key: 'frontDirectional_1'
   });
 
   lightsHelper.addDirectionalLight({
     intensity: 0.8,
     position: new THREE.Vector3(0, 0, 5000),
-    scene: 'back',
+    scene: this.scenes.back,
     key: 'backDirectional_1'
   });
 
   lightsHelper.addDirectionalLight({
     intensity: 0.1,
     position: new THREE.Vector3(0, 0, -5000),
-    scene: 'front',
     key: 'frontDirectional_2'
   });
 
   lightsHelper.addDirectionalLight({
     intensity: 0.8,
     position: new THREE.Vector3(0, 0, -5000),
-    scene: 'back',
+    scene: this.scenes.back,
     key: 'backDirectional_2'
   });
 
   lightsHelper.addSpotLight({
     posAngle1: 80,
     posAngle2: 80,
-    scene: 'front',
     key: 'frontSpot_1'
   });
 
@@ -303,14 +307,13 @@ FFBOMesh3D.prototype.initLights = function() {
     posAngle1: 80,
     posAngle2: 80,
     intensity: 12,
-    scene: 'back',
+    scene: this.scenes.back,
     key: 'backSpot_1'
   });
 
   lightsHelper.addSpotLight({
     posAngle1: -80,
     posAngle2: 80,
-    scene: 'front',
     key: 'frontSpot_2'
   });
 
@@ -318,7 +321,7 @@ FFBOMesh3D.prototype.initLights = function() {
     posAngle1: -80,
     posAngle2: 80,
     intensity: 12,
-    scene: 'back',
+    scene: this.scenes.back,
     key: 'backSpot_2'
   });
 
@@ -337,7 +340,7 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
       meshobj.children[i].material.dispose();
     }
     --this.meshNum;
-    this.meshGroup.remove( meshobj );
+    this.groups.front.remove( meshobj );
     delete meshobj;
     delete this.meshDict[key];
   }
@@ -354,8 +357,8 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
 
 FFBOMesh3D.prototype._configureCallbacks = function(){
   this.settings.on("change", function(e){
-  for(i=0; i<this.backmeshGroup.children.length; i++)
-    this.backmeshGroup.children[i].children[1].visible = e["value"];
+  for(i=0; i<this.groups.back.children.length; i++)
+    this.groups.back.children[i].children[1].visible = e["value"];
   }.bind(this), "meshWireframe");
 }
 
@@ -410,7 +413,7 @@ FFBOMesh3D.prototype.addJson = function(json) {
   } else
     lut = this.lut;
   if ( metadata.showAfterLoadAll )
-    this.meshGroup.visible = false;
+    this.groups.front.visible = false;
 
   var isNAData = (metadata.type === "morphology_json");
 
@@ -483,12 +486,6 @@ FFBOMesh3D.prototype.addJson = function(json) {
 
   this.updateInfoPanel()
 
-  if ( isNAData ) {
-    //this.meshGroup.visible = true;
-    //this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-    //this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-    //this.controls.reset();
-  }
 }
 
 FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
@@ -838,10 +835,10 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
   if ( !this.meshDict[key]['background'] ) {
   if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
     ++this.frontNum;
-  this.meshGroup.add( group );
+  this.groups.front.add( group );
   }
   else{
-  this.backmeshGroup.add(group)
+  this.groups.back.add(group)
   }
 
 }
@@ -855,7 +852,7 @@ FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
 
   this.raycaster.setFromCamera( this.mouse, this.camera );
 
-  var intersects = this.raycaster.intersectObjects( this.meshGroup.children, true);
+  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
   if ( intersects.length > 0 ) {
     this.currentIntersected = intersects[0].object.parent;
     /* find first object that can be highlighted (skip  mesh) */
@@ -893,7 +890,7 @@ FFBOMesh3D.prototype.onDocumentMouseDBLClick2 = function( event ) {
   event.preventDefault();
   this.raycaster.setFromCamera( this.mouse, this.camera );
   currInt = undefined;
-  var intersects = this.raycaster.intersectObjects( this.meshGroup.children, true);
+  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
   if ( intersects.length > 0 ) {
   currInt = intersects[0].object.parent;
   /* find first object that can be highlighted (skip  mesh) */
@@ -1011,7 +1008,7 @@ FFBOMesh3D.prototype.render = function() {
   if (this.controls.checkStateIsNone()) {
     this.raycaster.setFromCamera( this.mouse, this.camera );
 
-    var intersects = this.raycaster.intersectObjects( this.meshGroup.children, true);
+    var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
     if ( intersects.length > 0 ) {
       this.currentIntersected = intersects[0].object.parent;
       /* find first object that can be highlighted (skip  mesh) */
@@ -1307,7 +1304,7 @@ FFBOMesh3D.prototype.remove = function( id ) {
       if(!('morph_type' in this.meshDict[id[i]]) || (this.meshDict[id[i]]['morph_type'] != 'Synapse SWC'))
     --this.frontNum;
     }
-    this.meshGroup.remove( meshobj );
+    this.groups.front.remove( meshobj );
     delete meshobj;
     delete this.meshDict[id[i]];
 
@@ -1342,8 +1339,8 @@ FFBOMesh3D.prototype.setColor = function( id, color ) {
 
 FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
 
-  for (var i = 0; i < this.backmeshGroup.children.length; ++i ) {
-    var meshobj = this.backmeshGroup.children[i]
+  for (var i = 0; i < this.groups.back.children.length; ++i ) {
+    var meshobj = this.groups.back.children[i]
     for (var j = 0; j < meshobj.children.length; ++j ) {
       meshobj.children[j].material.color.set( color );
       meshobj.children[j].geometry.colorsNeedUpdate = true;
