@@ -3,9 +3,9 @@ var isOnMobile = checkOnMobile();
 function checkOnMobile() {
 
   if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) )
-  return true;
+    return true;
   else
-  return false;
+    return false;
 }
 
 function getRandomIntInclusive(min, max) {
@@ -36,9 +36,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   var height = this.container.clientHeight;
   var width = this.container.clientWidth;
 
-  this.fov = 20;
-
-  this.camera = new THREE.PerspectiveCamera( this.fov, width / height, 0.1, 20000 );
+  this.camera = new THREE.PerspectiveCamera( 20, width / height, 0.1, 20000 );
   this.camera.position.z = 1800;
 
     if(width<768 && width/height < 1){
@@ -58,19 +56,7 @@ function FFBOMesh3D(div_id, data, metadata) {
     back: new THREE.Object3D()
   }
 
-  this.scenes = {
-    front: new THREE.Scene(),
-    back: new THREE.Scene()
-  }
-
-  this.scenes.front.background = null
-  this.scenes.front.add( this.camera );
-
-  this.scenes.back.background = new THREE.Color(0x030305);
-  this.scenes.back.add( this.camera );
-
-  this.scenes.front.add( this.groups.front );
-  this.scenes.back.add( this.groups.back );
+  this.scenes = this.initScenes();
 
 
   this.currentIntersected;
@@ -108,9 +94,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.lightsHelper = this.initLights();
 
   this.lut = this.initLut();
-  /*
-   * create color map
-   */
+
 
 
   this.loadingManager = new THREE.LoadingManager();
@@ -153,7 +137,6 @@ function FFBOMesh3D(div_id, data, metadata) {
 
 
 
-
   this.createInfoPanel();
 
 
@@ -164,39 +147,9 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this._take_screenshot = false
 
-  this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
-  this.renderScene.clear = false;
-  this.renderScene.clearDepth = true;
 
-  this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
-  this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
-//this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
+  this.initPostProcessing();
 
-  this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
-  this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
-
-
-  this.bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( width, height ), 0.2, 0.2, 0.3 ); //1.0, 9, 0.5, 512);
-  this.bloomPass.renderToScreen = true;
-
-  //this.gammaCorrectionPass = new THREE.ShaderPass( THREE.GammaCorrectionShader );
-  //this.gammaCorrectionPass.renderToScreen = true;
-
-  this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
-  this.toneMappingPass.setMinLuminance(0.05);
-
-  this.renderer.gammaInput = true;
-  this.renderer.gammaOutput = true;
-
-  this.composer = new THREE.EffectComposer( this.renderer );
-  this.composer.setSize( width, height );
-  this.composer.addPass( this.backrenderScene );
-  this.composer.addPass( this.backrenderSSAO );
-  this.composer.addPass( this.renderScene );
-  this.composer.addPass( this.effectFXAA );
-  this.composer.addPass( this.toneMappingPass );
-
-  this.composer.addPass( this.bloomPass );
   //this.composer.addPass( this.gammaCorrectionPass );
 
 
@@ -248,6 +201,61 @@ FFBOMesh3D.prototype.initControls = function () {
   return controls;
 }
 
+
+FFBOMesh3D.prototype.initPostProcessing = function () {
+  var height = this.container.clientHeight;
+  var width = this.container.clientWidth;
+  this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
+  this.renderScene.clear = false;
+  this.renderScene.clearDepth = true;
+
+  this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
+  this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
+//this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
+
+  this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
+  this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
+
+
+  this.bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( width, height ), 0.2, 0.2, 0.3 ); //1.0, 9, 0.5, 512);
+  this.bloomPass.renderToScreen = true;
+
+  //this.gammaCorrectionPass = new THREE.ShaderPass( THREE.GammaCorrectionShader );
+  //this.gammaCorrectionPass.renderToScreen = true;
+
+  this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
+  this.toneMappingPass.setMinLuminance(0.05);
+
+  this.renderer.gammaInput = true;
+  this.renderer.gammaOutput = true;
+
+  this.composer = new THREE.EffectComposer( this.renderer );
+  this.composer.setSize( width, height );
+  this.composer.addPass( this.backrenderScene );
+  this.composer.addPass( this.backrenderSSAO );
+  this.composer.addPass( this.renderScene );
+  this.composer.addPass( this.effectFXAA );
+  this.composer.addPass( this.toneMappingPass );
+
+  this.composer.addPass( this.bloomPass );
+}
+
+FFBOMesh3D.prototype.initScenes = function () {
+  scenes = {
+    front: new THREE.Scene(),
+    back: new THREE.Scene()
+  }
+
+  scenes.front.background = null
+  scenes.front.add( this.camera );
+
+  scenes.back.background = new THREE.Color(0x030305);
+  scenes.back.add( this.camera );
+
+  scenes.front.add( this.groups.front );
+  scenes.back.add( this.groups.back );
+  return scenes;
+}
 
 FFBOMesh3D.prototype.initLut = function () {
   this.maxColorNum = this._metadata.maxColorNum;
