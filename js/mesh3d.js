@@ -826,27 +826,6 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
   }
 
 }
-FFBOMesh3D.prototype.initTimeliner = function() {
-  this.timelinerJson = {};
-  for (var key in this.meshDict)
-    this.timelinerJson[key] = 0;
-  this.timeliner = new Timeliner(this.timelinerJson);
-  /*
-   * load a dummy animation script
-   */
-  var dummyAnimJson = {
-    "version":"1.2.0",
-    "modified":"Mon Dec 08 2014 10:41:11 GMT+0800 (SGT)",
-    "title":"Untitled",
-    "ui": {"totalTime": 1},
-    "layers":[]
-  }
-  for (var key in this.meshDict) {
-    var dict = {"name": key, "values": [{"time":0.01, "value":0.55}], "_value":0, "_color":"#6ee167"};
-    dummyAnimJson["layers"].push(dict);
-  }
-  this.timeliner.load(dummyAnimJson);
-}
 
 FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
   if (event !== undefined)
