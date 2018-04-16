@@ -46,7 +46,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   }
     if(width<768 && width/height >= 1){
       this.camera.position.z =2600;
-	  }
+    }
 
   this.renderer = new THREE.WebGLRenderer();
   this.renderer.setPixelRatio( window.devicePixelRatio );
@@ -115,7 +115,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.loadingManager.onLoad = function() {
     this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
       this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-	/*this.controls.target0 = new THREE.Vector3(-334, -120, 19);*/
+  /*this.controls.target0 = new THREE.Vector3(-334, -120, 19);*/
     this.controls.reset();
     this.meshGroup.visible = true;
   }.bind(this);
@@ -217,11 +217,11 @@ function FFBOMesh3D(div_id, data, metadata) {
     dblclick: undefined,
     getInfo: this._getInfo,
     syncControls: undefined,
-	resize: undefined
+  resize: undefined
     /*'showInfo': undefined,
     'removeUnpin': undefined,
-	'hideAll': undefined,
-	'showAll': undefined,*/
+  'hideAll': undefined,
+  'showAll': undefined,*/
   }
   this.commandDispatcher = {
     'show': this.show,
@@ -351,8 +351,8 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
 
 FFBOMesh3D.prototype._configureCallbacks = function(){
   this.settings.on("change", function(e){
-	for(i=0; i<this.backmeshGroup.children.length; i++)
-	  this.backmeshGroup.children[i].children[1].visible = e["value"];
+  for(i=0; i<this.backmeshGroup.children.length; i++)
+    this.backmeshGroup.children[i].children[1].visible = e["value"];
   }.bind(this), "meshWireframe");
 }
 
@@ -400,7 +400,7 @@ FFBOMesh3D.prototype.addJson = function(json) {
   }
 
   if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
-	colorNum = keyList.length;
+  colorNum = keyList.length;
     lut = new THREE.Lut( metadata.colormap, colorNum);
     lut.setMin( 0 );
     lut.setMax( 1 );
@@ -418,12 +418,12 @@ FFBOMesh3D.prototype.addJson = function(json) {
       continue;
     }
     this.meshDict[key] = new PropertyManager(json.ffbo_json[key]);
-	this.meshDict[key].minX = 1000000;
-	this.meshDict[key].maxX = -1000000;
-	this.meshDict[key].minY = 1000000;
-	this.meshDict[key].maxY = -1000000;
-	this.meshDict[key].minZ = 1000000;
-	this.meshDict[key].maxZ = -1000000;
+  this.meshDict[key].minX = 1000000;
+  this.meshDict[key].maxX = -1000000;
+  this.meshDict[key].minY = 1000000;
+  this.meshDict[key].maxY = -1000000;
+  this.meshDict[key].minZ = 1000000;
+  this.meshDict[key].maxZ = -1000000;
 
     this.meshNum += 1;
 
@@ -438,10 +438,10 @@ FFBOMesh3D.prototype.addJson = function(json) {
 
     if ( !('label' in this.meshDict[key]) ){
       if ( 'name' in this.meshDict[key] )
-		this.meshDict[key]['label'] = this.meshDict[key]['name'];
-	  else
-		this.meshDict[key]['label'] = key;
-	}
+    this.meshDict[key]['label'] = this.meshDict[key]['name'];
+    else
+    this.meshDict[key]['label'] = key;
+  }
 
     /* read mesh */
     if ( isNAData )
@@ -491,20 +491,20 @@ FFBOMesh3D.prototype.addJson = function(json) {
 FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
   this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
   for(var key in this.meshDict){
-if( this.meshDict[key].object.visible ){
-	  if ( this.meshDict[key].minX < this.visibleBoundingBox.minX )
-		this.visibleBoundingBox.minX = this.meshDict[key].minX;
-	  if ( this.meshDict[key].maxX > this.visibleBoundingBox.maxX )
-		this.visibleBoundingBox.maxX = this.meshDict[key].maxX;
-	  if ( this.meshDict[key].minY < this.visibleBoundingBox.minY )
-		this.visibleBoundingBox.minY = this.meshDict[key].minY;
-	  if ( this.meshDict[key].maxY > this.visibleBoundingBox.maxY )
-		this.visibleBoundingBox.maxY = this.meshDict[key].maxY;
-	  if ( this.meshDict[key].maxZ < this.visibleBoundingBox.minZ )
-		this.visibleBoundingBox.minZ = this.meshDict[key].minZ;
-	  if ( this.meshDict[key].maxZ > this.visibleBoundingBox.maxZ )
-		this.visibleBoundingBox.maxZ = this.meshDict[key].maxZ;
-	}
+    if( this.meshDict[key].object.visible ){
+      if ( this.meshDict[key].minX < this.visibleBoundingBox.minX )
+      this.visibleBoundingBox.minX = this.meshDict[key].minX;
+      if ( this.meshDict[key].maxX > this.visibleBoundingBox.maxX )
+      this.visibleBoundingBox.maxX = this.meshDict[key].maxX;
+      if ( this.meshDict[key].minY < this.visibleBoundingBox.minY )
+      this.visibleBoundingBox.minY = this.meshDict[key].minY;
+      if ( this.meshDict[key].maxY > this.visibleBoundingBox.maxY )
+      this.visibleBoundingBox.maxY = this.meshDict[key].maxY;
+      if ( this.meshDict[key].maxZ < this.visibleBoundingBox.minZ )
+      this.visibleBoundingBox.minZ = this.meshDict[key].minZ;
+      if ( this.meshDict[key].maxZ > this.visibleBoundingBox.maxZ )
+      this.visibleBoundingBox.maxZ = this.meshDict[key].maxZ;
+    }
   }
 }
 
@@ -561,7 +561,7 @@ FFBOMesh3D.prototype.animate = function() {
 }
 FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
   return function (jsonString) {
-	var json = JSON.parse(jsonString);
+  var json = JSON.parse(jsonString);
     var color = this.meshDict[key]['color'];
     var geometry  = new THREE.Geometry();
     var vtx = json['vertices'];
@@ -574,7 +574,7 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
       geometry.vertices.push(
         new THREE.Vector3(x,y,z)
       );
-	  this.updateObjectBoundingBox(key, x, y, z);
+    this.updateObjectBoundingBox(key, x, y, z);
       this.updateBoundingBox(x,y,z);
     }
     for (var j = 0; j < idx.length/3; j++) {
@@ -587,20 +587,20 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
       );
     }
 
-	geometry.mergeVertices();
+  geometry.mergeVertices();
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
 
-	materials  = [
-	  //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-	  new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
-	  new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
-	];
+  materials  = [
+    //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
+    new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
+    new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
+  ];
 
 
     var group = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
-	if(! this.settings.meshWireframe )
-	  group.children[1].visible = false;
+  if(! this.settings.meshWireframe )
+    group.children[1].visible = false;
     group.visible = visibility;
 
     this._registerGroup(key, group);
@@ -642,7 +642,7 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
         geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
         geometry.colors.push(color);
         geometry.colors.push(color);
-		this.updateObjectBoundingBox(key, c.x, c.y, c.z);
+    this.updateObjectBoundingBox(key, c.x, c.y, c.z);
         this.updateBoundingBox(c.x, c.y, c.z);
       }
     }
@@ -658,149 +658,149 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
 
 FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
   return function() {
-	/*
-	 * process string
-	 */
-	var swcObj = {};
-	var len = this.meshDict[key]['sample'].length;
-	for (var j = 0; j < len; j++) {
+  /*
+   * process string
+   */
+  var swcObj = {};
+  var len = this.meshDict[key]['sample'].length;
+  for (var j = 0; j < len; j++) {
       swcObj[parseInt(this.meshDict[key]['sample'][j])] = {
-		'type'   : parseInt  (this.meshDict[key]['identifier'][j]),
-		'x'    : parseFloat(this.meshDict[key]['x'][j]),
-		'y'    : parseFloat(this.meshDict[key]['y'][j]),
-		'z'    : parseFloat(this.meshDict[key]['z'][j]),
-		'radius' : parseFloat(this.meshDict[key]['r'][j]),
-		'parent' : parseInt  (this.meshDict[key]['parent'][j]),
+    'type'   : parseInt  (this.meshDict[key]['identifier'][j]),
+    'x'    : parseFloat(this.meshDict[key]['x'][j]),
+    'y'    : parseFloat(this.meshDict[key]['y'][j]),
+    'z'    : parseFloat(this.meshDict[key]['z'][j]),
+    'radius' : parseFloat(this.meshDict[key]['r'][j]),
+    'parent' : parseInt  (this.meshDict[key]['parent'][j]),
       };
-	}
+  }
 
-	var color = this.meshDict[key]['color'];
-	var group = new THREE.Object3D();
-	var pointGeometry = undefined;
-	var mergedGeometry = undefined;
-	var geometry = undefined;
+  var color = this.meshDict[key]['color'];
+  var group = new THREE.Object3D();
+  var pointGeometry = undefined;
+  var mergedGeometry = undefined;
+  var geometry = undefined;
 
-	for (var idx in swcObj ) {
+  for (var idx in swcObj ) {
       var c = swcObj[idx];
-	  this.updateObjectBoundingBox(key, c.x, c.y, c.z);
+    this.updateObjectBoundingBox(key, c.x, c.y, c.z);
       this.updateBoundingBox(c.x,c.y,c.z);
       if (c.parent != -1) {
-		var p = swcObj[c.parent];
-		if(this.settings.neuron3d){
-		  if(mergedGeometry == undefined)
-			mergedGeometry = new THREE.Geometry()
-		  var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-		  if(!p.radius || !c.radius)
-			var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-		  else
-			var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-		  geometry.translate(0, 0.5*d.length(),0);
-		  geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-		  geometry.lookAt(d.clone());
-		  geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
+    var p = swcObj[c.parent];
+    if(this.settings.neuron3d){
+      if(mergedGeometry == undefined)
+      mergedGeometry = new THREE.Geometry()
+      var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+      if(!p.radius || !c.radius)
+      var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+      else
+      var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+      geometry.translate(0, 0.5*d.length(),0);
+      geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+      geometry.lookAt(d.clone());
+      geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
 
 
-		  mergedGeometry.merge(geometry);
-		  delete geometry
+      mergedGeometry.merge(geometry);
+      delete geometry
 
-		  if(this.settings.neuron3dMode == 2){
-			var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-			geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-			geometry.lookAt(d);
-			geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
+      if(this.settings.neuron3dMode == 2){
+      var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+      geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+      geometry.lookAt(d);
+      geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
 
-			mergedGeometry.merge(geometry);
-			delete geometry
-		  }
-		  else if(this.settings.neuron3dMode == 3){
-			if(p.parent != -1){
-			  p2 = swcObj[p.parent];
-			  var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
-			  var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
-			  var curve = new THREE.QuadraticBezierCurve3(
-				a,
-				new THREE.Vector3( p.x, p.y, p.z ),
-				b,
-			  );
-			  var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
-			  mergedGeometry.merge(geometry);
-			  delete geometry
-			}
-		  }
+      mergedGeometry.merge(geometry);
+      delete geometry
+      }
+      else if(this.settings.neuron3dMode == 3){
+      if(p.parent != -1){
+        p2 = swcObj[p.parent];
+        var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
+        var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
+        var curve = new THREE.QuadraticBezierCurve3(
+        a,
+        new THREE.Vector3( p.x, p.y, p.z ),
+        b,
+        );
+        var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+        mergedGeometry.merge(geometry);
+        delete geometry
+      }
+      }
 
-		}
-		else{
-		  if(geometry == undefined)
-			geometry = new THREE.Geometry();
-		  geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-		  geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-		  geometry.colors.push(color);
-		  geometry.colors.push(color);
-		}
+    }
+    else{
+      if(geometry == undefined)
+      geometry = new THREE.Geometry();
+      geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+      geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
+      geometry.colors.push(color);
+      geometry.colors.push(color);
+    }
       }
       if (c.type == 1) {
-		if(c.radius)
-		  var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-		else
-		  var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
-		sphereGeometry.translate( c.x, c.y, c.z );
-		var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-		group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-		this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
+    if(c.radius)
+      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+    else
+      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
+    sphereGeometry.translate( c.x, c.y, c.z );
+    var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+    group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+    this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
       }
-	  if (c.type == -1) {
-		if(this.settings.synapseMode==1){
-		  if(mergedGeometry == undefined)
-			mergedGeometry = new THREE.Geometry()
+    if (c.type == -1) {
+    if(this.settings.synapseMode==1){
+      if(mergedGeometry == undefined)
+      mergedGeometry = new THREE.Geometry()
 
-		  if(c.radius)
-			var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-		  else
-			var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
-		  sphereGeometry.translate( c.x, c.y, c.z );
-		  //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-		  //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-		  mergedGeometry.merge(sphereGeometry);
-		  this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
-		}
-		else{
-		  if(pointGeometry == undefined)
-			pointGeometry = new THREE.Geometry();
-		  pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-		}
-	  }
-	}
-	if(pointGeometry){
-	  var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
-	  var points = new THREE.Points(pointGeometry, pointMaterial);
-	  group.add(points);
-	}
-	if(mergedGeometry){
-	  var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-	  //var modifier = new THREE.SimplifyModifier();
+      if(c.radius)
+      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+      else
+      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+      sphereGeometry.translate( c.x, c.y, c.z );
+      //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+      //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+      mergedGeometry.merge(sphereGeometry);
+      this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
+    }
+    else{
+      if(pointGeometry == undefined)
+      pointGeometry = new THREE.Geometry();
+      pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+    }
+    }
+  }
+  if(pointGeometry){
+    var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
+    var points = new THREE.Points(pointGeometry, pointMaterial);
+    group.add(points);
+  }
+  if(mergedGeometry){
+    var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+    //var modifier = new THREE.SimplifyModifier();
 
-	  //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-	  var mesh = new THREE.Mesh(mergedGeometry, material);
-	  //var mesh = new THREE.Mesh(simplified, material);
+    //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+    var mesh = new THREE.Mesh(mergedGeometry, material);
+    //var mesh = new THREE.Mesh(simplified, material);
 
-	  group.add(mesh);
-	}
-	if(geometry){
-	  var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-	  group.add(new THREE.LineSegments(geometry, material));
-	}
-	group.visible = visibility;
-	this._registerGroup(key, group);
+    group.add(mesh);
+  }
+  if(geometry){
+    var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+    group.add(new THREE.LineSegments(geometry, material));
+  }
+  group.visible = visibility;
+  this._registerGroup(key, group);
 
-	/* delete morpology data */
-	delete this.meshDict[key]['identifier'];
-	delete this.meshDict[key]['x'];
-	delete this.meshDict[key]['y'];
-	delete this.meshDict[key]['z'];
-	delete this.meshDict[key]['r'];
-	delete this.meshDict[key]['parent'];
-	delete this.meshDict[key]['sample'];
-	delete this.meshDict[key]['type'];
+  /* delete morpology data */
+  delete this.meshDict[key]['identifier'];
+  delete this.meshDict[key]['x'];
+  delete this.meshDict[key]['y'];
+  delete this.meshDict[key]['z'];
+  delete this.meshDict[key]['r'];
+  delete this.meshDict[key]['parent'];
+  delete this.meshDict[key]['sample'];
+  delete this.meshDict[key]['type'];
   };
 };
 
@@ -822,23 +822,23 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
   }
   */
   if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC')){
-	if ( this.settings.defaultOpacity !== 1)
+  if ( this.settings.defaultOpacity !== 1)
       for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-		this.meshDict[key]['object'].children[i].material.opacity = this.settings.defaultOpacity;
+    this.meshDict[key]['object'].children[i].material.opacity = this.settings.defaultOpacity;
   }
   else{
-	if ( this.settings.synapseOpacity !== 1)
+  if ( this.settings.synapseOpacity !== 1)
       for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-		this.meshDict[key]['object'].children[i].material.opacity = this.settings.synapseOpacity;
+    this.meshDict[key]['object'].children[i].material.opacity = this.settings.synapseOpacity;
   }
 
   if ( !this.meshDict[key]['background'] ) {
-	if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
-	  ++this.frontNum;
-	this.meshGroup.add( group );
+  if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
+    ++this.frontNum;
+  this.meshGroup.add( group );
   }
   else{
-	this.backmeshGroup.add(group)
+  this.backmeshGroup.add(group)
   }
 
 }
@@ -958,7 +958,7 @@ FFBOMesh3D.prototype.onWindowResize = function() {
   this.controls.handleResize();
   this.render();
   if(this.dispatch['resize'] !== undefined)
-	this.dispatch['resize']();
+  this.dispatch['resize']();
 
 }
 
@@ -967,11 +967,11 @@ var _saveImage = (function () {
   document.body.appendChild(a);
   a.style = "display: none";
   return function (blob, fileName) {
-	url = window.URL.createObjectURL(blob);
-	a.href = url;
-	a.download = fileName;
-	a.click();
-	window.URL.revokeObjectURL(url);
+  url = window.URL.createObjectURL(blob);
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
   };
 }());
 
@@ -995,7 +995,7 @@ FFBOMesh3D.prototype.render = function() {
           var obj = this.meshDict[key].object.children;
           //for ( var i = 0; i < obj.length; ++i )
           obj[0].material.opacity = this.settings.backgroundOpacity +  0.5*this.settings.meshOscAmp*(1+Math.sin(x * .0005));
-		  obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+      obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
         } else {
           //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
           //this.meshDict[key].object.children[0].material.opacity = 0.8;
@@ -1036,10 +1036,10 @@ FFBOMesh3D.prototype.render = function() {
 
   this.composer.render();
   if(this._take_screenshot){
-	this.renderer.domElement.toBlob(function(b){
-	  _saveImage(b, "ffbo_screenshot.png")
-	})
-	this._take_screenshot = false;
+  this.renderer.domElement.toBlob(function(b){
+    _saveImage(b, "ffbo_screenshot.png")
+  })
+  this._take_screenshot = false;
   }
   //this.renderer.render( this.scene, this.camera );
 }
@@ -1048,7 +1048,7 @@ FFBOMesh3D.prototype.showAll = function() {
   for (var key in this.meshDict)
     this.meshDict[key].object.visible = true;
   if(this.dispatch['showAll'] !== undefined)
-	this.dispatch['showAll']();
+  this.dispatch['showAll']();
 };
 
 FFBOMesh3D.prototype.hideAll = function() {
@@ -1056,7 +1056,7 @@ FFBOMesh3D.prototype.hideAll = function() {
     if (!this.meshDict[key]['pinned'])
       this.meshDict[key].object.visible = false;
   if(this.dispatch['hideAll'] !== undefined)
-	this.dispatch['hideAll']();
+  this.dispatch['hideAll']();
 };
 
 FFBOMesh3D.prototype.export_state = function() {
@@ -1170,15 +1170,15 @@ FFBOMesh3D.prototype.highlight = function(d) {
       //  continue;
       // TODO:
       var val = (this.meshDict[key]['highlight']) ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-	  depthTest = true;
+    depthTest = true;
       if (this.meshDict[key]['pinned']){
         val = this.settings.pinOpacity;
-		depthTest = false
-	  }
+    depthTest = false
+    }
       for (i in this.meshDict[key].object.children){
         this.meshDict[key].object.children[i].material.opacity = val;
-		this.meshDict[key].object.children[i].material.depthTest = depthTest;
-	  }
+    this.meshDict[key].object.children[i].material.depthTest = depthTest;
+    }
     }
   }
   for (i in this.meshDict[d].object.children){
@@ -1193,22 +1193,22 @@ FFBOMesh3D.prototype.resume = function() {
 
   if (this.pinned.size === 0){
     this.resetOpacity();
-	return;
+  return;
   }
   for( var key in this.meshDict ){
-	if (!this.meshDict[key]['background']){
-	  val = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-	  depthTest = this.meshDict[key]['pinned'] ? false : true;
-	  for (i in this.meshDict[key].object.children){
-		this.meshDict[key].object.children[i].material.opacity = val;
-		this.meshDict[key].object.children[i].material.depthTest = depthTest;
-	  }
-	}
-	else{
-	  //for (i in this.meshDict[key].object.children)
-	  this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-	  this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-	}
+  if (!this.meshDict[key]['background']){
+    val = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+    depthTest = this.meshDict[key]['pinned'] ? false : true;
+    for (i in this.meshDict[key].object.children){
+    this.meshDict[key].object.children[i].material.opacity = val;
+    this.meshDict[key].object.children[i].material.depthTest = depthTest;
+    }
+  }
+  else{
+    //for (i in this.meshDict[key].object.children)
+    this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+    this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+  }
   }
   if (!this._metadata.allowHighlight)
     return;
@@ -1240,19 +1240,19 @@ FFBOMesh3D.prototype.resetOpacity = function() {
     //if (!this.meshDict[key]['highlight'])
     //  continue;
     //var op = (this.meshDict[key]['pinned']) ? 0.6 : val;
-	if (!this.meshDict[key]['background']){
-	  if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
-		for (i in this.meshDict[key].object.children)
-		  this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
-	  else
-		for (i in this.meshDict[key].object.children)
-		  this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
-	}
-	else{
-	  //for (i in this.meshDict[key].object.children)
-	  this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-	  this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-	}
+  if (!this.meshDict[key]['background']){
+    if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
+    for (i in this.meshDict[key].object.children)
+      this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+    else
+    for (i in this.meshDict[key].object.children)
+      this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+  }
+  else{
+    //for (i in this.meshDict[key].object.children)
+    this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+    this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+  }
 
   }
 }
@@ -1304,7 +1304,7 @@ FFBOMesh3D.prototype.remove = function( id ) {
     --this.meshNum;
     if ( !this.meshDict[id[i]]['background'] ) {
       if(!('morph_type' in this.meshDict[id[i]]) || (this.meshDict[id[i]]['morph_type'] != 'Synapse SWC'))
-		--this.frontNum;
+    --this.frontNum;
     }
     this.meshGroup.remove( meshobj );
     delete meshobj;
@@ -1334,7 +1334,7 @@ FFBOMesh3D.prototype.setColor = function( id, color ) {
       meshobj.children[j].geometry.colors[k].set( color );
       }
     }
-	this.meshDict[id[i]].color = new THREE.Color(color);
+  this.meshDict[id[i]].color = new THREE.Color(color);
   }
 
 }
@@ -1347,7 +1347,7 @@ FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
       meshobj.children[j].material.color.set( color );
       meshobj.children[j].geometry.colorsNeedUpdate = true;
       for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-		meshobj.children[j].geometry.colors[k].set( color );
+    meshobj.children[j].geometry.colors[k].set( color );
       }
     }
   }
