@@ -26,9 +26,9 @@ function FFBOMesh3D(div_id, data, metadata) {
     "allowHighlight": true,
   }
   if ( metadata !== undefined )
-  for ( var key in this._metadata )
-    if ( (key in metadata) && (metadata[key] !== undefined) )
-      this._metadata[key] = metadata[key]
+    for ( var key in this._metadata )
+      if ( (key in metadata) && (metadata[key] !== undefined) )
+        this._metadata[key] = metadata[key]
 
   this.div_id = div_id;
 
@@ -48,10 +48,6 @@ function FFBOMesh3D(div_id, data, metadata) {
       this.camera.position.z =2600;
 	  }
 
-  /*
-  this.camera.position.copy(new THREE.Vector3(-372, -523, 122))
-  this.camera.up.copy(new THREE.Vector3(-0.16, 0.22, 0.96))
-  */
   this.renderer = new THREE.WebGLRenderer();
   this.renderer.setPixelRatio( window.devicePixelRatio );
   this.renderer.setSize( width, height );
@@ -87,76 +83,8 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.controls.addEventListener('change', this.render.bind(this));
 
 
-  this.lightsHelper = new FFBOLightsHelper( this );
+  this.lightsHelper = this.initLights()
 
-  this.lightsHelper.addAmbientLight({intensity: 0.1,
-				     scene: 'front',
-				     key: 'frontAmbient'})
-  this.lightsHelper.addAmbientLight({intensity: 0.5,
-				     scene: 'back',
-				     key: 'backAmbient'})
-
-  this.lightsHelper.addDirectionalLight({intensity: 0.1,
-					   position: new THREE.Vector3(0, 0, 5000),
-					   scene: 'front',
-					   key: 'frontDirectional_1'})
-  this.lightsHelper.addDirectionalLight({intensity: 0.8,
-					   position: new THREE.Vector3(0, 0, 5000),
-					   scene: 'back',
-					   key: 'backDirectional_1'})
-  this.lightsHelper.addDirectionalLight({intensity: 0.1,
-					   position: new THREE.Vector3(0, 0, -5000),
-					   scene: 'front',
-					   key: 'frontDirectional_2'})
-  this.lightsHelper.addDirectionalLight({intensity: 0.8,
-					   position: new THREE.Vector3(0, 0, -5000),
-					   scene: 'back',
-					   key: 'backDirectional_2'})
-
-
-
-  this.lightsHelper.addSpotLight({posAngle1: 80,
-				  posAngle2: 80,
-				  scene: 'front',
-				  key: 'frontSpot_1'})
-  this.lightsHelper.addSpotLight({posAngle1: 80,
-				  posAngle2: 80,
-				  intensity: 12,
-				  scene: 'back',
-				  key: 'backSpot_1'})
-  this.lightsHelper.addSpotLight({posAngle1: -80,
-				  posAngle2: 80,
-				  scene: 'front',
-				  key: 'frontSpot_2'})
-  this.lightsHelper.addSpotLight({posAngle1: -80,
-				  posAngle2: 80,
-				  intensity: 12,
-				  scene: 'back',
-				  key: 'backSpot_2'})
-
-
-  /*
-
-  this.ambientlight = new THREE.AmbientLight( 0xffffff, 0.1 );
-  this.backambientlight = new THREE.AmbientLight( 0xffffff, 0.5 );
-
-  this.scene.add( this.ambientlight );
-  this.backscene.add( this.backambientlight );
-
-  this.frontlight = new THREE.DirectionalLight();
-  this.frontlight.position.set( 0, 0, 1 );
-  this.backfrontlight = new THREE.DirectionalLight();
-  this.backfrontlight.position.set( 0, 0, 1 );
-  this.scene.add( this.frontlight );
-  this.backscene.add( this.backfrontlight );
-
-  this.backlight = new THREE.DirectionalLight();
-  this.backlight.position.set( 0, 0, -5000 );
-  this.backbacklight = new THREE.DirectionalLight();
-  this.backbacklight.position.set( 0, 0, -5000 );
-  this.scene.add( this.backlight );
-  this.backscene.add( this.backbacklight );
-  */
 
   /*
    * create color map
@@ -305,6 +233,82 @@ function FFBOMesh3D(div_id, data, metadata) {
   }
   this._configureCallbacks();
 };
+
+FFBOMesh3D.prototype.initLights = function() {
+  lightsHelper = new FFBOLightsHelper( this );
+
+  lightsHelper.addAmbientLight({
+    intensity: 0.1,
+    scene: 'front',
+    key: 'frontAmbient'
+  });
+
+  lightsHelper.addAmbientLight({
+    intensity: 0.5,
+    scene: 'back',
+    key: 'backAmbient'
+  });
+
+  lightsHelper.addDirectionalLight({
+    intensity: 0.1,
+    position: new THREE.Vector3(0, 0, 5000),
+    scene: 'front',
+    key: 'frontDirectional_1'
+  });
+
+  lightsHelper.addDirectionalLight({
+    intensity: 0.8,
+    position: new THREE.Vector3(0, 0, 5000),
+    scene: 'back',
+    key: 'backDirectional_1'
+  });
+
+  lightsHelper.addDirectionalLight({
+    intensity: 0.1,
+    position: new THREE.Vector3(0, 0, -5000),
+    scene: 'front',
+    key: 'frontDirectional_2'
+  });
+
+  lightsHelper.addDirectionalLight({
+    intensity: 0.8,
+    position: new THREE.Vector3(0, 0, -5000),
+    scene: 'back',
+    key: 'backDirectional_2'
+  });
+
+  lightsHelper.addSpotLight({
+    posAngle1: 80,
+    posAngle2: 80,
+    scene: 'front',
+    key: 'frontSpot_1'
+  });
+
+  lightsHelper.addSpotLight({
+    posAngle1: 80,
+    posAngle2: 80,
+    intensity: 12,
+    scene: 'back',
+    key: 'backSpot_1'
+  });
+
+  lightsHelper.addSpotLight({
+    posAngle1: -80,
+    posAngle2: 80,
+    scene: 'front',
+    key: 'frontSpot_2'
+  });
+
+  lightsHelper.addSpotLight({
+    posAngle1: -80,
+    posAngle2: 80,
+    intensity: 12,
+    scene: 'back',
+    key: 'backSpot_2'
+  });
+
+  return lightsHelper
+}
 
 FFBOMesh3D.prototype.reset = function(resetBackground) {
   resetBackground = resetBackground || false;
