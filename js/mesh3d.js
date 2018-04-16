@@ -69,8 +69,23 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this.mouse = new THREE.Vector2(-100000,-100000);
 
+  this.settings = new PropertyManager({
+    defaultOpacity: (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1,
+    synapseOpacity: 1.0,
+    meshOscAmp: 0.0,
+    nonHighlightableOpacity: 0.1,
+    lowOpacity: 0.1,
+    pinOpacity: 0.9,
+    pinLowOpacity: 0.15,
+    highlightedObjectOpacity: 1.0,
+    defaultRadius: 0.5,
+    defaultSomaRadius: 3.0,
+    defaultSynapseRadius: 0.3,
+    backgroundOpacity: 0.8,
+    backgroundWireframeOpacity: 0.07,
+    meshWireframe: true,
+  });
 
-  this.settings = new PropertyManager({meshWireframe: true});
   this.states = new PropertyManager({
     pinned: false,
     highlight: false,
@@ -156,21 +171,6 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this._take_screenshot = false
 
-  this.default_opacity = (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1;
-
-  this.synapse_opacity = 1.0
-  this.meshOscAmp = 0.0;
-  this.non_highlightable_opacity = 0.1
-  this.low_opacity = 0.1
-  this.pin_opacity = 0.9
-  this.pin_low_opacity = 0.15
-  this.highlighted_object_opacity = 1.0
-  this.default_radius = 0.5
-  this.default_soma_radius = 3.0
-  this.default_synapse_radius = 0.3
-
-  this.background_opacity = 0.8
-  this.background_wireframe_opacity = 0.07;
   this.renderScene = new THREE.RenderPass( this.scene, this.camera );
   this.renderScene.clear = false;
   this.renderScene.clearDepth = true;
@@ -685,7 +685,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 			mergedGeometry = new THREE.Geometry()
 		  var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
 		  if(!p.radius || !c.radius)
-			var geometry = new THREE.CylinderGeometry(this.default_radius, this.default_radius, d.length(), 4, 1, 0);
+			var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
 		  else
 			var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
 		  geometry.translate(0, 0.5*d.length(),0);
@@ -736,7 +736,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 		if(c.radius)
 		  var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
 		else
-		  var sphereGeometry = new THREE.SphereGeometry(this.default_soma_radius, 8, 8 );
+		  var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
 		sphereGeometry.translate( c.x, c.y, c.z );
 		var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
 		group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
@@ -750,7 +750,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 		  if(c.radius)
 			var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
 		  else
-			var sphereGeometry = new THREE.SphereGeometry(this.default_synapse_radius, 8, 8 );
+			var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
 		  sphereGeometry.translate( c.x, c.y, c.z );
 		  //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
 		  //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
@@ -765,7 +765,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 	  }
 	}
 	if(pointGeometry){
-	  var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.default_synapse_radius, lights:true } );
+	  var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
 	  var points = new THREE.Points(pointGeometry, pointMaterial);
 	  group.add(points);
 	}
@@ -816,14 +816,14 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
   }
   */
   if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC')){
-	if ( this.default_opacity !== 1)
+	if ( this.settings.defaultOpacity !== 1)
       for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-		this.meshDict[key]['object'].children[i].material.opacity = this.default_opacity;
+		this.meshDict[key]['object'].children[i].material.opacity = this.settings.defaultOpacity;
   }
   else{
-	if ( this.synapse_opacity !== 1)
+	if ( this.settings.synapseOpacity !== 1)
       for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-		this.meshDict[key]['object'].children[i].material.opacity = this.synapse_opacity;
+		this.meshDict[key]['object'].children[i].material.opacity = this.settings.synapseOpacity;
   }
 
   if ( !this.meshDict[key]['background'] ) {
@@ -988,8 +988,8 @@ FFBOMesh3D.prototype.render = function() {
         if ( this.meshDict[key]['background'] ) {
           var obj = this.meshDict[key].object.children;
           //for ( var i = 0; i < obj.length; ++i )
-          obj[0].material.opacity = this.background_opacity +  0.5*this.meshOscAmp*(1+Math.sin(x * .0005));
-		  obj[1].material.opacity = this.background_wireframe_opacity;
+          obj[0].material.opacity = this.settings.backgroundOpacity +  0.5*this.settings.meshOscAmp*(1+Math.sin(x * .0005));
+		  obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
         } else {
           //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
           //this.meshDict[key].object.children[0].material.opacity = 0.8;
@@ -1163,10 +1163,10 @@ FFBOMesh3D.prototype.highlight = function(d) {
       //if (this.meshDict[key]['pinned'])
       //  continue;
       // TODO:
-      var val = (this.meshDict[key]['highlight']) ? this.low_opacity : this.non_highlightable_opacity;
+      var val = (this.meshDict[key]['highlight']) ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
 	  depthTest = true;
       if (this.meshDict[key]['pinned']){
-        val = this.pin_opacity;
+        val = this.settings.pinOpacity;
 		depthTest = false
 	  }
       for (i in this.meshDict[key].object.children){
@@ -1176,7 +1176,7 @@ FFBOMesh3D.prototype.highlight = function(d) {
     }
   }
   for (i in this.meshDict[d].object.children){
-    this.meshDict[d].object.children[i].material.opacity = this.highlighted_object_opacity;
+    this.meshDict[d].object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
     this.meshDict[d].object.children[i].material.depthTest = false;
   }
   this.meshDict[d].object.visible = true;
@@ -1191,7 +1191,7 @@ FFBOMesh3D.prototype.resume = function() {
   }
   for( var key in this.meshDict ){
 	if (!this.meshDict[key]['background']){
-	  val = this.meshDict[key]['pinned'] ? this.pin_opacity : this.pin_low_opacity;
+	  val = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
 	  depthTest = this.meshDict[key]['pinned'] ? false : true;
 	  for (i in this.meshDict[key].object.children){
 		this.meshDict[key].object.children[i].material.opacity = val;
@@ -1200,8 +1200,8 @@ FFBOMesh3D.prototype.resume = function() {
 	}
 	else{
 	  //for (i in this.meshDict[key].object.children)
-	  this.meshDict[key].object.children[0].material.opacity = this.background_opacity;
-	  this.meshDict[key].object.children[1].material.opacity = this.background_wireframe_opacity;
+	  this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+	  this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
 	}
   }
   if (!this._metadata.allowHighlight)
@@ -1215,9 +1215,9 @@ FFBOMesh3D.prototype.resume = function() {
   if (!this.meshDict[d]['pinned']) {
     this.meshDict[d].object.visible = this.highlightedObj[1];
     this.highlightedObj = null;
-    val = ( this._metadata.highlightMode === "rest") ? this.pin_low_opacity : this.default_opacity;
+    val = ( this._metadata.highlightMode === "rest") ? this.settings.pinLowOpacity : this.settings.defaultOpacity;
   } else
-    val = ( this._metadata.highlightMode === "rest") ? this.pin_opacity : this.default_opacity;
+    val = ( this._metadata.highlightMode === "rest") ? this.settings.pinOpacity : this.settings.defaultOpacity;
   for (i in x)
     x[i].material.opacity = val;
   this.isHighlight = false;
@@ -1226,7 +1226,7 @@ FFBOMesh3D.prototype.resume = function() {
 
 
 FFBOMesh3D.prototype.resetOpacity = function() {
-  var val = this.default_opacity;
+  var val = this.settings.defaultOpacity;
   //if (this.pinnedNum > 0)
   //  val = 0.2;
   //reset
@@ -1237,15 +1237,15 @@ FFBOMesh3D.prototype.resetOpacity = function() {
 	if (!this.meshDict[key]['background']){
 	  if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
 		for (i in this.meshDict[key].object.children)
-		  this.meshDict[key].object.children[i].material.opacity = this.default_opacity;
+		  this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
 	  else
 		for (i in this.meshDict[key].object.children)
-		  this.meshDict[key].object.children[i].material.opacity = this.synapse_opacity;
+		  this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
 	}
 	else{
 	  //for (i in this.meshDict[key].object.children)
-	  this.meshDict[key].object.children[0].material.opacity = this.background_opacity;
-	  this.meshDict[key].object.children[1].material.opacity = this.background_wireframe_opacity;
+	  this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+	  this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
 	}
 
   }
