@@ -1,3 +1,69 @@
+.tooltip-inner {
+    padding: 1px 6px;
+    color: #000;
+    background-color: #eee;
+    border-radius: 10px;
+    border: #000 solid 2px;
+}
+
+
+#vis_set input[type='radio']:checked:after {
+    width: 15px;
+    height: 15px;
+    border-radius: 15px;
+    top: -2px;
+    left: -1px;
+    position: relative;
+    background-color: #68ADD5;
+    content: '';
+    display: inline-block;
+    visibility: visible;
+    border: 2px solid white;
+}
+
+.slider.slider-horizontal .slider-track {
+    height: 5px !important;
+    margin-top: -2.5px !important;
+}
+
+.slider-handle {
+    top: 5px !important;
+    width: 10px !important;
+    height: 10px !important;
+    background-color: #B3DFF9;
+    background-image: -webkit-linear-gradient(top,#B3DFF9 0,#A0D7F7 100%) !important;
+    background-image: -o-linear-gradient(top,#B3DFF9 0,#A0D7F7 100%) !important;
+    background-image: linear-gradient(to bottom,#B3DFF9 0,#A0D7F7 100%) !important;
+}
+
+.slider-selection {
+    position: absolute;
+    background-image: -webkit-linear-gradient(top,#797979 0,#757575 100%);
+    background-image: -o-linear-gradient(top,#797979 0,#757575 100%);
+    background-image: linear-gradient(to bottom,#797979 0,#757575 100%);
+    background-repeat: repeat-x;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff797979',endColorstr='#ff757575',GradientType=0);
+    -webkit-box-shadow: inset 0 -1px 0 rgba(0,0,0,0.15);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.15);
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    border-radius: 4px;
+}
+
+.slider-track {
+    position: absolute;
+    cursor: pointer;
+    background-image: -webkit-linear-gradient(top,#757575 0,#797979 100%);
+    background-image: -o-linear-gradient(top,#757575 0,#797979 100%);
+    /* background-image: linear-gradient(to bottom,#757575 0,#797979 100%); */
+    background-repeat: repeat-x;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff757575',endColorstr='#ff797979',GradientType=0);
+    -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
 .switch_checkbox {
     display: none;
 }
@@ -26,19 +92,24 @@
 }
 
 .switch_checkbox_label.ui-checkbox-on {
-    background: #337ab7;//rgb(39, 173, 95);
+    background: #68ADD5;
 }
 .switch_checkbox_label.ui-checkbox-on:after {
     left: auto;
     right: 0;
 }
 
-#bloom_pass td{
-    padding-bottom:10px
+
+
+#vis_set_dragger {
+    left: calc( var(--boundary-horizontal) - 15px );
 }
 
 #vis_set_table td:last-child{
     min-width: 240px;
+}
+#vis_set > .setting-wrapper {
+    width: 95%;
 }
 #vis_set .row {
    /* padding-left: 30px;
@@ -52,6 +123,10 @@
 #vis_set .row > div:nth-child(even){
     text-align: right;
 }
+#vis_set .row > .col-xs-12, #vis_set .row > .col-md-12{
+    text-align: left !important;
+}
+
 #vis_set .slider {
     margin-bottom: 10px;
 }
@@ -70,6 +145,10 @@
 }
 #vis_set input[type=radio]{
     margin-left: 10px;
+}
+
+#bloom_pass td{
+    padding-bottom:10px
 }
 
 .slider{
@@ -169,7 +248,7 @@ p, td, .btn, th, ul, .overlay .row {
 }
 
 @media (min-width: 43.75em) {
-    p, td, .btn, ul, .overlay .row {
+    p, td, .btn, ul, .overlay .row, #vis_set .row {
 	font-size: 0.85em;
 	/* equivalent to 16px */
 	line-height: 1.5;
@@ -306,7 +385,7 @@ blockquote {
 
     --font-color-a:      #777;
     --font-color-p:      #999;
-    --font-color-h5:     #377097;
+    --font-color-h5:     #88CDF5;
     --font-color-h4:     #88CDF5; /*#377097;*/
     --font-color-h3:     #88CDF5;
     --font-color-h2:     #A0D7F7;
@@ -331,9 +410,16 @@ blockquote {
     --font-color-grey : grey;
 
     --boundary-horizontal: 50vw;
+    --boundary-horizontal-overlay: 80vw;
+
 }
 
-
+@media screen and (min-width: 1278px)  {
+    :root{
+	--boundary-horizontal: 35vw;
+    }
+}
+	
 a{
   /*font-family: 'Rajdhani', sans-serif;*/
   font-family: 'Quicksand', sans-serif;
@@ -347,7 +433,7 @@ a:hover{
   color: #80b919;
 }
 
-p, .overlay .row{
+p, .overlay .row, #vis_set .row{
   /*font-family: 'Lora', sans-serif;*/
   font-family: 'Open Sans', sans-serif;
   font-weight: normal; /*400;*/
@@ -2134,16 +2220,20 @@ div#overview-panel > .overview-content-wrapper > div:nth-of-type(even) {
     height: 40%;
 }
 
-.slider-bar {
-  top: 60px;
-  height: calc( 100vh - 120px );
-  width: 15px;
-  left: calc( var(--boundary-horizontal) - 15px );
-  background: transparent;
-  cursor: ew-resize;
-  z-index: 3000;
-  position: fixed;
+.slider-bar{
+    top: 60px;
+    width: 15px;
+    background: transparent;
+    cursor: ew-resize;
+    z-index: 3000;
+    position: fixed;
+    height: calc( 100vh - 120px );
 }
+
+#info_panel_dragger {
+    left: calc( var(--boundary-horizontal) - 15px );
+}
+
 
 @media screen and (orientation:portrait) {
   .slider-bar {
