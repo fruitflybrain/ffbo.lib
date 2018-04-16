@@ -89,6 +89,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   });
 
   this.states = new PropertyManager({
+    mouseOver: false,
     pinned: false,
     highlight: false,
     animate: false});
@@ -133,7 +134,6 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this.container.addEventListener( 'resize', this.onWindowResize.bind(this), false );
 
-  this.isMouseOver = false;
   this.animOpacity = {};
   this.meshDict = new PropertyManager();
   this.meshNum = 0;
@@ -554,7 +554,7 @@ FFBOMesh3D.prototype.animate = function() {
   requestAnimationFrame( this.animate.bind(this) );
 
   this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-  if( this.isMouseOver && this.dispatch.syncControls)
+  if( this.states.mouseOver && this.dispatch.syncControls)
     this.dispatch.syncControls(this)
 
   this.render();
@@ -929,13 +929,13 @@ FFBOMesh3D.prototype.onDocumentMouseMove = function( event ) {
 FFBOMesh3D.prototype.onDocumentMouseEnter = function( event ) {
   event.preventDefault();
 
-  this.isMouseOver = true;
+  this.states.mouseOver = true;
 }
 
 FFBOMesh3D.prototype.onDocumentMouseLeave = function( event ) {
   event.preventDefault();
 
-  this.isMouseOver = false;
+  this.states.mouseOver = false;
 
   this.hide3dToolTip();
   this.resume();
