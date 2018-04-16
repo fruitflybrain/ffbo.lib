@@ -1,0 +1,57 @@
+:root {
+  --background-color: rgb(230, 230, 238);
+  --infobar-background-color: rgb(229, 229, 238);
+  --background-color-transparent: rgba(30,30,35,0.8);
+  --overlay-background-color: rgba(30,30,35,1.0);
+
+  --navbar-text-color: rgb(68, 63, 63);
+  --li-hover-color: rgb(45, 50, 65);
+  --overlay-thead-color: rgb(20,20,25);
+  --overlay-th-color: rgb(20,20,25);
+  --shadow-color:rgba(0,0,0,0.1);
+
+  --font-color-a:      #777;
+  --font-color-p:      rgb(41, 41, 41);
+  --font-color-h5:     rgb(73, 128, 160);
+  --font-color-h4:     rgb(73, 128, 160); /*#377097;*/
+  --font-color-h3:     rgb(73, 128, 160);
+  --font-color-h2:     rgb(73, 128, 160);
+  --font-color-h1:     rgb(73, 128, 160);
+  --font-color-brand:  #c5c3c0;
+  --font-color-navbar: #9d9d9d;
+  --font-color-navbar-hl: #fff;
+
+  --btn-color:rgb(157,175,180);
+  --btn-color-d:rgba(157,175,180,0.2);
+
+  --info-ui-color:rgb(223, 209, 209);
+  --info-ui-background-color:#337ab7;
+
+  --info-ui-color-hover:rgb(255, 255, 255);
+  --info-ui-background-color-hover:#337ab7;
+
+  --srch-btn-background-color:#337ab7;
+  --srch-btn-border-color:#2e6da4;
+
+  --highlight-color: rgb(115, 201, 144);
+  --highlight-color-d: rgba(115, 201, 144,0.2);
+
+  --th-color:rgb(27,35,45);
+  --td-color:rgb(33,43,56);
+
+  --srch-box-color: #000;
+  --srch-box-background: #ccc;
+  --srch-box-border: rgb(197, 193, 193);
+
+  --overview-background:#000;/* rgba(23,23,23,1);*/
+  --card-background: #000;/*rgba(32,32,32,1);*/
+  --font-color-blue : rgba(0,182,240,1);
+  --font-color-blue-l : rgba(0,182,240,1);
+  --font-color-grey : grey;
+
+  --boundary-horizontal: 50vw;
+  --boundary-horizontal-overlay: 80vw;
+  --h-font-family: 'Quicksand', sans-serif;
+  --u-font-family: 'Open Sans', sans-serif;
+  --title-font-family: 'Rajdhani';
+}
