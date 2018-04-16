@@ -83,6 +83,9 @@ function FFBOMesh3D(div_id, data, metadata) {
     defaultSynapseRadius: 0.3,
     backgroundOpacity: 0.8,
     backgroundWireframeOpacity: 0.07,
+    neuron3d: false,
+    neuron3dMode: 1,
+    synapseMode: 1,
     meshWireframe: true,
   });
 
@@ -151,9 +154,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.boundingBox = Object.assign( {}, this.defaultBoundingBox )
   this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox )
 
-  this.neurons_3d = false;
-  this.mode_3d = 1;
-  this.synapse_mode = 1
+
 
 
   this.createInfoPanel();
@@ -680,7 +681,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
       this.updateBoundingBox(c.x,c.y,c.z);
       if (c.parent != -1) {
 		var p = swcObj[c.parent];
-		if(this.neurons_3d){
+		if(this.settings.neuron3d){
 		  if(mergedGeometry == undefined)
 			mergedGeometry = new THREE.Geometry()
 		  var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
@@ -697,7 +698,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 		  mergedGeometry.merge(geometry);
 		  delete geometry
 
-		  if(this.mode_3d == 2){
+		  if(this.settings.neuron3dMode == 2){
 			var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
 			geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
 			geometry.lookAt(d);
@@ -706,7 +707,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 			mergedGeometry.merge(geometry);
 			delete geometry
 		  }
-		  else if(this.mode_3d == 3){
+		  else if(this.settings.neuron3dMode == 3){
 			if(p.parent != -1){
 			  p2 = swcObj[p.parent];
 			  var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
@@ -743,7 +744,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
 		this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
       }
 	  if (c.type == -1) {
-		if(this.synapse_mode==1){
+		if(this.settings.synapseMode==1){
 		  if(mergedGeometry == undefined)
 			mergedGeometry = new THREE.Geometry()
 
