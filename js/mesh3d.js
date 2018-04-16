@@ -147,8 +147,7 @@ function FFBOMesh3D(div_id, data, metadata) {
 
 
   this.createInfoPanel();
-  if ( data != undefined && Object.keys(data).length > 0)
-    this.addJson( data );
+
 
   this._uibtnright = 5;
   this.toolTipPos = new THREE.Vector2();
@@ -223,6 +222,10 @@ function FFBOMesh3D(div_id, data, metadata) {
     'setcolor': this.setColor,
     'resetview': this.resetView,
   }
+
+  if ( data != undefined && Object.keys(data).length > 0)
+    this.addJson( data );
+
   this._configureCallbacks();
 };
 
