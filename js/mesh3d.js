@@ -52,7 +52,6 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.renderer.setPixelRatio( window.devicePixelRatio );
   this.renderer.setSize( width, height );
   this.container.appendChild(this.renderer.domElement);
-  this.canvasRect = this.renderer.domElement.getBoundingClientRect();
 
   this.scene = new THREE.Scene();
   this.scene.background = null
@@ -939,8 +938,6 @@ FFBOMesh3D.prototype.onDocumentMouseLeave = function( event ) {
 //
 FFBOMesh3D.prototype.onWindowResize = function() {
 
-  this.canvasRect = this.renderer.domElement.getBoundingClientRect();
-
   var height = this.container.clientHeight;
   var width = this.container.clientWidth;
 
@@ -1452,14 +1449,14 @@ FFBOMesh3D.prototype._getInfo = function (d) {
 FFBOMesh3D.prototype.getNeuronScreenPosition = function (id) {
 
   var vector = this.meshDict[id].position.clone()
-  this.canvasRect = this.renderer.domElement.getBoundingClientRect();
+  canvasRect = this.renderer.domElement.getBoundingClientRect();
 
   // map to normalized device coordinate (NDC) space
   vector.project( this.camera );
 
   // map to 2D screen space
-  vector.x = Math.round( (   vector.x + 1 ) * this.canvasRect.width  / 2 ) + this.canvasRect.left;
-  vector.y = Math.round( ( - vector.y + 1 ) * this.canvasRect.height / 2 ) + this.canvasRect.top;
+  vector.x = Math.round( (   vector.x + 1 ) * canvasRect.width  / 2 ) + canvasRect.left;
+  vector.y = Math.round( ( - vector.y + 1 ) * canvasRect.height / 2 ) + canvasRect.top;
 
   return {'x':vector.x, 'y':vector.y};
 }
