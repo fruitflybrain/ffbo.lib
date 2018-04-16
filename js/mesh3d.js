@@ -19,7 +19,7 @@ function FFBOMesh3D(div_id, data, metadata) {
 
     /* default metadata */
     this._metadata = {
-        "colormap": "no_purple",
+        "colormap": "rainbow_gist",
         "maxColorNum": 1747591,
         "highlightMode": "rest", /* one: highlight one; rest: deem rest */
         "allowPin": true,
@@ -38,16 +38,20 @@ function FFBOMesh3D(div_id, data, metadata) {
 
     this.fov = 20;
 
-        this.camera = new THREE.PerspectiveCamera( this.fov, width / height, 0.1, 20000 );
-        this.camera.position.z = 1800;
+    this.camera = new THREE.PerspectiveCamera( this.fov, width / height, 0.1, 20000 );
+    this.camera.position.z = 1800;
 
         if(width<768 && width/height < 1){
             this.camera.position.z = 3800;
     }
         if(width<768 && width/height >= 1){
-            this.camera.position.z = 2600;
-    }
-
+            this.camera.position.z =2600;
+	    }
+    
+    /*
+    this.camera.position.copy(new THREE.Vector3(-372, -523, 122))
+    this.camera.up.copy(new THREE.Vector3(-0.16, 0.22, 0.96))
+    */
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setPixelRatio( window.devicePixelRatio );
     this.renderer.setSize( width, height );
@@ -55,9 +59,15 @@ function FFBOMesh3D(div_id, data, metadata) {
     this.canvasRect = this.renderer.domElement.getBoundingClientRect();
 
     this.scene = new THREE.Scene();
+    this.scene.background = null
     this.scene.add( this.camera );
 
+    this.backscene = new THREE.Scene();
+    this.backscene.background = new THREE.Color(0x030305);
+    this.backscene.add( this.camera );
+
     this.meshGroup = new THREE.Object3D(); // for raycaster detection
+    this.backmeshGroup = new THREE.Object3D();
 
     this.currentIntersected;
 
@@ -65,6 +75,9 @@ function FFBOMesh3D(div_id, data, metadata) {
 
     this.isAnim = false;
 
+    this.settings = new PropertyManager({meshWireframe: true});
+    this._states = new PropertyManager({pinned: false, highlight: false});
+    
     this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
     this.controls.rotateSpeed = 2.0;
     this.controls.zoomSpeed = 1.0;
@@ -73,13 +86,78 @@ function FFBOMesh3D(div_id, data, metadata) {
     this.controls.dynamicDampingFactor = 0.3;
     this.controls.addEventListener('change', this.render.bind(this));
 
+    
+    this.lightsHelper = new FFBOLightsHelper( this );
+    
+    this.lightsHelper.addAmbientLight({intensity: 0.1,
+				       scene: 'front',
+				       key: 'frontAmbient'})
+    this.lightsHelper.addAmbientLight({intensity: 0.5,
+				       scene: 'back',
+				       key: 'backAmbient'})
+
+    this.lightsHelper.addDirectionalLight({intensity: 0.1,
+					   position: new THREE.Vector3(0, 0, 5000),
+					   scene: 'front',
+					   key: 'frontDirectional_1'})
+    this.lightsHelper.addDirectionalLight({intensity: 0.8,
+					   position: new THREE.Vector3(0, 0, 5000),
+					   scene: 'back',
+					   key: 'backDirectional_1'})
+    this.lightsHelper.addDirectionalLight({intensity: 0.1,
+					   position: new THREE.Vector3(0, 0, -5000),
+					   scene: 'front',
+					   key: 'frontDirectional_2'})
+    this.lightsHelper.addDirectionalLight({intensity: 0.8,
+					   position: new THREE.Vector3(0, 0, -5000),
+					   scene: 'back',
+					   key: 'backDirectional_2'})
+
+
+    
+    this.lightsHelper.addSpotLight({posAngle1: 80,
+				    posAngle2: 80,
+				    scene: 'front',
+				    key: 'frontSpot_1'})
+    this.lightsHelper.addSpotLight({posAngle1: 80,
+				    posAngle2: 80,
+				    intensity: 12,
+				    scene: 'back',
+				    key: 'backSpot_1'})
+    this.lightsHelper.addSpotLight({posAngle1: -80,
+				    posAngle2: 80,
+				    scene: 'front',
+				    key: 'frontSpot_2'})
+    this.lightsHelper.addSpotLight({posAngle1: -80,
+				    posAngle2: 80,
+				    intensity: 12,
+				    scene: 'back',
+				    key: 'backSpot_2'})
+
+
+    /*
+
+    this.ambientlight = new THREE.AmbientLight( 0xffffff, 0.1 );
+    this.backambientlight = new THREE.AmbientLight( 0xffffff, 0.5 );
+
+    this.scene.add( this.ambientlight );
+    this.backscene.add( this.backambientlight );
+				
     this.frontlight = new THREE.DirectionalLight();
     this.frontlight.position.set( 0, 0, 1 );
+    this.backfrontlight = new THREE.DirectionalLight();
+    this.backfrontlight.position.set( 0, 0, 1 );
     this.scene.add( this.frontlight );
+    this.backscene.add( this.backfrontlight );
 
     this.backlight = new THREE.DirectionalLight();
     this.backlight.position.set( 0, 0, -5000 );
+    this.backbacklight = new THREE.DirectionalLight();
+    this.backbacklight.position.set( 0, 0, -5000 );
     this.scene.add( this.backlight );
+    this.backscene.add( this.backbacklight );
+    */
+    
     /*
      * create color map
      */
@@ -91,11 +169,13 @@ function FFBOMesh3D(div_id, data, metadata) {
     this.loadingManager = new THREE.LoadingManager();
     this.loadingManager.onLoad = function() {
         this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-        this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+	/*this.controls.target0 = new THREE.Vector3(-334, -120, 19);*/
         this.controls.reset();
         this.meshGroup.visible = true;
     }.bind(this);
     this.scene.add( this.meshGroup );
+    this.backscene.add( this.backmeshGroup );
 
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
@@ -118,39 +198,98 @@ function FFBOMesh3D(div_id, data, metadata) {
 
     this.isMouseOver = false;
     this.animOpacity = {};
-    this.meshDict = {};
+    this.meshDict = new PropertyManager();
     this.meshNum = 0;
     this.frontNum = 0;
-    this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
+    this.defaultBoundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
 
+    this.boundingBox = Object.assign( {}, this.defaultBoundingBox )
+    this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox )
 
-
-
+    this.neurons_3d = false;
+    this.mode_3d = 1;
+    this.synapse_mode = 1
+    
+    
     this.createInfoPanel();
     if ( data != undefined && Object.keys(data).length > 0)
         this.addJson( data );
 
+    this._uibtnright = 5;
     this.toolTipPos = new THREE.Vector2();
     this.createToolTip();
 
     this.isHighlight = false;
     this.highlightedObj = null;
 
-    this.default_opacity = (this._metadata.highlightMode === "rest" ) ? 1.0 : 0.1;
-    this.meshOscAmp = 0.15;
+    this._take_screenshot = false
+    this.default_opacity = (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1;
+    this.synapse_opacity = 1.0
+    this.meshOscAmp = 0.0;
+    this.non_highlightable_opacity = 0.1
+    this.low_opacity = 0.1
+    this.pin_opacity = 0.9
+    this.pin_low_opacity = 0.15
+    this.highlighted_object_opacity = 1.0
+    this.default_radius = 0.5
+    this.default_soma_radius = 3.0
+    this.default_synapse_radius = 0.3
 
+    this.background_opacity = 0.8
+    this.background_wireframe_opacity = 0.07;
+    this.renderScene = new THREE.RenderPass( this.scene, this.camera );
+    this.renderScene.clear = false;
+    this.renderScene.clearDepth = true;
+    
+    this.backrenderScene = new THREE.RenderPass( this.backscene, this.camera);
+    this.backrenderSSAO = new THREE.SSAOPass( this.backscene, this.camera, width, height);
+//this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
+    
+    this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
+    this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
+
+    
+    this.bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( width, height ), 0.2, 0.2, 0.3 ); //1.0, 9, 0.5, 512);
+    this.bloomPass.renderToScreen = true;
+
+    //this.gammaCorrectionPass = new THREE.ShaderPass( THREE.GammaCorrectionShader );
+    //this.gammaCorrectionPass.renderToScreen = true;
+    
+    this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
+    this.toneMappingPass.setMinLuminance(0.05);
+    
+    this.renderer.gammaInput = true;
+    this.renderer.gammaOutput = true;
+
+    this.composer = new THREE.EffectComposer( this.renderer );
+    this.composer.setSize( width, height );
+    this.composer.addPass( this.backrenderScene );
+    this.composer.addPass( this.backrenderSSAO );
+    this.composer.addPass( this.renderScene );
+    this.composer.addPass( this.effectFXAA );
+    this.composer.addPass( this.toneMappingPass );
+    
+    this.composer.addPass( this.bloomPass );
+    //this.composer.addPass( this.gammaCorrectionPass );
+    
+
+    this.passes = {'SSAO': 1, 'FXAA': 3, 'toneMappingPass': 4, 'unrealBloomPass': 5}
+    
     this.animate();
     this.pinned = new Set();
 
+    this.UIBtns = {}
+     
     this.dispatch = {
-        'click': undefined,
-        'dblclick': undefined,
-        'getInfo': this._getInfo,
-        'showInfo': undefined,
-        'syncControls': undefined,
+        click: undefined,
+        dblclick: undefined,
+        getInfo: this._getInfo,
+        syncControls: undefined,
+	resize: undefined
+        /*'showInfo': undefined,
         'removeUnpin': undefined,
 	'hideAll': undefined,
-	'showAll': undefined,
+	'showAll': undefined,*/
     }
     this.commandDispatcher = {
         'show': this.show,
@@ -164,12 +303,9 @@ function FFBOMesh3D(div_id, data, metadata) {
         'setcolor': this.setColor,
         'resetview': this.resetView,
     }
-    this.createResetBtn();
-    this.createInfoBtn();
-    this.createShowAllBtn();
-    this.createHideAllBtn();
-    this.createRemoveUnpinBtn();
+    this._configureCallbacks();
 };
+
 FFBOMesh3D.prototype.reset = function(resetBackground) {
     resetBackground = resetBackground || false;
     for (var key in this.meshDict) {
@@ -182,11 +318,11 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
             meshobj.children[i].material.dispose();
         }
         --this.meshNum;
-        --this.frontNum;
         this.meshGroup.remove( meshobj );
         delete meshobj;
         delete this.meshDict[key];
     }
+    this.frontNum = 0
     this.isHighlight = false;
     this.highlightedObj = null;
     this.pinned.clear()
@@ -195,6 +331,13 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
         this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
     }
     this.controls.reset();
+}
+
+FFBOMesh3D.prototype._configureCallbacks = function(){
+    this.settings.on("change", function(e){
+	for(i=0; i<this.backmeshGroup.children.length; i++)
+	    this.backmeshGroup.children[i].children[1].visible = e["value"];
+    }.bind(this), "meshWireframe");
 }
 
 FFBOMesh3D.prototype.addCommand = function(json) {
@@ -258,7 +401,14 @@ FFBOMesh3D.prototype.addJson = function(json) {
             console.log( 'mesh object already exists... skip rendering...' )
             continue;
         }
-        this.meshDict[key] = json.ffbo_json[key];
+        this.meshDict[key] = new PropertyManager(json.ffbo_json[key]);
+	this.meshDict[key].minX = 1000000;
+	this.meshDict[key].maxX = -1000000;
+	this.meshDict[key].minY = 1000000;
+	this.meshDict[key].maxY = -1000000;
+	this.meshDict[key].minZ = 1000000;
+	this.meshDict[key].maxZ = -1000000;
+	
         this.meshNum += 1;
 
         if ( !('highlight' in this.meshDict[key]) )
@@ -287,7 +437,7 @@ FFBOMesh3D.prototype.addJson = function(json) {
             }
             if ( 'filename' in this.meshDict[key] ) {
                 this.meshDict[key]['filetype'] = this.meshDict[key].filename.split('.').pop();
-                var loader = new THREE.XHRLoader( this.loadingManager );
+                var loader = new THREE.FileLoader( this.loadingManager );
                 if (this.meshDict[key]['filetype'] == "json")
                     loader.load(this.meshDict[key].filename, this.loadMeshCallBack(key, metadata.visibility).bind(this));
                 else if (this.meshDict[key]['filetype'] == "swc" )
@@ -298,7 +448,7 @@ FFBOMesh3D.prototype.addJson = function(json) {
                 }
             } else if ( 'dataStr' in this.meshDict[key] ) {
                 if (this.meshDict[key]['filetype']  == "json")
-                    this.loadMeshCallBack(key, metadata.visibility).bind(this)(this.meshDict[key]['dataStr']);
+                    this.ladMeshCallBack(key, metadata.visibility).bind(this)(this.meshDict[key]['dataStr']);
                 else if (this.meshDict[key]['filetype'] == "swc" )
                     this.loadSWCCallBack(key, metadata.visibility).bind(this)(this.meshDict[key]['dataStr']);
                 else {
@@ -322,6 +472,41 @@ FFBOMesh3D.prototype.addJson = function(json) {
     }
 }
 
+FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
+    this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
+    for(var key in this.meshDict){
+	if( this.meshDict[key].object.visible ){
+	    if ( this.meshDict[key].minX < this.visibleBoundingBox.minX )
+		this.visibleBoundingBox.minX = this.meshDict[key].minX;
+	    if ( this.meshDict[key].maxX > this.visibleBoundingBox.maxX )
+		this.visibleBoundingBox.maxX = this.meshDict[key].maxX;
+	    if ( this.meshDict[key].minY < this.visibleBoundingBox.minY )
+		this.visibleBoundingBox.minY = this.meshDict[key].minY;
+	    if ( this.meshDict[key].maxY > this.visibleBoundingBox.maxY )
+		this.visibleBoundingBox.maxY = this.meshDict[key].maxY;
+	    if ( this.meshDict[key].maxZ < this.visibleBoundingBox.minZ )
+		this.visibleBoundingBox.minZ = this.meshDict[key].minZ;
+	    if ( this.meshDict[key].maxZ > this.visibleBoundingBox.maxZ )
+		this.visibleBoundingBox.maxZ = this.meshDict[key].maxZ;
+	}
+    }
+}
+
+FFBOMesh3D.prototype.updateObjectBoundingBox = function(key, x, y, z) {
+    if ( x < this.meshDict[key].minX )
+        this.meshDict[key].minX = x;
+    if ( x > this.meshDict[key].maxX )
+        this.meshDict[key].maxX = x;
+    if ( y < this.meshDict[key].minY )
+        this.meshDict[key].minY = y;
+    if ( y > this.meshDict[key].maxY )
+        this.meshDict[key].maxY = y;
+    if ( z < this.meshDict[key].minZ )
+        this.meshDict[key].minZ = z;
+    if ( z > this.meshDict[key].maxZ )
+        this.meshDict[key].maxZ = z;
+}
+
 FFBOMesh3D.prototype.updateBoundingBox = function(x,y,z) {
     if ( x < this.boundingBox.minX )
         this.boundingBox.minX = x;
@@ -336,6 +521,7 @@ FFBOMesh3D.prototype.updateBoundingBox = function(x,y,z) {
     if ( z > this.boundingBox.maxZ )
         this.boundingBox.maxZ = z;
 }
+
 FFBOMesh3D.prototype.setAnim = function(data) {
     for (var key in data) {
         if (this.meshDict[key].object === undefined)
@@ -359,8 +545,7 @@ FFBOMesh3D.prototype.animate = function() {
 }
 FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
     return function (jsonString) {
-
-            var json = JSON.parse(jsonString);
+	var json = JSON.parse(jsonString);
         var color = this.meshDict[key]['color'];
         var geometry  = new THREE.Geometry();
         var vtx = json['vertices'];
@@ -373,6 +558,7 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
             geometry.vertices.push(
                 new THREE.Vector3(x,y,z)
             );
+	    this.updateObjectBoundingBox(key, x, y, z);
             this.updateBoundingBox(x,y,z);
         }
         for (var j = 0; j < idx.length/3; j++) {
@@ -385,15 +571,20 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
             );
         }
 
+	geometry.mergeVertices();
         geometry.computeFaceNormals();
         geometry.computeVertexNormals();
 
-        var materials = [
-            //new THREE.MeshPhongMaterial( { color: color, shading: THREE.FlatShading, shininess: 0, transparent: true } ),
-            new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, shading: THREE.FlatShading} ),
-            new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
-        ];
+	materials  = [
+	    //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
+	    new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
+	    new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
+	];
+	
+	
         var group = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
+	if(! this.settings.meshWireframe )
+	    group.children[1].visible = false;
         group.visible = visibility;
 
         this._registerGroup(key, group);
@@ -435,7 +626,8 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
                 geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
                 geometry.colors.push(color);
                 geometry.colors.push(color);
-                this.updateBoundingBox(c.x,c.y,c.z);
+		this.updateObjectBoundingBox(key, c.x, c.y, c.z);
+                this.updateBoundingBox(c.x, c.y, c.z);
             }
         }
         var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
@@ -450,62 +642,149 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
 
 FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
     return function() {
-    /*
-     * process string
-     */
-    var swcObj = {};
-    var len = this.meshDict[key]['sample'].length;
-    for (var j = 0; j < len; j++) {
-        swcObj[parseInt(this.meshDict[key]['sample'][j])] = {
-        'type'   : parseInt  (this.meshDict[key]['identifier'][j]),
-        'x'      : parseFloat(this.meshDict[key]['x'][j]),
-        'y'      : parseFloat(this.meshDict[key]['y'][j]),
-        'z'      : parseFloat(this.meshDict[key]['z'][j]),
-        'radius' : parseFloat(this.meshDict[key]['r'][j]),
-        'parent' : parseInt  (this.meshDict[key]['parent'][j]),
-        };
-    }
+	/*
+	 * process string
+	 */
+	var swcObj = {};
+	var len = this.meshDict[key]['sample'].length;
+	for (var j = 0; j < len; j++) {
+            swcObj[parseInt(this.meshDict[key]['sample'][j])] = {
+		'type'   : parseInt  (this.meshDict[key]['identifier'][j]),
+		'x'      : parseFloat(this.meshDict[key]['x'][j]),
+		'y'      : parseFloat(this.meshDict[key]['y'][j]),
+		'z'      : parseFloat(this.meshDict[key]['z'][j]),
+		'radius' : parseFloat(this.meshDict[key]['r'][j]),
+		'parent' : parseInt  (this.meshDict[key]['parent'][j]),
+            };
+	}
+	
+	var color = this.meshDict[key]['color'];
+	var group = new THREE.Object3D();
+	var pointGeometry = undefined;
+	var mergedGeometry = undefined;
+	var geometry = undefined;
+	
+	for (var idx in swcObj ) {
+            var c = swcObj[idx];
+	    this.updateObjectBoundingBox(key, c.x, c.y, c.z);
+            this.updateBoundingBox(c.x,c.y,c.z);
+            if (c.parent != -1) {
+		var p = swcObj[c.parent];
+		if(this.neurons_3d){
+		    if(mergedGeometry == undefined)
+			mergedGeometry = new THREE.Geometry()
+		    var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+		    if(!p.radius || !c.radius)
+			var geometry = new THREE.CylinderGeometry(this.default_radius, this.default_radius, d.length(), 4, 1, 0);
+		    else
+			var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+		    geometry.translate(0, 0.5*d.length(),0);
+		    geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+		    geometry.lookAt(d.clone());
+		    geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
+		    
+		    
+		    mergedGeometry.merge(geometry);
+		    delete geometry
+		    
+		    if(this.mode_3d == 2){
+			var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+			geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+			geometry.lookAt(d);
+			geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
+			
+			mergedGeometry.merge(geometry);
+			delete geometry
+		    }
+		    else if(this.mode_3d == 3){
+			if(p.parent != -1){
+			    p2 = swcObj[p.parent];
+			    var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z); 
+			    var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z); 
+			    var curve = new THREE.QuadraticBezierCurve3(
+				a,
+				new THREE.Vector3( p.x, p.y, p.z ),
+				b,
+			    );
+			    var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+			    mergedGeometry.merge(geometry);
+			    delete geometry
+			}
+		    }
+		    
+		}
+		else{
+		    if(geometry == undefined)
+			geometry = new THREE.Geometry();
+		    geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+		    geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
+		    geometry.colors.push(color);
+		    geometry.colors.push(color);
+		}
+            }
+            if (c.type == 1) {
+		if(c.radius)
+		    var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+		else
+		    var sphereGeometry = new THREE.SphereGeometry(this.default_soma_radius, 8, 8 );
+		sphereGeometry.translate( c.x, c.y, c.z );
+		var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+		group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+		this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
+            }
+	    if (c.type == -1) {
+		if(this.synapse_mode==1){
+		    if(mergedGeometry == undefined)
+			mergedGeometry = new THREE.Geometry()
 
-    var color = this.meshDict[key]['color'];
-    var geometry  = new THREE.Geometry();
-    var sphereGeometry = undefined;
+		    if(c.radius)
+			var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+		    else
+			var sphereGeometry = new THREE.SphereGeometry(this.default_synapse_radius, 8, 8 );
+		    sphereGeometry.translate( c.x, c.y, c.z );
+		    //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+		    //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+		    mergedGeometry.merge(sphereGeometry);
+		    this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
+		}
+		else{
+		    if(pointGeometry == undefined)
+			pointGeometry = new THREE.Geometry();
+		    pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+		}
+	    }
+	}
+	if(pointGeometry){
+	    var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.default_synapse_radius, lights:true } );
+	    var points = new THREE.Points(pointGeometry, pointMaterial);
+	    group.add(points);
+	}
+	if(mergedGeometry){
+	    var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+	    //var modifier = new THREE.SimplifyModifier();
+	    
+	    //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+	    var mesh = new THREE.Mesh(mergedGeometry, material);
+	    //var mesh = new THREE.Mesh(simplified, material);
+	    
+	    group.add(mesh);
+	}
+	if(geometry){
+	    var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+	    group.add(new THREE.LineSegments(geometry, material));
+	}
+	group.visible = visibility;
+	this._registerGroup(key, group);
 
-    for (var idx in swcObj ) {
-        var c = swcObj[idx];
-        this.updateBoundingBox(c.x,c.y,c.z);
-        if (c.parent != -1) {
-        var p = swcObj[c.parent];
-        geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-        geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-        geometry.colors.push(color);
-        geometry.colors.push(color);
-        }
-        if (c.type == 1) {
-            sphereGeometry = new THREE.SphereGeometry( 3, 8, 8 );
-            sphereGeometry.translate( c.x, c.y, c.z );
-            this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
-        }
-    }
-    var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-    var group = new THREE.Object3D();
-    group.add(new THREE.LineSegments(geometry, material));
-    if ( sphereGeometry !== undefined ) {
-        var sphereMaterial = new THREE.MeshPhongMaterial( {color: color, transparent: true} );
-        group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-    }
-    group.visible = visibility;
-
-    this._registerGroup(key, group);
-
-    /* delete morpology data */
-    delete this.meshDict[key]['identifier'];
-    delete this.meshDict[key]['x'];
-    delete this.meshDict[key]['y'];
-    delete this.meshDict[key]['z'];
-    delete this.meshDict[key]['r'];
-    delete this.meshDict[key]['parent'];
-    delete this.meshDict[key]['sample'];
-
+	/* delete morpology data */
+	delete this.meshDict[key]['identifier'];
+	delete this.meshDict[key]['x'];
+	delete this.meshDict[key]['y'];
+	delete this.meshDict[key]['z'];
+	delete this.meshDict[key]['r'];
+	delete this.meshDict[key]['parent'];
+	delete this.meshDict[key]['sample'];
+	delete this.meshDict[key]['type'];
     };
 };
 
@@ -515,20 +794,36 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
     group.name = this.meshDict[key].label;
     group.uid = key;
 
-    this.meshDict[key]['object']  = group;
+    group = new PropertyManager(group);
+    this.meshDict[key]['object']  = group
     this.meshDict[key]['pinned']  = false;
-
+    //group = this.meshDict[key]['object'];
+    /*
     if ( !this.meshDict[key]['background'] ) {
         ++this.frontNum;
         for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
             this.meshDict[key]['object'].children[i].material.depthTest = false;
     }
-
-    if ( this.default_opacity !== 1)
-        for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-            this.meshDict[key]['object'].children[i].material.opacity = this.default_opacity;
-
-    this.meshGroup.add( group );
+    */
+    if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC')){
+	if ( this.default_opacity !== 1)
+            for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
+		this.meshDict[key]['object'].children[i].material.opacity = this.default_opacity;    
+    }
+    else{
+	if ( this.synapse_opacity !== 1)
+            for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
+		this.meshDict[key]['object'].children[i].material.opacity = this.synapse_opacity;    
+    }
+	
+    if ( !this.meshDict[key]['background'] ) {
+	if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
+	    ++this.frontNum;
+	this.meshGroup.add( group );
+    }
+    else{
+	this.backmeshGroup.add(group)
+    }
 
 }
 FFBOMesh3D.prototype.initTimeliner = function() {
@@ -662,12 +957,28 @@ FFBOMesh3D.prototype.onWindowResize = function() {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize( width, height );
-
+    this.composer.setSize( width, height );
+    this.effectFXAA.uniforms[ 'resolution' ].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900) )
+    
     this.controls.handleResize();
-
     this.render();
+    if(this.dispatch['resize'] !== undefined)
+	this.dispatch['resize']();
+    
 }
 
+var _saveImage = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (blob, fileName) {
+	url = window.URL.createObjectURL(blob);
+	a.href = url;
+	a.download = fileName;
+	a.click();
+	window.URL.revokeObjectURL(url);
+    };
+}());
 
 FFBOMesh3D.prototype.render = function() {
 
@@ -687,8 +998,9 @@ FFBOMesh3D.prototype.render = function() {
                 var x = new Date().getTime();
                 if ( this.meshDict[key]['background'] ) {
                     var obj = this.meshDict[key].object.children;
-                    for ( var i = 0; i < obj.length; ++i )
-                        obj[i].material.opacity = 0.025 + 0.5*this.meshOscAmp*(1+Math.sin(x * .0005));
+                    //for ( var i = 0; i < obj.length; ++i )
+                    obj[0].material.opacity = this.background_opacity +  0.5*this.meshOscAmp*(1+Math.sin(x * .0005));
+		    obj[1].material.opacity = this.background_wireframe_opacity;
                 } else {
                     //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
                     //this.meshDict[key].object.children[0].material.opacity = 0.8;
@@ -727,7 +1039,14 @@ FFBOMesh3D.prototype.render = function() {
         }
     }
 
-    this.renderer.render( this.scene, this.camera );
+    this.composer.render();
+    if(this._take_screenshot){
+	this.renderer.domElement.toBlob(function(b){
+	    _saveImage(b, "ffbo_screenshot.png")
+	})
+	this._take_screenshot = false;
+    }
+    //this.renderer.render( this.scene, this.camera );
 }
 
 FFBOMesh3D.prototype.showAll = function() {
@@ -852,58 +1171,94 @@ FFBOMesh3D.prototype.highlight = function(d) {
     this.highlightedObj = [d, this.meshDict[d].object.visible];
     if ( this._metadata.highlightMode === "rest" ) {
         for (var key in this.meshDict) {
-            if (this.meshDict[key]['pinned'])
-                continue;
+            //if (this.meshDict[key]['pinned'])
+            //    continue;
             // TODO:
-            var val = (this.meshDict[key]['highlight']) ? 0.2 : 0.05;
-            if (this.meshDict[key]['pinned'])
-                val = 0.4;
-            for (i in this.meshDict[key].object.children)
+            var val = (this.meshDict[key]['highlight']) ? this.low_opacity : this.non_highlightable_opacity;
+	    depthTest = true;
+            if (this.meshDict[key]['pinned']){
+                val = this.pin_opacity;
+		depthTest = false
+	    }
+            for (i in this.meshDict[key].object.children){
                 this.meshDict[key].object.children[i].material.opacity = val;
+		this.meshDict[key].object.children[i].material.depthTest = depthTest;
+	    }
         }
     }
-    for (i in this.meshDict[d].object.children)
-        this.meshDict[d].object.children[i].material.opacity = 1;
+    for (i in this.meshDict[d].object.children){
+        this.meshDict[d].object.children[i].material.opacity = this.highlighted_object_opacity;
+        this.meshDict[d].object.children[i].material.depthTest = false;
+    }
     this.meshDict[d].object.visible = true;
     this.isHighlight = true;
 }
 
 FFBOMesh3D.prototype.resume = function() {
 
+    if (this.pinned.size === 0){
+        this.resetOpacity();
+	return;
+    }
+    for( var key in this.meshDict ){
+	if (!this.meshDict[key]['background']){
+	    val = this.meshDict[key]['pinned'] ? this.pin_opacity : this.pin_low_opacity;
+	    depthTest = this.meshDict[key]['pinned'] ? false : true;
+	    for (i in this.meshDict[key].object.children){
+		this.meshDict[key].object.children[i].material.opacity = val;
+		this.meshDict[key].object.children[i].material.depthTest = depthTest;
+	    }
+	}
+	else{
+	    //for (i in this.meshDict[key].object.children)
+	    this.meshDict[key].object.children[0].material.opacity = this.background_opacity;
+	    this.meshDict[key].object.children[1].material.opacity = this.background_wireframe_opacity;
+	}
+    }
     if (!this._metadata.allowHighlight)
         return;
     if (this.highlightedObj === null)
         return;
+
     var d = this.highlightedObj[0];
     var x = this.meshDict[d].object.children;
     var val;
     if (!this.meshDict[d]['pinned']) {
         this.meshDict[d].object.visible = this.highlightedObj[1];
         this.highlightedObj = null;
-        val = ( this._metadata.highlightMode === "rest") ? 0.2 : this.default_opacity;
+        val = ( this._metadata.highlightMode === "rest") ? this.pin_low_opacity : this.default_opacity;
     } else
-        val = ( this._metadata.highlightMode === "rest") ? 0.6 : this.default_opacity;
+        val = ( this._metadata.highlightMode === "rest") ? this.pin_opacity : this.default_opacity;
     for (i in x)
         x[i].material.opacity = val;
-    if (this.pinned.size === 0)
-        this.resetOpacity();
     this.isHighlight = false;
     this.renderer.domElement.style.cursor = "auto";
 }
 
 
 FFBOMesh3D.prototype.resetOpacity = function() {
-    var val = 0.8;
+    var val = this.default_opacity;
     //if (this.pinnedNum > 0)
     //    val = 0.2;
     //reset
     for (var key in this.meshDict) {
-        if (!this.meshDict[key]['highlight'])
-            continue;
+        //if (!this.meshDict[key]['highlight'])
+        //    continue;
         //var op = (this.meshDict[key]['pinned']) ? 0.6 : val;
+	if (!this.meshDict[key]['background']){
+	    if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
+		for (i in this.meshDict[key].object.children)
+		    this.meshDict[key].object.children[i].material.opacity = this.default_opacity;
+	    else
+		for (i in this.meshDict[key].object.children)
+		    this.meshDict[key].object.children[i].material.opacity = this.synapse_opacity;
+	}
+	else{
+	    //for (i in this.meshDict[key].object.children)
+	    this.meshDict[key].object.children[0].material.opacity = this.background_opacity;
+	    this.meshDict[key].object.children[1].material.opacity = this.background_wireframe_opacity;
+	}
 
-        for (i in this.meshDict[key].object.children)
-            this.meshDict[key].object.children[i].material.opacity = this.default_opacity;
     }
 }
 
@@ -940,9 +1295,9 @@ FFBOMesh3D.prototype.unpin = function( id ) {
 }
 
 FFBOMesh3D.prototype.remove = function( id ) {
-
+    
     id = this.asarray( id );
-
+    
     for (var i = 0; i < id.length; ++i ) {
         if ( !(id[i] in this.meshDict ) )
             continue;
@@ -953,13 +1308,13 @@ FFBOMesh3D.prototype.remove = function( id ) {
         }
         --this.meshNum;
         if ( !this.meshDict[id[i]]['background'] ) {
-            this.meshGroup.remove( meshobj );
-            --this.frontNum;
+            if(!('morph_type' in this.meshDict[id[i]]) || (this.meshDict[id[i]]['morph_type'] != 'Synapse SWC'))
+		--this.frontNum;
         }
         this.meshGroup.remove( meshobj );
         delete meshobj;
         delete this.meshDict[id[i]];
-
+	
         if (this.highlightedObj !== null && this.highlightedObj[0] === id[i])
             this.highlightedObj = null;
         if (this.pinned.has(id[i]))
@@ -984,13 +1339,36 @@ FFBOMesh3D.prototype.setColor = function( id, color ) {
             meshobj.children[j].geometry.colors[k].set( color );
             }
         }
+	this.meshDict[id[i]].color = new THREE.Color(color);
+    }
+    
+}
+
+FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
+
+    for (var i = 0; i < this.backmeshGroup.children.length; ++i ) {
+        var meshobj = this.backmeshGroup.children[i]
+        for (var j = 0; j < meshobj.children.length; ++j ) {
+            meshobj.children[j].material.color.set( color );
+            meshobj.children[j].geometry.colorsNeedUpdate = true;
+            for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
+		meshobj.children[j].geometry.colors[k].set( color );
+            }
+        }
     }
 }
 
 FFBOMesh3D.prototype.resetView = function() {
-        this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
+    this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
     this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
     this.controls.reset();
+}
+
+FFBOMesh3D.prototype.resetVisibleView = function() {
+    this.computeVisibleBoundingBox();
+    this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
+    this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
+    //this.controls.reset();
 }
 
 FFBOMesh3D.prototype.togglePin = function( id ) {
@@ -1018,92 +1396,29 @@ FFBOMesh3D.prototype.unpinAll = function() {
     this.resetOpacity();
 }
 
-FFBOMesh3D.prototype.createShowAllBtn = function() {
-    this.btnShowAll = document.createElement('a');
-    this.btnShowAll.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 5px; right: 45px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    this.btnShowAll.innerHTML = "<i class='fa fa-eye' aria-hidden='true'></i>";
-    this.btnShowAll.addEventListener("click", this.showAll.bind(this));
-    this.btnShowAll.addEventListener("mouseover", (function() {
-        this.btnShowAll.style.color = "#fff";
-        this.show3dToolTip("Unhide All");
-    }).bind(this));
-    this.btnShowAll.addEventListener("mouseleave", (function() {
-        this.btnShowAll.style.color = "#aaa";
-        this.hide3dToolTip();
-    }).bind(this));
-    this.container.appendChild(this.btnShowAll);
-}
-
-
-FFBOMesh3D.prototype.createHideAllBtn = function() {
-    this.btnHideAll = document.createElement('a');
-    this.btnHideAll.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 5px; right: 65px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    this.btnHideAll.innerHTML = "<i class='fa fa-eye-slash' aria-hidden='true'></i>";
-    this.btnHideAll.addEventListener("click", this.hideAll.bind(this));
-    this.btnHideAll.addEventListener("mouseover", (function() {
-        this.btnHideAll.style.color = "#fff";
-        this.show3dToolTip("Hide All");
-    }).bind(this));
-    this.btnHideAll.addEventListener("mouseleave", (function() {
-        this.btnHideAll.style.color = "#aaa";
-        this.hide3dToolTip();
-    }).bind(this));
-    this.container.appendChild(this.btnHideAll);
-}
-
-FFBOMesh3D.prototype.createRemoveUnpinBtn = function() {
-    this.btnRemoveUnpin = document.createElement('a');
-    this.btnRemoveUnpin.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 5px; right: 85px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    this.btnRemoveUnpin.innerHTML = "<i class='fa fa-trash' aria-hidden='true'></i>";
-    this.btnRemoveUnpin.addEventListener("click", (function(){this.dispatch["removeUnpin"]()}).bind(this));
-    this.btnRemoveUnpin.addEventListener("mouseenter", (function() {
-        this.btnRemoveUnpin.style.color = "#fff";
-        this.show3dToolTip("Remove Unpinned Neurons");
-    }).bind(this));
-    this.btnRemoveUnpin.addEventListener("mouseleave",  (function() {
-        this.btnRemoveUnpin.style.color = "#aaa";
-        this.hide3dToolTip();
-    }).bind(this));
-    this.container.appendChild(this.btnRemoveUnpin);
-}
-
-FFBOMesh3D.prototype.createInfoBtn = function() {
-    this.btnInfo = document.createElement('a');
-    this.btnInfo.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 5px; right: 5px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    this.btnInfo.innerHTML = "<i class='fa fa-info-circle' aria-hidden='true'></i>";
-    this.btnInfo.addEventListener("click", (function(){this.dispatch["showInfo"]()}).bind(this));
-    this.btnInfo.addEventListener("mouseover", (function() {
-        this.btnInfo.style.color = "#fff";
-        this.show3dToolTip("GUI guideline");
-    }).bind(this));
-    this.btnInfo.addEventListener("mouseleave", (function() {
-        this.btnInfo.style.color = "#aaa";
-        this.hide3dToolTip();
-    }).bind(this));
-    this.container.appendChild(this.btnInfo);
-}
-
-FFBOMesh3D.prototype.createResetBtn = function() {
-    this.btnReset = document.createElement('a');
-    this.btnReset.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 5px; right: 25px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    this.btnReset.innerHTML = "<i class='fa fa-refresh' aria-hidden='true'></i>";
-    this.btnReset.addEventListener("click", this.resetView.bind(this));
-    this.btnReset.addEventListener("mouseenter", (function() {
-        this.btnReset.style.color = "#fff";
-        this.show3dToolTip("Reset View");
-    }).bind(this));
-    this.btnReset.addEventListener("mouseleave",  (function() {
-        this.btnReset.style.color = "#aaa";
-        this.hide3dToolTip();
-    }).bind(this));
-    this.container.appendChild(this.btnReset);
-}
-
 
 FFBOMesh3D.prototype.createInfoPanel = function() {
     this.infoDiv = document.createElement('div');
-    this.infoDiv.style.cssText = 'position: absolute; text-align: left; height: 15px; top: 6px; right: 105px; font: 12px sans-serif; z-index: 999; padding-right: 5px; border-right: 1px solid #888; pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100';
+    this.infoDiv.style.cssText = 'position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100';
     this.container.appendChild(this.infoDiv);
+}
+
+FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip){
+    this.UIBtns[name] = document.createElement('a');
+    this.UIBtns[name].style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + this._uibtnright + 'px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
+    this.UIBtns[name].innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
+    this.dispatch[name] = undefined;
+    this.UIBtns[name].addEventListener("click", (function(){this.dispatch[name]()}).bind(this));
+    this.UIBtns[name].addEventListener("mouseover", (function() {
+        this.UIBtns[name].style.color = "#fff";
+        this.show3dToolTip(tooltip);
+    }).bind(this));
+    this.UIBtns[name].addEventListener("mouseleave", (function() {
+        this.UIBtns[name].style.color = "#aaa";
+        this.hide3dToolTip();
+    }).bind(this));
+    this.container.appendChild(this.UIBtns[name]);
+    this._uibtnright += 20;
 }
 
 FFBOMesh3D.prototype.updateInfoPanel = function() {
