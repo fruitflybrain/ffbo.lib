@@ -874,34 +874,6 @@ FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
   }
 }
 
-FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
-  if (event !== undefined)
-    event.preventDefault();
-
-  if (!this.controls.checkStateIsNone())
-    return;
-
-  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
-
-  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
-  if ( intersects.length > 0 ) {
-    this.uiVars.currentIntersected = intersects[0].object.parent;
-    /* find first object that can be highlighted (skip  mesh) */
-    for (var i = 1; i < intersects.length; i++ ) {
-      var x = intersects[i].object.parent;
-      if (this.meshDict[x.uid]['highlight']) {
-        this.uiVars.currentIntersected = x;
-        break;
-      }
-    }
-  }
-  if (this.dispatch['click'] != undefined && this.uiVars.currentIntersected != undefined ) {
-    var x = this.uiVars.currentIntersected;
-    if (this.meshDict[x.uid]['highlight'])
-      this.dispatch['click']([x.name, x.uid]);
-  }
-}
-
 FFBOMesh3D.prototype.onDocumentMouseDBLClick = function( event ) {
   if (event !== undefined)
     event.preventDefault();
