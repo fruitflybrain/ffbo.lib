@@ -178,7 +178,10 @@ function FFBOMesh3D(div_id, data, metadata) {
     'resetview': this.resetView,
   }
 
-  // this.uiVars.on("change", (function () { this.updateOpacity(); }).bind(this));
+  this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
+  // this.uiVars.on('change', (function () { this.updateState(); }).bind(this), 'highlightedObjects');
+
+  this.uiVars.on('change', (function () { this.updateOpacity(); }).bind(this), 'highlightedObjects');
 
   if ( data != undefined && Object.keys(data).length > 0)
     this.addJson( data );
@@ -370,10 +373,12 @@ FFBOMesh3D.prototype.initLoadingManager = function() {
 
 FFBOMesh3D.prototype.reset = function(resetBackground) {
   resetBackground = resetBackground || false;
-  for (var key in this.meshDict) {
+  for (var key of Object.keys(this.meshDict)) {
     if ( !resetBackground && this.meshDict[key].background ) {
       continue;
     }
+    if (this.meshDict[key]['pinned'])
+      this.meshDict[key]['pinned'] = false;
     var meshobj = this.meshDict[key].object;
     for (var i = 0; i < meshobj.children.length; i++ ) {
       meshobj.children[i].geometry.dispose();
@@ -387,7 +392,7 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
   this.uiVars.frontNum = 0
   this.states.highlight = false;
   this.uiVars.highlightedObjects = null;
-  this.uiVars.pinnedObjects.clear()
+  // this.uiVars.pinnedObjects.clear()
   if ( resetBackground ) {
     this.controls.target0.set(0,0,0);
     this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
@@ -818,16 +823,9 @@ FFBOMesh3D.prototype._registerGroup = function(key, unit, group) {
   group.name = unit.label;
   group.uid = key;
 
-  unit['object']  = group
-  unit['pinned']  = false;
-  //group = this.meshDict[key]['object'];
-  /*
-  if ( !this.meshDict[key]['background'] ) {
-    ++this.uiVars.frontNum;
-    for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-      this.meshDict[key]['object'].children[i].material.depthTest = false;
-  }
-  */
+  unit['object'] = group
+  unit['pinned'] = false;
+
   if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
     if ( this.settings.defaultOpacity !== 1)
       for (var i=0; i < unit['object'].children.length; i++)
@@ -1053,15 +1051,11 @@ FFBOMesh3D.prototype.render = function() {
           break;
         }
       }
-      if ( this.uiVars.currentIntersected !== undefined ) {
-        this.show3dToolTip(this.uiVars.currentIntersected.name);
-        this.highlight(this.uiVars.currentIntersected.uid);
-      }
+      this.show3dToolTip(this.uiVars.currentIntersected.name);
+      this.highlight(this.uiVars.currentIntersected.uid);
     } else {
-      if ( this.uiVars.currentIntersected !== undefined ) {
-        this.hide3dToolTip();
-        this.resume();
-      }
+      this.hide3dToolTip();
+      this.resume();
       this.uiVars.currentIntersected = undefined;
     }
   }
@@ -1133,25 +1127,23 @@ FFBOMesh3D.prototype.import_state = function(state_metadata) {
 
   this.camera.lookAt(this.controls.target);
 
-  this.pin(state_metadata['pin'])
-
-  for (var key in state_metadata['color']) {
-  if (this.meshDict.hasOwnProperty(key)) {
+  for (var i = 0; i < state_metadata['pinned'].length; ++i) {
+    var key = state_metadata['pinned'][i];
+    if (this.meshDict.hasOwnProperty(key))
+      this.meshDict[key]['pinned'] = true;
+  }
+  for (var key of Object.keys(state_metadata['color'])) {
     var meshobj = this.meshDict[key].object;
     var color = state_metadata['color'][key];
     for (var j = 0; j < meshobj.children.length; ++j ) {
-    meshobj.children[j].material.color.fromArray( color );
-    for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-      meshobj.children[j].geometry.colors[k].fromArray( color );
-    }
-    meshobj.children[j].geometry.colorsNeedUpdate = true;
-
+      meshobj.children[j].material.color.fromArray( color );
+      for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
+        meshobj.children[j].geometry.colors[k].fromArray( color );
+      }
+      meshobj.children[j].geometry.colorsNeedUpdate = true;
     }
     meshobj.visible = state_metadata['visible'][key];
   }
-  }
-
-
 }
 
 FFBOMesh3D.prototype.show = function(id) {
@@ -1186,6 +1178,26 @@ FFBOMesh3D.prototype.toggleVis = function(key) {
 }
 
 FFBOMesh3D.prototype.highlight = function(d) {
+  if (!this._metadata.allowHighlight)
+    return;
+  if (!(d in this.meshDict) || !(this.meshDict[d]['highlight']))
+    return;
+
+  this.renderer.domElement.style.cursor = "pointer";
+
+  this.states.highlight = true;
+  this.uiVars.highlightedObjects = [d, this.meshDict[d].object.visible];
+  this.meshDict[d].object.visible = true;
+}
+
+FFBOMesh3D.prototype.resume = function() {
+  this.states.highlight = false;
+  this.renderer.domElement.style.cursor = "auto";
+  this.uiVars.highlightedObjects = null;
+}
+
+
+FFBOMesh3D.prototype._highlight = function(d) {
 
   if (!this._metadata.allowHighlight)
     return;
@@ -1221,7 +1233,7 @@ FFBOMesh3D.prototype.highlight = function(d) {
   this.states.highlight = true;
 }
 
-FFBOMesh3D.prototype.resume = function() {
+FFBOMesh3D.prototype._resume = function() {
 
   if (this.uiVars.pinnedObjects.size === 0){
     this.resetOpacity();
@@ -1262,29 +1274,66 @@ FFBOMesh3D.prototype.resume = function() {
   this.renderer.domElement.style.cursor = "auto";
 }
 
+FFBOMesh3D.prototype.updateOpacity = function() {
+  if ( this.states.highlight ) {
+    if ( this._metadata.highlightMode === "rest" ) {
+      for (const key of Object.keys(this.meshDict)) {
+        var val = this.meshDict[key];
+        var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
+        var depthTest = true;
+        if (val['pinned']) {
+          opacity = this.settings.pinOpacity;
+          depthTest = false;
+        }
+        for (var i in val.object.children) {
+          val.object.children[i].material.opacity = opacity;
+          val.object.children[i].material.depthTest = depthTest;
+        }
+      }
+    }
+    var key = this.uiVars.highlightedObjects[0];
+    var val = this.meshDict[key];
+    for (var i in val.object.children) {
+      val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+      val.object.children[i].material.depthTest = false;
+    }
+  } else if (!this.states.highlight && this.states.pinned) {
+    for (const key of Object.keys(this.meshDict)) {
+      var val = this.meshDict[key];
+      if (!val['background']){
+        var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+        var depthTest = !this.meshDict[key]['pinned'];
+        for (var i in val.object.children) {
+          val.object.children[i].material.opacity = opacity;
+          val.object.children[i].material.depthTest = depthTest;
+        }
+      } else {
+        val.object.children[0].material.opacity = this.settings.backgroundOpacity;
+        val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+      }
+    }
+  } else {
+    this.resetOpacity();
+  }
+}
 
 FFBOMesh3D.prototype.resetOpacity = function() {
   var val = this.settings.defaultOpacity;
-  //if (this.uiVars.pinnedObjectsNum > 0)
-  //  val = 0.2;
-  //reset
-  for (var key in this.meshDict) {
-    //if (!this.meshDict[key]['highlight'])
-    //  continue;
-    //var op = (this.meshDict[key]['pinned']) ? 0.6 : val;
-  if (!this.meshDict[key]['background']){
-    if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
-    for (i in this.meshDict[key].object.children)
-      this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
-    else
-    for (i in this.meshDict[key].object.children)
-      this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
-  }
-  else{
-    //for (i in this.meshDict[key].object.children)
-    this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-    this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-  }
+
+  for (const key of Object.keys(this.meshDict)) {
+    if (!this.meshDict[key]['background']){
+      if(!('morph_type' in this.meshDict[key]) ||
+          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+        for (i in this.meshDict[key].object.children)
+          this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+      } else {
+        for (i in this.meshDict[key].object.children)
+          this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+      }
+    } else {
+      this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+      this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+    }
 
   }
 }
@@ -1295,6 +1344,15 @@ FFBOMesh3D.prototype.asarray = function( variable ) {
   return variable;
 }
 
+FFBOMesh3D.prototype.updatePinned = function(e) {
+  if (e.obj['pinned']) {
+    this.uiVars.pinnedObjects.add(e.path[0])
+  } else {
+    this.uiVars.pinnedObjects.delete(e.path[0])
+  }
+  this.states.pinned = (this.uiVars.pinnedObjects.size > 0);
+}
+
 FFBOMesh3D.prototype.pin = function( id ) {
 
   id = this.asarray( id );
@@ -1303,7 +1361,6 @@ FFBOMesh3D.prototype.pin = function( id ) {
     if ( !(id[i] in this.meshDict ) || this.meshDict[id[i]]['pinned'] )
       continue;
     this.meshDict[id[i]]['pinned'] = true;
-    this.uiVars.pinnedObjects.add(id[i])
   }
 }
 
@@ -1315,10 +1372,7 @@ FFBOMesh3D.prototype.unpin = function( id ) {
     if ( !(id[i] in this.meshDict ) || !this.meshDict[id[i]]['pinned'] )
       continue;
     this.meshDict[id[i]]['pinned'] = false;
-    this.uiVars.pinnedObjects.delete(id[i])
   }
-  if (this.uiVars.pinnedObjects.size == 0)
-    this.resetOpacity();
 }
 
 FFBOMesh3D.prototype.remove = function( id ) {
@@ -1328,7 +1382,10 @@ FFBOMesh3D.prototype.remove = function( id ) {
   for (var i = 0; i < id.length; ++i ) {
     if ( !(id[i] in this.meshDict ) )
       continue;
+    if (this.meshDict[id[i]]['pinned'])
+      this.meshDict[id[i]]['pinned'] = false;
     var meshobj = this.meshDict[id[i]].object;
+
     for (var j = 0; j < meshobj.children.length; ++j ) {
       meshobj.children[j].geometry.dispose();
       meshobj.children[j].material.dispose();
@@ -1344,11 +1401,7 @@ FFBOMesh3D.prototype.remove = function( id ) {
 
     if (this.uiVars.highlightedObjects !== null && this.uiVars.highlightedObjects[0] === id[i])
       this.uiVars.highlightedObjects = null;
-    if (this.uiVars.pinnedObjects.has(id[i]))
-      this.uiVars.pinnedObjects.delete(id[i])
   }
-  if (this.uiVars.pinnedObjects.size == 0)
-    this.resetOpacity();
 }
 
 FFBOMesh3D.prototype.setColor = function( id, color ) {
@@ -1403,24 +1456,14 @@ FFBOMesh3D.prototype.togglePin = function( id ) {
   if (!this._metadata.allowPin)
     return;
   this.meshDict[id]['pinned'] = !this.meshDict[id]['pinned'];
-  if (this.meshDict[id]['pinned']) {
-    this.uiVars.pinnedObjects.add(id)
-  } else {
-    this.uiVars.pinnedObjects.delete(id)
-  }
-
-  if (this.uiVars.pinnedObjects.size == 0)
-    this.resetOpacity();
 }
 
 FFBOMesh3D.prototype.unpinAll = function() {
 
   if (!this._metadata.allowPin)
     return;
-  for (var key of this.uiVars.pinnedObjects)
+  for (var key of Object.keys(this.uiVars.pinnedObjects))
     this.meshDict[key]['pinned'] = false;
-  this.uiVars.pinnedObjects.clear();
-  this.resetOpacity();
 }
 
 
