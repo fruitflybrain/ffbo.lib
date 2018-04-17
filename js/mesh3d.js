@@ -32,7 +32,6 @@ function FFBOMesh3D(div_id, data, metadata) {
   this._metadata = {
     "colormap": "rainbow_gist",
     "maxColorNum": 1747591,
-    "highlightMode": "rest", /* one: highlight one; rest: deem rest */
     "allowPin": true,
     "allowHighlight": true,
   }
@@ -43,7 +42,7 @@ function FFBOMesh3D(div_id, data, metadata) {
 
 
   this.settings = new PropertyManager({
-    defaultOpacity: (this._metadata.highlightMode === "rest" ) ? 0.7 : 0.1,
+    defaultOpacity: 0.7,
     synapseOpacity: 1.0,
     meshOscAmp: 0.0,
     nonHighlightableOpacity: 0.1,
@@ -1265,9 +1264,9 @@ FFBOMesh3D.prototype._resume = function() {
   if (!this.meshDict[d]['pinned']) {
     this.meshDict[d].object.visible = this.uiVars.highlightedObjects[1];
     this.uiVars.highlightedObjects = null;
-    val = ( this._metadata.highlightMode === "rest") ? this.settings.pinLowOpacity : this.settings.defaultOpacity;
+    val = this.settings.pinLowOpacity;
   } else
-    val = ( this._metadata.highlightMode === "rest") ? this.settings.pinOpacity : this.settings.defaultOpacity;
+    val = this.settings.pinOpacity;
   for (i in x)
     x[i].material.opacity = val;
   this.states.highlight = false;
@@ -1276,19 +1275,17 @@ FFBOMesh3D.prototype._resume = function() {
 
 FFBOMesh3D.prototype.updateOpacity = function() {
   if ( this.states.highlight ) {
-    if ( this._metadata.highlightMode === "rest" ) {
-      for (const key of Object.keys(this.meshDict)) {
-        var val = this.meshDict[key];
-        var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-        var depthTest = true;
-        if (val['pinned']) {
-          opacity = this.settings.pinOpacity;
-          depthTest = false;
-        }
-        for (var i in val.object.children) {
-          val.object.children[i].material.opacity = opacity;
-          val.object.children[i].material.depthTest = depthTest;
-        }
+    for (const key of Object.keys(this.meshDict)) {
+      var val = this.meshDict[key];
+      var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
+      var depthTest = true;
+      if (val['pinned']) {
+        opacity = this.settings.pinOpacity;
+        depthTest = false;
+      }
+      for (var i in val.object.children) {
+        val.object.children[i].material.opacity = opacity;
+        val.object.children[i].material.depthTest = depthTest;
       }
     }
     var key = this.uiVars.highlightedObjects[0];
