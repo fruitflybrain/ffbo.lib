@@ -8,6 +8,17 @@ function checkOnMobile() {
     return false;
 }
 
+function getAttr(obj, key, val) {
+  if (key in obj)
+    val = obj[key];
+  return val;
+}
+
+function setAttrIfNotDefined(obj, key, val) {
+  if (!(key in obj))
+    obj[key] = val;
+}
+
 function getRandomIntInclusive(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -58,7 +69,9 @@ function FFBOMesh3D(div_id, data, metadata) {
     animate: false
   });
 
-  this.uiVars = {
+  this.meshDict = new PropertyManager();
+
+  this.uiVars = new PropertyManager({
     pinnedObjects: new Set(),
     toolTipPosition: new THREE.Vector2(),
     highlightedObjects: null,
@@ -66,7 +79,7 @@ function FFBOMesh3D(div_id, data, metadata) {
     currentIntersected: null,
     meshNum: 0,
     frontNum: 0
-  }
+  });
 
   this.raycaster = new THREE.Raycaster();
   this.raycaster.linePrecision = 3;
@@ -165,10 +178,12 @@ function FFBOMesh3D(div_id, data, metadata) {
     'resetview': this.resetView,
   }
 
+  // this.uiVars.on("change", (function () { this.updateOpacity(); }).bind(this));
+
   if ( data != undefined && Object.keys(data).length > 0)
     this.addJson( data );
 
-  this._configureCallbacks();
+  this.animate();
 };
 
 FFBOMesh3D.prototype.initCamera = function () {
