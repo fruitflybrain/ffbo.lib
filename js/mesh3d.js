@@ -455,72 +455,49 @@ FFBOMesh3D.prototype.addJson = function(json) {
   if ( metadata.showAfterLoadAll )
     this.groups.front.visible = false;
 
-  var isNAData = (metadata.type === "morphology_json");
-
   for ( var i = 0; i < keyList.length; ++i ) {
     var key = keyList[i];
     if (key in this.meshDict ) {
       console.log( 'mesh object already exists... skip rendering...' )
       continue;
     }
-    this.meshDict[key] = new PropertyManager(json.ffbo_json[key]);
-  this.meshDict[key].minX = 1000000;
-  this.meshDict[key].maxX = -1000000;
-  this.meshDict[key].minY = 1000000;
-  this.meshDict[key].maxY = -1000000;
-  this.meshDict[key].minZ = 1000000;
-  this.meshDict[key].maxZ = -1000000;
+    var unit = new PropertyManager(json.ffbo_json[key]);
+    unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
 
-    this.uiVars.meshNum += 1;
-
-    if ( !('highlight' in this.meshDict[key]) )
-      this.meshDict[key]['highlight'] = true;
-
-    if ( !('background' in this.meshDict[key]) )
-      this.meshDict[key]['background'] = false;
-
-    if ( !('color' in this.meshDict[key]) )
-      this.meshDict[key]['color'] = lut.getColor( id2float(i) );
-
-    if ( !('label' in this.meshDict[key]) ){
-      if ( 'name' in this.meshDict[key] )
-    this.meshDict[key]['label'] = this.meshDict[key]['name'];
-    else
-    this.meshDict[key]['label'] = key;
-  }
+    setAttrIfNotDefined(unit, 'highlight', true);
+    setAttrIfNotDefined(unit, 'background', false);
+    setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
+    setAttrIfNotDefined(unit, 'label', getAttr(unit, 'name', key));
 
     /* read mesh */
-    if ( isNAData )
-      this.loadMorphJSONCallBack(key, metadata.visibility).bind(this)();
-    else {
-      if ( ('dataStr' in this.meshDict[key]) && ('filename' in this.meshDict[key]) ) {
+    if ( metadata.type === "morphology_json" ) {
+      this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+    } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
         console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
         continue;
-      }
-      if ( 'filename' in this.meshDict[key] ) {
-        this.meshDict[key]['filetype'] = this.meshDict[key].filename.split('.').pop();
+    } else if ( 'filename' in unit ) {
+        unit['filetype'] = unit.filename.split('.').pop();
         var loader = new THREE.FileLoader( this.loadingManager );
-        if (this.meshDict[key]['filetype'] == "json")
-          loader.load(this.meshDict[key].filename, this.loadMeshCallBack(key, metadata.visibility).bind(this));
-        else if (this.meshDict[key]['filetype'] == "swc" )
-          loader.load(this.meshDict[key].filename, this.loadSWCCallBack(key, metadata.visibility).bind(this));
+        if (unit['filetype'] == "json")
+          loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
+        else if (unit['filetype'] == "swc" )
+          loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
         else {
           console.log( 'mesh object has unrecognized data format... skip rendering' );
           continue;
         }
-      } else if ( 'dataStr' in this.meshDict[key] ) {
-        if (this.meshDict[key]['filetype']  == "json")
-          this.ladMeshCallBack(key, metadata.visibility).bind(this)(this.meshDict[key]['dataStr']);
-        else if (this.meshDict[key]['filetype'] == "swc" )
-          this.loadSWCCallBack(key, metadata.visibility).bind(this)(this.meshDict[key]['dataStr']);
-        else {
-          console.log( 'mesh object has unrecognized data format... skip rendering' );
-          continue;
-        }
-      } else {
-        console.log( 'mesh object has neither filename nor data string... skip rendering' );
+    } else if ( 'dataStr' in unit ) {
+      if (unit['filetype']  == "json")
+        this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+      else if (unit['filetype'] == "swc" )
+        this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+      else {
+        console.log( 'mesh object has unrecognized data format... skip rendering' );
         continue;
       }
+    } else {
+      console.log( 'mesh object has neither filename nor data string... skip rendering' );
+      continue;
     }
   }
 
@@ -532,35 +509,35 @@ FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
   this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
   for(var key in this.meshDict){
     if( this.meshDict[key].object.visible ){
-      if ( this.meshDict[key].minX < this.visibleBoundingBox.minX )
-      this.visibleBoundingBox.minX = this.meshDict[key].minX;
-      if ( this.meshDict[key].maxX > this.visibleBoundingBox.maxX )
-      this.visibleBoundingBox.maxX = this.meshDict[key].maxX;
-      if ( this.meshDict[key].minY < this.visibleBoundingBox.minY )
-      this.visibleBoundingBox.minY = this.meshDict[key].minY;
-      if ( this.meshDict[key].maxY > this.visibleBoundingBox.maxY )
-      this.visibleBoundingBox.maxY = this.meshDict[key].maxY;
-      if ( this.meshDict[key].maxZ < this.visibleBoundingBox.minZ )
-      this.visibleBoundingBox.minZ = this.meshDict[key].minZ;
-      if ( this.meshDict[key].maxZ > this.visibleBoundingBox.maxZ )
-      this.visibleBoundingBox.maxZ = this.meshDict[key].maxZ;
+      if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
+      this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
+      if ( this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX )
+      this.visibleBoundingBox.maxX = this.meshDict[key].boundingBox.maxX;
+      if ( this.meshDict[key].boundingBox.minY < this.visibleBoundingBox.minY )
+      this.visibleBoundingBox.minY = this.meshDict[key].boundingBox.minY;
+      if ( this.meshDict[key].boundingBox.maxY > this.visibleBoundingBox.maxY )
+      this.visibleBoundingBox.maxY = this.meshDict[key].boundingBox.maxY;
+      if ( this.meshDict[key].boundingBox.maxZ < this.visibleBoundingBox.minZ )
+      this.visibleBoundingBox.minZ = this.meshDict[key].boundingBox.minZ;
+      if ( this.meshDict[key].boundingBox.maxZ > this.visibleBoundingBox.maxZ )
+      this.visibleBoundingBox.maxZ = this.meshDict[key].boundingBox.maxZ;
     }
   }
 }
 
-FFBOMesh3D.prototype.updateObjectBoundingBox = function(key, x, y, z) {
-  if ( x < this.meshDict[key].minX )
-    this.meshDict[key].minX = x;
-  if ( x > this.meshDict[key].maxX )
-    this.meshDict[key].maxX = x;
-  if ( y < this.meshDict[key].minY )
-    this.meshDict[key].minY = y;
-  if ( y > this.meshDict[key].maxY )
-    this.meshDict[key].maxY = y;
-  if ( z < this.meshDict[key].minZ )
-    this.meshDict[key].minZ = z;
-  if ( z > this.meshDict[key].maxZ )
-    this.meshDict[key].maxZ = z;
+FFBOMesh3D.prototype.updateObjectBoundingBox = function(obj, x, y, z) {
+  if ( x < obj.boundingBox.minX )
+    obj.boundingBox.minX = x;
+  if ( x > obj.boundingBox.maxX )
+    obj.boundingBox.maxX = x;
+  if ( y < obj.boundingBox.minY )
+    obj.boundingBox.minY = y;
+  if ( y > obj.boundingBox.maxY )
+    obj.boundingBox.maxY = y;
+  if ( z < obj.boundingBox.minZ )
+    obj.boundingBox.minZ = z;
+  if ( z > obj.boundingBox.maxZ )
+    obj.boundingBox.maxZ = z;
 }
 
 FFBOMesh3D.prototype.updateBoundingBox = function(x,y,z) {
@@ -599,22 +576,20 @@ FFBOMesh3D.prototype.animate = function() {
 
   this.render();
 }
-FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
+
+FFBOMesh3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
   return function (jsonString) {
-  var json = JSON.parse(jsonString);
-    var color = this.meshDict[key]['color'];
-    var geometry  = new THREE.Geometry();
+    var json = JSON.parse(jsonString);
+    var color = unit['color'];
+    var geometry = new THREE.Geometry();
     var vtx = json['vertices'];
     var idx = json['faces'];
-    var len = vtx.length / 3;
-    for (var j = 0; j < len; j++) {
+    for (var j = 0; j < vtx.length / 3; j++) {
       var x = parseFloat(vtx[3*j+0]);
       var y = parseFloat(vtx[3*j+1]);
       var z = parseFloat(vtx[3*j+2]);
-      geometry.vertices.push(
-        new THREE.Vector3(x,y,z)
-      );
-    this.updateObjectBoundingBox(key, x, y, z);
+      geometry.vertices.push(new THREE.Vector3(x,y,z));
+      this.updateObjectBoundingBox(unit, x, y, z);
       this.updateBoundingBox(x,y,z);
     }
     for (var j = 0; j < idx.length/3; j++) {
@@ -627,27 +602,28 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, visibility) {
       );
     }
 
-  geometry.mergeVertices();
+    geometry.mergeVertices();
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
 
-  materials  = [
+    materials  = [
     //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-    new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
-    new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
-  ];
+      new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
+      new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
+    ];
 
 
     var group = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
-  if(! this.settings.meshWireframe )
-    group.children[1].visible = false;
-    group.visible = visibility;
+    if(! this.settings.meshWireframe )
+      group.children[1].visible = false;
+      group.visible = visibility;
 
-    this._registerGroup(key, group);
+      this._registerGroup(key, unit, group);
   };
 
 };
-FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
+
+FFBOMesh3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
   return function(swcString) {
     /*
      * process string
@@ -671,7 +647,7 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
       }
     });
 
-    var color = this.meshDict[key]['color'];
+    var color = unit['color'];
     var geometry  = new THREE.Geometry();
 
     for (var idx in swcObj ) {
@@ -682,7 +658,7 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
         geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
         geometry.colors.push(color);
         geometry.colors.push(color);
-    this.updateObjectBoundingBox(key, c.x, c.y, c.z);
+        this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
         this.updateBoundingBox(c.x, c.y, c.z);
       }
     }
@@ -691,123 +667,115 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, visibility) {
     group.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
     group.visible = visibility;
 
-    this._registerGroup(key, group);
+    this._registerGroup(key, unit, group);
 
   };
 };
 
-FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
+FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
   return function() {
   /*
    * process string
    */
   var swcObj = {};
-  var len = this.meshDict[key]['sample'].length;
+  var len = unit['sample'].length;
   for (var j = 0; j < len; j++) {
-      swcObj[parseInt(this.meshDict[key]['sample'][j])] = {
-    'type'   : parseInt  (this.meshDict[key]['identifier'][j]),
-    'x'    : parseFloat(this.meshDict[key]['x'][j]),
-    'y'    : parseFloat(this.meshDict[key]['y'][j]),
-    'z'    : parseFloat(this.meshDict[key]['z'][j]),
-    'radius' : parseFloat(this.meshDict[key]['r'][j]),
-    'parent' : parseInt  (this.meshDict[key]['parent'][j]),
+      swcObj[parseInt(unit['sample'][j])] = {
+    'type'   : parseInt  (unit['identifier'][j]),
+    'x'    : parseFloat(unit['x'][j]),
+    'y'    : parseFloat(unit['y'][j]),
+    'z'    : parseFloat(unit['z'][j]),
+    'radius' : parseFloat(unit['r'][j]),
+    'parent' : parseInt  (unit['parent'][j]),
       };
   }
 
-  var color = this.meshDict[key]['color'];
+  var color = unit['color'];
   var group = new THREE.Object3D();
   var pointGeometry = undefined;
   var mergedGeometry = undefined;
   var geometry = undefined;
 
   for (var idx in swcObj ) {
-      var c = swcObj[idx];
-    this.updateObjectBoundingBox(key, c.x, c.y, c.z);
-      this.updateBoundingBox(c.x,c.y,c.z);
-      if (c.parent != -1) {
-    var p = swcObj[c.parent];
-    if(this.settings.neuron3d){
-      if(mergedGeometry == undefined)
-      mergedGeometry = new THREE.Geometry()
-      var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-      if(!p.radius || !c.radius)
-      var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-      else
-      var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-      geometry.translate(0, 0.5*d.length(),0);
-      geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-      geometry.lookAt(d.clone());
-      geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
+    var c = swcObj[idx];
+    this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+    this.updateBoundingBox(c.x,c.y,c.z);
+    if (c.parent != -1) {
+      var p = swcObj[c.parent];
+      if(this.settings.neuron3d){
+        if(mergedGeometry == undefined)
+          mergedGeometry = new THREE.Geometry()
+        var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+        if(!p.radius || !c.radius)
+          var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+        else
+          var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+        geometry.translate(0, 0.5*d.length(),0);
+        geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+        geometry.lookAt(d.clone());
+        geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
 
-
-      mergedGeometry.merge(geometry);
-      delete geometry
-
-      if(this.settings.neuron3dMode == 2){
-      var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-      geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-      geometry.lookAt(d);
-      geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
-
-      mergedGeometry.merge(geometry);
-      delete geometry
-      }
-      else if(this.settings.neuron3dMode == 3){
-      if(p.parent != -1){
-        p2 = swcObj[p.parent];
-        var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
-        var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
-        var curve = new THREE.QuadraticBezierCurve3(
-        a,
-        new THREE.Vector3( p.x, p.y, p.z ),
-        b,
-        );
-        var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
         mergedGeometry.merge(geometry);
         delete geometry
-      }
-      }
 
-    }
-    else{
-      if(geometry == undefined)
-      geometry = new THREE.Geometry();
-      geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-      geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-      geometry.colors.push(color);
-      geometry.colors.push(color);
-    }
-      }
-      if (c.type == 1) {
-    if(c.radius)
-      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-    else
-      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
-    sphereGeometry.translate( c.x, c.y, c.z );
-    var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-    group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-    this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
-      }
-    if (c.type == -1) {
-    if(this.settings.synapseMode==1){
-      if(mergedGeometry == undefined)
-      mergedGeometry = new THREE.Geometry()
+        if (this.settings.neuron3dMode == 2) {
+          var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+          geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+          geometry.lookAt(d);
+          geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
 
+          mergedGeometry.merge(geometry);
+          delete geometry
+        } else if (this.settings.neuron3dMode == 3) {
+          if (p.parent != -1) {
+            p2 = swcObj[p.parent];
+            var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
+            var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
+            var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
+
+            var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+            mergedGeometry.merge(geometry);
+            delete geometry
+          }
+        }
+      } else {
+        if (geometry == undefined)
+          geometry = new THREE.Geometry();
+        geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+        geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
+        geometry.colors.push(color);
+        geometry.colors.push(color);
+      }
+    }
+    if (c.type == 1) {
       if(c.radius)
-      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+        var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
       else
-      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+        var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
       sphereGeometry.translate( c.x, c.y, c.z );
+      var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+      group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+      unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+    }
+    if (c.type == -1) {
+      if(this.settings.synapseMode==1){
+        if(mergedGeometry == undefined)
+          mergedGeometry = new THREE.Geometry()
+
+        if(c.radius)
+          var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+        else
+          var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+        sphereGeometry.translate( c.x, c.y, c.z );
       //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
       //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-      mergedGeometry.merge(sphereGeometry);
-      this.meshDict[key]['position'] = new THREE.Vector3(c.x,c.y,c.z);
-    }
-    else{
-      if(pointGeometry == undefined)
-      pointGeometry = new THREE.Geometry();
-      pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-    }
+        mergedGeometry.merge(sphereGeometry);
+        unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+      } else {
+        if(pointGeometry == undefined)
+          pointGeometry = new THREE.Geometry();
+        pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+      }
     }
   }
   if(pointGeometry){
@@ -830,29 +798,28 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, visibility) {
     group.add(new THREE.LineSegments(geometry, material));
   }
   group.visible = visibility;
-  this._registerGroup(key, group);
+  this._registerGroup(key, unit, group);
 
   /* delete morpology data */
-  delete this.meshDict[key]['identifier'];
-  delete this.meshDict[key]['x'];
-  delete this.meshDict[key]['y'];
-  delete this.meshDict[key]['z'];
-  delete this.meshDict[key]['r'];
-  delete this.meshDict[key]['parent'];
-  delete this.meshDict[key]['sample'];
-  delete this.meshDict[key]['type'];
+  delete unit['identifier'];
+  delete unit['x'];
+  delete unit['y'];
+  delete unit['z'];
+  delete unit['r'];
+  delete unit['parent'];
+  delete unit['sample'];
+  delete unit['type'];
   };
 };
 
-FFBOMesh3D.prototype._registerGroup = function(key, group) {
+FFBOMesh3D.prototype._registerGroup = function(key, unit, group) {
 
   /* create label for tooltip if not provided */
-  group.name = this.meshDict[key].label;
+  group.name = unit.label;
   group.uid = key;
 
-  group = new PropertyManager(group);
-  this.meshDict[key]['object']  = group
-  this.meshDict[key]['pinned']  = false;
+  unit['object']  = group
+  unit['pinned']  = false;
   //group = this.meshDict[key]['object'];
   /*
   if ( !this.meshDict[key]['background'] ) {
@@ -861,26 +828,53 @@ FFBOMesh3D.prototype._registerGroup = function(key, group) {
       this.meshDict[key]['object'].children[i].material.depthTest = false;
   }
   */
-  if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC')){
-  if ( this.settings.defaultOpacity !== 1)
-      for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-    this.meshDict[key]['object'].children[i].material.opacity = this.settings.defaultOpacity;
-  }
-  else{
-  if ( this.settings.synapseOpacity !== 1)
-      for (var i=0; i < this.meshDict[key]['object'].children.length; i++)
-    this.meshDict[key]['object'].children[i].material.opacity = this.settings.synapseOpacity;
-  }
-
-  if ( !this.meshDict[key]['background'] ) {
-  if(!('morph_type' in this.meshDict[key]) || (this.meshDict[key]['morph_type'] != 'Synapse SWC'))
-    ++this.uiVars.frontNum;
-  this.groups.front.add( group );
-  }
-  else{
-  this.groups.back.add(group)
+  if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+    if ( this.settings.defaultOpacity !== 1)
+      for (var i=0; i < unit['object'].children.length; i++)
+        unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+  } else {
+    if ( this.settings.synapseOpacity !== 1)
+      for (var i=0; i < unit['object'].children.length; i++)
+        unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
   }
 
+  if ( !unit['background'] ) {
+    if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC'))
+      ++this.uiVars.frontNum;
+    this.groups.front.add( group );
+  } else {
+    this.groups.back.add(group)
+  }
+  this.uiVars.meshNum += 1;
+  this.meshDict[key] = unit;
+}
+
+FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
+  if (event !== undefined)
+    event.preventDefault();
+
+  if (!this.controls.checkStateIsNone())
+    return;
+
+  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
+
+  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
+  if ( intersects.length > 0 ) {
+    this.uiVars.currentIntersected = intersects[0].object.parent;
+    /* find first object that can be highlighted (skip  mesh) */
+    for (var i = 1; i < intersects.length; i++ ) {
+      var x = intersects[i].object.parent;
+      if (this.meshDict[x.uid]['highlight']) {
+        this.uiVars.currentIntersected = x;
+        break;
+      }
+    }
+  }
+  if (this.dispatch['click'] != undefined && this.uiVars.currentIntersected != undefined ) {
+    var x = this.uiVars.currentIntersected;
+    if (this.meshDict[x.uid]['highlight'])
+      this.dispatch['click']([x.name, x.uid]);
+  }
 }
 
 FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
