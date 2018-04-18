@@ -92,8 +92,8 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.renderer = this.initRenderer();
 
   this.groups = {
-    front: new THREE.Object3D(), // for raycaster detection
-    back: new THREE.Object3D()
+    front: new THREE.Group(), // for raycaster detection
+    back: new THREE.Group()
   }
 
   this.scenes = this.initScenes();
@@ -616,12 +616,12 @@ FFBOMesh3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
     ];
 
 
-    var group = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
+    var object = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
     if(! this.settings.meshWireframe )
-      group.children[1].visible = false;
-      group.visible = visibility;
+      object.children[1].visible = false;
+      object.visible = visibility;
 
-      this._registerGroup(key, unit, group);
+      this._registerObject(key, unit, object);
   };
 
 };
@@ -666,11 +666,11 @@ FFBOMesh3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
       }
     }
     var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-    var group = new THREE.Object3D();
-    group.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
-    group.visible = visibility;
+    var object = new THREE.Object3D();
+    object.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
+    object.visible = visibility;
 
-    this._registerGroup(key, unit, group);
+    this._registerObject(key, unit, object);
 
   };
 };
@@ -694,7 +694,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
   }
 
   var color = unit['color'];
-  var group = new THREE.Object3D();
+  var object = new THREE.Object3D();
   var pointGeometry = undefined;
   var mergedGeometry = undefined;
   var geometry = undefined;
@@ -757,7 +757,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
         var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
       sphereGeometry.translate( c.x, c.y, c.z );
       var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-      group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+      object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
       unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
     }
     if (c.type == -1) {
@@ -771,7 +771,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
         sphereGeometry.translate( c.x, c.y, c.z );
       //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-      //group.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+      //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
         mergedGeometry.merge(sphereGeometry);
         unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
       } else {
@@ -784,7 +784,7 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
   if(pointGeometry){
     var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
     var points = new THREE.Points(pointGeometry, pointMaterial);
-    group.add(points);
+    object.add(points);
   }
   if(mergedGeometry){
     var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
@@ -794,14 +794,14 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
     var mesh = new THREE.Mesh(mergedGeometry, material);
     //var mesh = new THREE.Mesh(simplified, material);
 
-    group.add(mesh);
+    object.add(mesh);
   }
   if(geometry){
     var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-    group.add(new THREE.LineSegments(geometry, material));
+    object.add(new THREE.LineSegments(geometry, material));
   }
-  group.visible = visibility;
-  this._registerGroup(key, unit, group);
+  object.visible = visibility;
+  this._registerObject(key, unit, object);
 
   /* delete morpology data */
   delete unit['identifier'];
@@ -815,15 +815,16 @@ FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
   };
 };
 
-FFBOMesh3D.prototype._registerGroup = function(key, unit, group) {
+FFBOMesh3D.prototype._registerObject = function(key, unit, object) {
 
   /* create label for tooltip if not provided */
-  group.name = unit.label;
-  group.uid = key;
+  object.name = unit.label;
+  object.uid = key;
 
-  unit['object'] = group
+  unit['object'] = new PropertyManager(object);
   unit['pinned'] = false;
 
+  // TODO: move the code below to a function
   if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
     if ( this.settings.defaultOpacity !== 1)
       for (var i=0; i < unit['object'].children.length; i++)
@@ -837,9 +838,9 @@ FFBOMesh3D.prototype._registerGroup = function(key, unit, group) {
   if ( !unit['background'] ) {
     if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC'))
       ++this.uiVars.frontNum;
-    this.groups.front.add( group );
+    this.groups.front.add(object);
   } else {
-    this.groups.back.add(group)
+    this.groups.back.add(object)
   }
   this.uiVars.meshNum += 1;
   this.meshDict[key] = unit;
@@ -1444,17 +1445,17 @@ FFBOMesh3D.prototype.syncControls = function (ffbomesh) {
 }
 
 THREE.Lut.prototype.addColorMap( 'rainbow_gist', [
-[ 0.000000, '0xff0028' ], [ 0.031250, '0xff0100' ], [ 0.062500, '0xff2c00' ],
-[ 0.093750, '0xff5700' ], [ 0.125000, '0xff8200' ], [ 0.156250, '0xffae00' ],
-[ 0.187500, '0xffd900' ], [ 0.218750, '0xf9ff00' ], [ 0.250000, '0xceff00' ],
-[ 0.281250, '0xa3ff00' ], [ 0.312500, '0x78ff00' ], [ 0.343750, '0x4dff00' ],
-[ 0.375000, '0x22ff00' ], [ 0.406250, '0x00ff08' ], [ 0.437500, '0x00ff33' ],
-[ 0.468750, '0x00ff5e' ], [ 0.500000, '0x00ff89' ], [ 0.531250, '0x00ffb3' ],
-[ 0.562500, '0x00ffde' ], [ 0.593750, '0x00f4ff' ], [ 0.625000, '0x00c8ff' ],
-[ 0.656250, '0x009dff' ], [ 0.687500, '0x0072ff' ], [ 0.718750, '0x0047ff' ],
-[ 0.750000, '0x001bff' ], [ 0.781250, '0x0f00ff' ], [ 0.812500, '0x3a00ff' ],
-[ 0.843750, '0x6600ff' ], [ 0.875000, '0x9100ff' ], [ 0.906250, '0xbc00ff' ],
-[ 0.937500, '0xe800ff' ], [ 0.968750, '0xff00ea' ], [ 1.000000, '0xff00bf' ],
+  [ 0.000000, '0xff0028' ], [ 0.031250, '0xff0100' ], [ 0.062500, '0xff2c00' ],
+  [ 0.093750, '0xff5700' ], [ 0.125000, '0xff8200' ], [ 0.156250, '0xffae00' ],
+  [ 0.187500, '0xffd900' ], [ 0.218750, '0xf9ff00' ], [ 0.250000, '0xceff00' ],
+  [ 0.281250, '0xa3ff00' ], [ 0.312500, '0x78ff00' ], [ 0.343750, '0x4dff00' ],
+  [ 0.375000, '0x22ff00' ], [ 0.406250, '0x00ff08' ], [ 0.437500, '0x00ff33' ],
+  [ 0.468750, '0x00ff5e' ], [ 0.500000, '0x00ff89' ], [ 0.531250, '0x00ffb3' ],
+  [ 0.562500, '0x00ffde' ], [ 0.593750, '0x00f4ff' ], [ 0.625000, '0x00c8ff' ],
+  [ 0.656250, '0x009dff' ], [ 0.687500, '0x0072ff' ], [ 0.718750, '0x0047ff' ],
+  [ 0.750000, '0x001bff' ], [ 0.781250, '0x0f00ff' ], [ 0.812500, '0x3a00ff' ],
+  [ 0.843750, '0x6600ff' ], [ 0.875000, '0x9100ff' ], [ 0.906250, '0xbc00ff' ],
+  [ 0.937500, '0xe800ff' ], [ 0.968750, '0xff00ea' ], [ 1.000000, '0xff00bf' ],
 ]);
 
 
