@@ -407,7 +407,7 @@ FFBOMesh3D.prototype._configureCallbacks = function(){
   }.bind(this), "meshWireframe");
 }
 
-FFBOMesh3D.prototype.addCommand = function(json) {
+FFBOMesh3D.prototype.execCommand = function(json) {
   var neuList = json['neurons'] || [];
   var commandList = json['commands'] || [];
   var args = json['args'] || undefined;
