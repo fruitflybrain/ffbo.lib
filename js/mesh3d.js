@@ -77,7 +77,8 @@ function FFBOMesh3D(div_id, data, metadata) {
     cursorPosition: new THREE.Vector2(-100000,-100000),
     currentIntersected: null,
     meshNum: 0,
-    frontNum: 0
+    frontNum: 0,
+    backNum: 0
   });
 
   this.raycaster = new THREE.Raycaster();
@@ -176,9 +177,10 @@ function FFBOMesh3D(div_id, data, metadata) {
     'setcolor': this.setColor,
     'resetview': this.resetView,
   }
-
+  this.meshDict.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
+  this.meshDict.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
   this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
-  // this.uiVars.on('change', (function () { this.updateState(); }).bind(this), 'highlightedObjects');
+  this.uiVars.on('change', (function () { this.updateInfoPanel(); }).bind(this), 'frontNum');
 
   this.states.on('change', (function (e) { this.updateOpacity(e); }).bind(this), 'highlight');
 
@@ -503,9 +505,6 @@ FFBOMesh3D.prototype.addJson = function(json) {
       continue;
     }
   }
-
-  this.updateInfoPanel()
-
 }
 
 FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
@@ -835,14 +834,6 @@ FFBOMesh3D.prototype._registerObject = function(key, unit, object) {
         unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
   }
 
-  if ( !unit['background'] ) {
-    if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC'))
-      ++this.uiVars.frontNum;
-    this.groups.front.add(object);
-  } else {
-    this.groups.back.add(object)
-  }
-  this.uiVars.meshNum += 1;
   this.meshDict[key] = unit;
 }
 
@@ -1149,6 +1140,41 @@ FFBOMesh3D.prototype.hide = function(id) {
   }
 }
 
+FFBOMesh3D.prototype.onAddMesh = function(e) {
+  if ( !e.value['background'] ) {
+    if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      ++this.uiVars.frontNum;
+    this.groups.front.add(e.value.object);
+  } else {
+    this.groups.back.add(e.value.object);
+    ++this.uiVars.backNum;
+  }
+  ++this.uiVars.meshNum;
+}
+
+FFBOMesh3D.prototype.onRemoveMesh = function(e) {
+  // console.log(e);
+  if (e.value['pinned'])
+    e.value['pinned'] = false;
+  var meshobj = e.value.object;
+
+  for (var j = 0; j < meshobj.children.length; ++j ) {
+    meshobj.children[j].geometry.dispose();
+    meshobj.children[j].material.dispose();
+  }
+
+  if ( !e.value['background'] ) {
+    if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+       --this.uiVars.frontNum;
+    this.groups.front.remove( meshobj );
+  } else {
+    this.groups.back.remove( meshobj );
+    --this.uiVars.backNum;
+  }
+  --this.uiVars.meshNum;
+  delete meshobj;
+}
+
 FFBOMesh3D.prototype.toggleVis = function(key) {
   if (key in this.meshDict)
     this.meshDict[key].object.visible = !this.meshDict[key].object.visible;
@@ -1273,24 +1299,8 @@ FFBOMesh3D.prototype.remove = function( id ) {
   for (var i = 0; i < id.length; ++i ) {
     if ( !(id[i] in this.meshDict ) )
       continue;
-    if (this.meshDict[id[i]]['pinned'])
-      this.meshDict[id[i]]['pinned'] = false;
-    var meshobj = this.meshDict[id[i]].object;
-
-    for (var j = 0; j < meshobj.children.length; ++j ) {
-      meshobj.children[j].geometry.dispose();
-      meshobj.children[j].material.dispose();
-    }
-    --this.uiVars.meshNum;
-    if ( !this.meshDict[id[i]]['background'] ) {
-      if(!('morph_type' in this.meshDict[id[i]]) || (this.meshDict[id[i]]['morph_type'] != 'Synapse SWC'))
-         --this.uiVars.frontNum;
-    }
-    this.groups.front.remove( meshobj );
-    delete meshobj;
     delete this.meshDict[id[i]];
-
-    this.resume();
+    // this.resume();
   }
 }
 
