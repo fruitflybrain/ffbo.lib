@@ -1184,8 +1184,20 @@ FFBOMesh3D.prototype.highlight = function(d) {
   if (d === undefined || !this._metadata.allowHighlight)
     return;
 
+  if (typeof(d) === 'string' && (d in this.meshDict))
+    d = this.meshDict[d];
+
   this.renderer.domElement.style.cursor = "pointer";
-  this.states.highlight = (d['highlight']) && (d['object']['uid']);
+
+  if (this.states.highligh)
+    this.meshDict[this.states.highlight[0]]['visible'] =  this.states.highlight[1];
+
+  if ((d['highlight']) !== false) {
+    this.states.highlight = [d['object']['uid'], d['visible']];
+    d['visible'] = true;
+  } else {
+    this.states.highlight = false;
+  }
 }
 
 FFBOMesh3D.prototype.resume = function() {
@@ -1195,7 +1207,7 @@ FFBOMesh3D.prototype.resume = function() {
 
 FFBOMesh3D.prototype.updateOpacity = function(e) {
   if (this.states.highlight) {
-    var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+    var list = ((e !== undefined) && e.old_value[0]) ? [e.old_value[0]] : Object.keys(this.meshDict);
     for (const key of list) {
       var val = this.meshDict[key];
       var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
@@ -1209,7 +1221,7 @@ FFBOMesh3D.prototype.updateOpacity = function(e) {
         val.object.children[i].material.depthTest = depthTest;
       }
     }
-    var val = this.uiVars.currentIntersected;
+    var val = this.meshDict[this.states.highlight[0]];
     for (var i in val.object.children) {
       val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
       val.object.children[i].material.depthTest = false;
