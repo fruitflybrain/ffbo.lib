@@ -180,7 +180,7 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
   // this.uiVars.on('change', (function () { this.updateState(); }).bind(this), 'highlightedObjects');
 
-  this.uiVars.on('change', (function () { this.updateOpacity(); }).bind(this), 'highlightedObjects');
+  this.states.on('change', (function (e) { this.updateOpacity(e); }).bind(this), 'highlight');
 
   if ( data != undefined && Object.keys(data).length > 0)
     this.addJson( data );
@@ -390,7 +390,6 @@ FFBOMesh3D.prototype.reset = function(resetBackground) {
   }
   this.uiVars.frontNum = 0
   this.states.highlight = false;
-  this.uiVars.highlightedObjects = null;
   // this.uiVars.pinnedObjects.clear()
   if ( resetBackground ) {
     this.controls.target0.set(0,0,0);
@@ -1008,26 +1007,14 @@ FFBOMesh3D.prototype.render = function() {
   /*
    * show label of mesh object when it intersects with cursor
    */
-  if (this.controls.checkStateIsNone()) {
-    this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
-
-    var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
-    if ( intersects.length > 0 ) {
-      this.uiVars.currentIntersected = intersects[0].object.parent;
-      /* find first object that can be highlighted (skip  mesh) */
-      for (var i = 1; i < intersects.length; i++ ) {
-        var x = intersects[i].object.parent;
-        if (this.meshDict[x.uid]['highlight']) {
-          this.uiVars.currentIntersected = x;
-          break;
-        }
-      }
-      this.show3dToolTip(this.uiVars.currentIntersected.name);
-      this.highlight(this.uiVars.currentIntersected.uid);
+  if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+    this.getIntersection([this.groups.front, this.groups.back]);
+    if (this.uiVars.currentIntersected) {
+      this.show3dToolTip(this.uiVars.currentIntersected.label);
+      this.highlight(this.uiVars.currentIntersected);
     } else {
       this.hide3dToolTip();
       this.resume();
-      this.uiVars.currentIntersected = undefined;
     }
   }
 
@@ -1039,6 +1026,28 @@ FFBOMesh3D.prototype.render = function() {
   this._take_screenshot = false;
   }
   //this.renderer.render( this.scene, this.camera );
+}
+
+FFBOMesh3D.prototype.getIntersection = function(groups) {
+
+  if (groups === undefined)
+    return undefined;
+
+  var val = undefined;
+
+  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
+
+  for (const group of groups) {
+    var intersects = this.raycaster.intersectObjects( group.children, true);
+    if ( intersects.length > 0 ) {
+      val = intersects[0].object.parent.uid;
+      if (val in this.meshDict) {
+        val = this.meshDict[val];
+        break;
+      }
+    }
+  }
+  this.uiVars.currentIntersected = val;
 }
 
 FFBOMesh3D.prototype.showAll = function() {
@@ -1125,8 +1134,6 @@ FFBOMesh3D.prototype.show = function(id) {
     if ( !(id[i] in this.meshDict ) )
       continue;
     this.meshDict[id[i]].object.visible = true;
-    if (this.uiVars.highlightedObjects !== null && this.uiVars.highlightedObjects[0] == id[i])
-      this.uiVars.highlightedObjects[1] = true;
   }
 }
 
@@ -1138,8 +1145,6 @@ FFBOMesh3D.prototype.hide = function(id) {
     if ( !(id[i] in this.meshDict ) )
       continue;
     this.meshDict[id[i]].object.visible = false;
-    if (this.uiVars.highlightedObjects !== null && this.uiVars.highlightedObjects[0] == id[i])
-      this.uiVars.highlightedObjects[1] = false;
   }
 }
 
@@ -1149,105 +1154,22 @@ FFBOMesh3D.prototype.toggleVis = function(key) {
 }
 
 FFBOMesh3D.prototype.highlight = function(d) {
-  if (!this._metadata.allowHighlight)
-    return;
-  if (!(d in this.meshDict) || !(this.meshDict[d]['highlight']))
+  if (d === undefined || !this._metadata.allowHighlight)
     return;
 
   this.renderer.domElement.style.cursor = "pointer";
-
-  this.states.highlight = true;
-  this.uiVars.highlightedObjects = [d, this.meshDict[d].object.visible];
-  this.meshDict[d].object.visible = true;
+  this.states.highlight = (d['highlight']) && (d['object']['uid']);
 }
 
 FFBOMesh3D.prototype.resume = function() {
   this.states.highlight = false;
   this.renderer.domElement.style.cursor = "auto";
-  this.uiVars.highlightedObjects = null;
 }
 
-
-FFBOMesh3D.prototype._highlight = function(d) {
-
-  if (!this._metadata.allowHighlight)
-    return;
-  if (!(d in this.meshDict) || !(this.meshDict[d]['highlight']))
-    return;
-  if (this.uiVars.highlightedObjects !== null  && d !== this.uiVars.highlightedObjects[0])
-    this.resume();
-
-  this.renderer.domElement.style.cursor = "pointer";
-  this.uiVars.highlightedObjects = [d, this.meshDict[d].object.visible];
-  if ( this._metadata.highlightMode === "rest" ) {
-    for (var key in this.meshDict) {
-      //if (this.meshDict[key]['pinned'])
-      //  continue;
-      // TODO:
-      var val = (this.meshDict[key]['highlight']) ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-    depthTest = true;
-      if (this.meshDict[key]['pinned']){
-        val = this.settings.pinOpacity;
-    depthTest = false
-    }
-      for (i in this.meshDict[key].object.children){
-        this.meshDict[key].object.children[i].material.opacity = val;
-    this.meshDict[key].object.children[i].material.depthTest = depthTest;
-    }
-    }
-  }
-  for (i in this.meshDict[d].object.children){
-    this.meshDict[d].object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-    this.meshDict[d].object.children[i].material.depthTest = false;
-  }
-  this.meshDict[d].object.visible = true;
-  this.states.highlight = true;
-}
-
-FFBOMesh3D.prototype._resume = function() {
-
-  if (this.uiVars.pinnedObjects.size === 0){
-    this.resetOpacity();
-  return;
-  }
-  for( var key in this.meshDict ){
-  if (!this.meshDict[key]['background']){
-    val = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-    depthTest = this.meshDict[key]['pinned'] ? false : true;
-    for (i in this.meshDict[key].object.children){
-    this.meshDict[key].object.children[i].material.opacity = val;
-    this.meshDict[key].object.children[i].material.depthTest = depthTest;
-    }
-  }
-  else{
-    //for (i in this.meshDict[key].object.children)
-    this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-    this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-  }
-  }
-  if (!this._metadata.allowHighlight)
-    return;
-  if (this.uiVars.highlightedObjects === null)
-    return;
-
-  var d = this.uiVars.highlightedObjects[0];
-  var x = this.meshDict[d].object.children;
-  var val;
-  if (!this.meshDict[d]['pinned']) {
-    this.meshDict[d].object.visible = this.uiVars.highlightedObjects[1];
-    this.uiVars.highlightedObjects = null;
-    val = this.settings.pinLowOpacity;
-  } else
-    val = this.settings.pinOpacity;
-  for (i in x)
-    x[i].material.opacity = val;
-  this.states.highlight = false;
-  this.renderer.domElement.style.cursor = "auto";
-}
-
-FFBOMesh3D.prototype.updateOpacity = function() {
-  if ( this.states.highlight ) {
-    for (const key of Object.keys(this.meshDict)) {
+FFBOMesh3D.prototype.updateOpacity = function(e) {
+  if (this.states.highlight) {
+    var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+    for (const key of list) {
       var val = this.meshDict[key];
       var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
       var depthTest = true;
@@ -1260,8 +1182,7 @@ FFBOMesh3D.prototype.updateOpacity = function() {
         val.object.children[i].material.depthTest = depthTest;
       }
     }
-    var key = this.uiVars.highlightedObjects[0];
-    var val = this.meshDict[key];
+    var val = this.uiVars.currentIntersected;
     for (var i in val.object.children) {
       val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
       val.object.children[i].material.depthTest = false;
@@ -1362,14 +1283,13 @@ FFBOMesh3D.prototype.remove = function( id ) {
     --this.uiVars.meshNum;
     if ( !this.meshDict[id[i]]['background'] ) {
       if(!('morph_type' in this.meshDict[id[i]]) || (this.meshDict[id[i]]['morph_type'] != 'Synapse SWC'))
-    --this.uiVars.frontNum;
+         --this.uiVars.frontNum;
     }
     this.groups.front.remove( meshobj );
     delete meshobj;
     delete this.meshDict[id[i]];
 
-    if (this.uiVars.highlightedObjects !== null && this.uiVars.highlightedObjects[0] === id[i])
-      this.uiVars.highlightedObjects = null;
+    this.resume();
   }
 }
 
