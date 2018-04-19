@@ -7,12 +7,12 @@ if( moduleExporter === undefined){
     } else if (typeof require === 'function') {
       define(dependencies, definition);
     } else {
-      window[name] = eval("definition(" + dependencies.toString() + ")");
+      window[name] = definition();
     }
   };
 }
 
-moduleExporter("FFBOLightsHelper", ["PropertyManager"], function(PropertyManager){
+moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE, PropertyManager){
 
   function guidGenerator() {
     var S4 = function() {
