@@ -1,3 +1,52 @@
+if( moduleExporter === undefined){
+  var moduleExporter = function(name, dependencies, definition) {
+    if (typeof module === 'object' && module && module.exports) {
+      dependencies = dependencies.map(require);
+      module.exports = definition.apply(context, dependencies);
+    } else if (typeof require === 'function') {
+      define(dependencies, definition);
+    } else {
+      window[name] = definition();
+    }
+  };
+}
+
+moduleExporter(
+  "FFBOMesh3D",
+  [
+    "three",
+    "detector",
+    "propertymanager",
+    "lightshelper",
+    "lut",
+    "trackballControls",
+    "simplifymodifier",
+    "copyshader",
+    "convolutionshader",
+    "fxaashader",
+    "ssaoshader",
+    "luminosityhighpassshader",
+    "luminosityshader",
+    "tonemapshader",
+    "gammacorrectionshader",
+    "effectcomposer",
+    "renderpass",
+    "ssaarenderpass",
+    "shaderpass",
+    "ssaopass",
+    "maskpass",
+    "bloompass",
+    "unrealbloompass",
+    "adaptivetonemappingpass"
+  ],
+  function(THREE, Dectector, PropertyManager, FFBOLightsHelper)
+{
+
+THREE = THREE || window.THREE;
+Detector = Detector || window.Detector;
+PropertyManager = PropertyManager || window.PropertyManager;
+FFBOLightsHelper = FFBOLightsHelper || window.FFBOLightsHelper;
+
 var isOnMobile = checkOnMobile();
 
 function checkOnMobile() {
@@ -1554,3 +1603,5 @@ THREE.Lut.prototype.addColorMap( 'no_purple', [
   [0.982456, '0x006AFF'],
   [1.000000, '0x005EFF'],
 ]);
+return FFBOMesh3D;
+});
