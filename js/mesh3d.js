@@ -177,18 +177,44 @@ function FFBOMesh3D(div_id, data, metadata) {
     'setcolor': this.setColor,
     'resetview': this.resetView,
   }
-  this.meshDict.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
-  this.meshDict.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
-  this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
-  this.uiVars.on('change', (function () { this.updateInfoPanel(); }).bind(this), 'frontNum');
 
-  this.states.on('change', (function (e) { this.updateOpacity(e); }).bind(this), 'highlight');
+  this.callbackRegistry = {
+    'add': (function (func) { this.meshDict.on('add', func); }).bind(this),
+    'remove': (function (func) { this.meshDict.on('remove', func); }).bind(this),
+    'pinned': (function (func) { this.meshDict.on('change', func, 'pinned'); }).bind(this),
+    'visible': (function (func) { this.meshDict.on('change', func, 'visible'); }).bind(this),
+    'num': (function (func) { this.uiVars.on('change', func, 'frontNum'); }).bind(this),
+    'highlight': (function (func) { this.states.on('change', func, 'highlight'); }).bind(this),
+  }
+
+  this.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
+  this.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
+  this.on('pinned', (function (e) { console.log('pinned'); this.updatePinned(e); }).bind(this));
+  this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
+  this.on('highlight', (function (e) { this.updateOpacity(e);  }).bind(this));
+  this.on('highlight', (function (e) { this.onUpdateHighlight(e); }).bind(this));
+
+  // this.meshDict.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
+  // this.meshDict.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
+  // this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
+  // this.uiVars.on('change', (function () { this.updateInfoPanel(); }).bind(this), 'frontNum');
+  //
+  // this.states.on('change', (function (e) { this.updateOpacity(e); }).bind(this), 'highlight');
 
   if ( data != undefined && Object.keys(data).length > 0)
     this.addJson( data );
 
   this.animate();
 };
+
+FFBOMesh3D.prototype.on = function (key, func) {
+  if (key in this.callbackRegistry) {
+    var register = this.callbackRegistry[key];
+    register(func);
+  } else {
+    console.log("callback keyword '" + key + "' not recognized.");
+  }
+}
 
 FFBOMesh3D.prototype.initCamera = function () {
 
