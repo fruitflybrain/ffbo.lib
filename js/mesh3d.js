@@ -888,29 +888,15 @@ FFBOMesh3D.prototype.onDocumentMouseDBLClick = function( event ) {
 
 FFBOMesh3D.prototype.onDocumentMouseDBLClickMobile = function( event ) {
   if (event !== undefined)
-  event.preventDefault();
-  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
-  currInt = undefined;
-  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
-  if ( intersects.length > 0 ) {
-  currInt = intersects[0].object.parent;
-  /* find first object that can be highlighted (skip  mesh) */
-  for (var i = 1; i < intersects.length; i++ ) {
-    var x = intersects[i].object.parent;
-    if (this.meshDict[x.uid]['highlight']) {
-    currInt = x;
-    break;
-    }
-  }
-  }
-  if (currInt != undefined ) {
-  var x = currInt;
-  if (!this.meshDict[x.uid]['highlight'])
-    return;
+    event.preventDefault();
+  var intersected = this.getIntersection([this.groups.front]);
 
-  this.togglePin(x.uid);
-  if (this.dispatch['dblclick'] !== undefined )
-    this.dispatch['dblclick'](x.uid, x.name, this.meshDict[x.uid]['pinned']);
+  if (intersected != undefined ) {
+    if (!intersected['highlight'])
+      return;
+    this.togglePin(x.uid);
+    if (this.dispatch['dblclick'] !== undefined )
+      this.dispatch['dblclick'](intersected.uid, intersected.name, this.meshDict[intersected.uid]['pinned']);
   }
 }
 
@@ -938,7 +924,7 @@ FFBOMesh3D.prototype.onDocumentMouseLeave = function( event ) {
 
   this.states.mouseOver = false;
 
-  this.highlight();
+  this.highlight(undefined);
 }
 //
 FFBOMesh3D.prototype.onWindowResize = function() {
@@ -1185,7 +1171,7 @@ FFBOMesh3D.prototype.toggleVis = function(key) {
     this.meshDict[key].object.visible = !this.meshDict[key].object.visible;
 }
 
-FFBOMesh3D.prototype.highlight = function(d) {
+FFBOMesh3D.prototype.highlight = function(d, updatePos) {
   if (d === undefined || d === false) {
     this.states.highlight = false;
     this.hide3dToolTip();
@@ -1195,12 +1181,19 @@ FFBOMesh3D.prototype.highlight = function(d) {
   if (typeof(d) === 'string' && (d in this.meshDict))
     d = this.meshDict[d];
 
-  this.show3dToolTip(d['label']);
-
   if ((d['highlight']) !== false) {
+
     this.states.highlight = [d['object']['uid'], d['visible']];
   } else
     this.states.highlight = false;
+
+
+  if (updatePos !== undefined && updatePos === true) {
+    var pos = this.getNeuronScreenPosition(d['object']['uid']);
+    this.uiVars.toolTipPosition.x = pos.x;
+    this.uiVars.toolTipPosition.y = pos.y;
+  }
+  this.show3dToolTip(d['label']);
 }
 
 FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
@@ -1322,7 +1315,6 @@ FFBOMesh3D.prototype.remove = function( id ) {
     if ( !(id[i] in this.meshDict ) )
       continue;
     delete this.meshDict[id[i]];
-    // this.resume();
   }
 }
 
@@ -1451,13 +1443,6 @@ FFBOMesh3D.prototype.show3dToolTip = function (d) {
 
 FFBOMesh3D.prototype.hide3dToolTip = function () {
   this.toolTipDiv.style.opacity = 0.0;
-}
-
-FFBOMesh3D.prototype.onUpdateTooltip = function (e) {
-  if (e.value)
-    this.show3dToolTip(e.value);
-  else
-    this.hide3dToolTip();
 }
 
 FFBOMesh3D.prototype._getInfo = function (d) {
