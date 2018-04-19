@@ -1,19 +1,35 @@
-function guidGenerator() {
+// Adapted from https://stackoverflow.com/a/30538574
+if( moduleExporter === undefined){
+  var moduleExporter = function(name, dependencies, definition) {
+    if (typeof module === 'object' && module && module.exports) {
+      dependencies = dependencies.map(require);
+      module.exports = definition.apply(context, dependencies);
+    } else if (typeof require === 'function') {
+      define(dependencies, definition);
+    } else {
+      window[name] = eval("definition(" + dependencies.toString() + ")");
+    }
+  };
+}
+
+moduleExporter("FFBOLightsHelper", ["PropertyManager"], function(PropertyManager){
+
+  function guidGenerator() {
     var S4 = function() {
-  return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+      return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
     };
     return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
-}
+  }
 
-function getProperty(properties, propertyName, def){
-  if(propertyName in properties)
-    return properties[propertyName]
-  else
-    return def
+  function getProperty(properties, propertyName, def){
+    if(propertyName in properties)
+      return properties[propertyName]
+    else
+      return def
 
-}
+  }
 
-function FFBOLightsHelper(camera, controls, scene) {
+  function FFBOLightsHelper(camera, controls, scene) {
     lh = new PropertyManager(this);
 
     lh.camera = camera;
@@ -21,35 +37,35 @@ function FFBOLightsHelper(camera, controls, scene) {
     lh.scene = scene;
 
     lh.on('change', function(e){
-  light = this[e['path'][0]];
-  if(e['value']){
-      light.intensity = light._intensity
-  }
-  else{
-      light._intensity = light.intensity;
-            light.intensity = 0;
-  }
+      light = this[e['path'][0]];
+      if(e['value']){
+        light.intensity = light._intensity
+      }
+      else{
+        light._intensity = light.intensity;
+        light.intensity = 0;
+      }
     }.bind(lh), 'enabled')
 
     lh._updatePause = false;
     lh.controls.addEventListener("change", function(){
-  if(this._updatePause)
-      return;
-  this._updatePause = true;
-  setTimeout(function(){
-      for( k in this )
-    if(this[k].type == "SpotLight")
-        if( this[k].track )
-      this._updateSpotLight( this[k] );
-      this._updatePause = false;
-  }.bind(this), 20);
+      if(this._updatePause)
+        return;
+      this._updatePause = true;
+      setTimeout(function(){
+        for( k in this )
+          if(this[k].type == "SpotLight")
+            if( this[k].track )
+              this._updateSpotLight( this[k] );
+        this._updatePause = false;
+      }.bind(this), 20);
     }.bind(lh));
     return lh
-}
+  }
 
 
 
-FFBOLightsHelper.prototype.addAmbientLight = function(properties){
+  FFBOLightsHelper.prototype.addAmbientLight = function(properties){
     if(properties == undefined)
       properties = {};
     scene = getProperty(properties, 'scene', this.scene);
@@ -62,9 +78,9 @@ FFBOLightsHelper.prototype.addAmbientLight = function(properties){
     this[key].enabled = true;
     scene.add(this[key])
     return this[key]
-}
+  }
 
-FFBOLightsHelper.prototype.addDirectionalLight = function(properties){
+  FFBOLightsHelper.prototype.addDirectionalLight = function(properties){
     if(properties == undefined)
       properties = {};
     scene = getProperty(properties, 'scene', this.scene);
@@ -80,9 +96,9 @@ FFBOLightsHelper.prototype.addDirectionalLight = function(properties){
     scene.add(this[key])
     scene.add(this[key].target)
     return this[key]
-}
+  }
 
-FFBOLightsHelper.prototype._updateSpotLight = function(light){
+  FFBOLightsHelper.prototype._updateSpotLight = function(light){
     position = this.camera.position.clone();
     target = this.controls.target.clone();
     position.sub(target);
@@ -97,10 +113,10 @@ FFBOLightsHelper.prototype._updateSpotLight = function(light){
     light.position.copy(position);
     light.target.position.copy(target);
     light.distance = distance;
-}
+  }
 
 
-FFBOLightsHelper.prototype.addSpotLight = function(properties){
+  FFBOLightsHelper.prototype.addSpotLight = function(properties){
     if(properties == undefined)
       properties = {};
     scene = getProperty(properties, 'scene', this.scene);
@@ -124,7 +140,7 @@ FFBOLightsHelper.prototype.addSpotLight = function(properties){
     this[key].posAngle2 = posAngle2;
 
     this[key].on("change", function(e){
-  this._updateSpotLight(e.obj);
+      this._updateSpotLight(e.obj);
     }.bind(this), ["posAngle1", "posAngle2", "distanceFactor"])
     this._updateSpotLight(this[key])
 
@@ -133,4 +149,7 @@ FFBOLightsHelper.prototype.addSpotLight = function(properties){
     scene.add(this[key].target)
     this[key].track = track;
     return this[key];
-}
+  }
+
+  return FFBOLightsHelper;
+});
