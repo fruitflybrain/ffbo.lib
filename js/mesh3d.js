@@ -137,11 +137,7 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this.createToolTip();
 
-  this._uibtnright = 5;
-
-
   this._take_screenshot = false
-
 
   this.initPostProcessing();
 
@@ -1181,8 +1177,7 @@ FFBOMesh3D.prototype.highlight = function(d, updatePos) {
     d = this.meshDict[d];
 
   if ((d['highlight']) !== false) {
-
-    this.states.highlight = [d['object']['uid'], d['visible']];
+    this.states.highlight = [d['object']['uid'], d['object']['visible']];
   } else
     this.states.highlight = false;
 
@@ -1198,12 +1193,12 @@ FFBOMesh3D.prototype.highlight = function(d, updatePos) {
 FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
 
   if (e.old_value)
-      this.meshDict[e.old_value[0]]['visible'] = e.old_value[1];
+      this.meshDict[e.old_value[0]]['object']['visible'] = e.old_value[1];
   if (e.value === false) {
     this.renderer.domElement.style.cursor = "auto";
   } else {
     this.renderer.domElement.style.cursor = "pointer";
-    this.meshDict[e.value[0]]['visible'] = true;
+    this.meshDict[e.value[0]]['object']['visible'] = true;
   }
 }
 
