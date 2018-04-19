@@ -74,17 +74,17 @@ function FFBOMesh3D(div_id, data, metadata) {
     pinnedObjects: new Set(),
     toolTipPosition: new THREE.Vector2(),
     highlightedObjects: null,
+    currentIntersected: undefined,
     cursorPosition: new THREE.Vector2(-100000,-100000),
-    currentIntersected: null,
     meshNum: 0,
     frontNum: 0,
-    backNum: 0
+    backNum: 0,
+    tooltip: undefined
   });
 
   this.raycaster = new THREE.Raycaster();
   this.raycaster.linePrecision = 3;
 
-  this.createToolTip();
 
   this.container = document.getElementById( div_id );
 
@@ -125,8 +125,6 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.container.addEventListener( 'resize', this.onWindowResize.bind(this), false );
 
   this.animOpacity = {};
-  this.meshDict = new PropertyManager();
-
 
   this.defaultBoundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
 
@@ -137,6 +135,7 @@ function FFBOMesh3D(div_id, data, metadata) {
 
   this.createInfoPanel();
 
+  this.createToolTip();
 
   this._uibtnright = 5;
 
@@ -259,7 +258,6 @@ FFBOMesh3D.prototype.initPostProcessing = function () {
 
   this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
   this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
-  //this.renderScene = new THREE.SSAORenderPass( this.scene, this.camera );
 
   this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
   this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
@@ -267,9 +265,6 @@ FFBOMesh3D.prototype.initPostProcessing = function () {
 
   this.bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( width, height ), 0.2, 0.2, 0.3 ); //1.0, 9, 0.5, 512);
   this.bloomPass.renderToScreen = true;
-
-  //this.gammaCorrectionPass = new THREE.ShaderPass( THREE.GammaCorrectionShader );
-  //this.gammaCorrectionPass.renderToScreen = true;
 
   this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
   this.toneMappingPass.setMinLuminance(0.05);
@@ -870,24 +865,11 @@ FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
   if (!this.controls.checkStateIsNone())
     return;
 
-  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
+  var intersected = this.getIntersection([this.groups.front]);
 
-  var intersects = this.raycaster.intersectObjects( this.groups.front.children, true);
-  if ( intersects.length > 0 ) {
-    this.uiVars.currentIntersected = intersects[0].object.parent;
-    /* find first object that can be highlighted (skip  mesh) */
-    for (var i = 1; i < intersects.length; i++ ) {
-      var x = intersects[i].object.parent;
-      if (this.meshDict[x.uid]['highlight']) {
-        this.uiVars.currentIntersected = x;
-        break;
-      }
-    }
-  }
-  if (this.dispatch['click'] != undefined && this.uiVars.currentIntersected != undefined ) {
-    var x = this.uiVars.currentIntersected;
-    if (this.meshDict[x.uid]['highlight'])
-      this.dispatch['click']([x.name, x.uid]);
+  if (this.dispatch['click'] != undefined && intersected != undefined ) {
+    if (intersected['highlight'])
+      this.dispatch['click']([intersected.label, intersected.object.uid]);
   }
 }
 
@@ -895,13 +877,12 @@ FFBOMesh3D.prototype.onDocumentMouseDBLClick = function( event ) {
   if (event !== undefined)
     event.preventDefault();
 
-  if (this.uiVars.currentIntersected != undefined ) {
-    var x = this.uiVars.currentIntersected;
-    if (!this.meshDict[x.uid]['highlight'])
+  var intersected = this.getIntersection([this.groups.front]);
+
+  if (intersected != undefined ) {
+    if (!intersected['highlight'])
       return;
-    this.togglePin(x.uid);
-    if (this.dispatch['dblclick'] !== undefined )
-      this.dispatch['dblclick'](x.uid, x.name, this.meshDict[x.uid]['pinned']);
+    this.togglePin(intersected);
   }
 }
 
@@ -1026,14 +1007,17 @@ FFBOMesh3D.prototype.render = function() {
    * show label of mesh object when it intersects with cursor
    */
   if (this.controls.checkStateIsNone() && this.states.mouseOver) {
-    this.getIntersection([this.groups.front, this.groups.back]);
-    if (this.uiVars.currentIntersected) {
-      this.show3dToolTip(this.uiVars.currentIntersected.label);
-      this.highlight(this.uiVars.currentIntersected);
-    } else {
-      this.hide3dToolTip();
-      this.resume();
+    var intersected = this.getIntersection([this.groups.front, this.groups.back]);
+    // if (intersected) {
+    //   this.show3dToolTip(intersected.label);
+    // } else {
+    //   this.resume();
+    // }
+    if (this.uiVars.currentIntersected || intersected) {
+      this.uiVars.currentIntersected = intersected;
+      this.highlight(intersected);
     }
+
   }
 
   this.composer.render();
@@ -1052,20 +1036,21 @@ FFBOMesh3D.prototype.getIntersection = function(groups) {
     return undefined;
 
   var val = undefined;
+  var object = undefined;
 
   this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
 
   for (const group of groups) {
     var intersects = this.raycaster.intersectObjects( group.children, true);
     if ( intersects.length > 0 ) {
-      val = intersects[0].object.parent.uid;
-      if (val in this.meshDict) {
-        val = this.meshDict[val];
+      object = intersects[0].object.parent;
+      if (object.hasOwnProperty('uid') && object.uid in this.meshDict) {
+        val =  this.meshDict[object.uid];
         break;
       }
     }
   }
-  this.uiVars.currentIntersected = val;
+  return val;
 }
 
 FFBOMesh3D.prototype.showAll = function() {
@@ -1207,20 +1192,52 @@ FFBOMesh3D.prototype.toggleVis = function(key) {
 }
 
 FFBOMesh3D.prototype.highlight = function(d) {
+  if (d === undefined || d === false) {
+    this.states.highlight = false;
+    this.hide3dToolTip();
+    return;
+  }
+
+  if (typeof(d) === 'string' && (d in this.meshDict))
+    d = this.meshDict[d];
+
+  this.show3dToolTip(d['label']);
+
+  if ((d['highlight']) !== false) {
+    this.states.highlight = [d['object']['uid'], d['visible']];
+  } else
+    this.states.highlight = false;
+}
+
+FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
+
+  if (e.old_value)
+      this.meshDict[e.old_value[0]]['visible'] = e.old_value[1];
+  if (e.value === false) {
+    this.renderer.domElement.style.cursor = "auto";
+  } else {
+
+    this.renderer.domElement.style.cursor = "pointer";
+    this.meshDict[e.value[0]]['visible'] = true;
+  }
+}
+
+FFBOMesh3D.prototype._highlight = function(d) {
   if (d === undefined || !this._metadata.allowHighlight)
     return;
 
   if (typeof(d) === 'string' && (d in this.meshDict))
     d = this.meshDict[d];
 
-  this.renderer.domElement.style.cursor = "pointer";
-
-  if (this.states.highligh)
+  if (this.states.highlight)
     this.meshDict[this.states.highlight[0]]['visible'] =  this.states.highlight[1];
 
   if ((d['highlight']) !== false) {
     this.states.highlight = [d['object']['uid'], d['visible']];
     d['visible'] = true;
+
+    this.renderer.domElement.style.cursor = "pointer";
+
   } else {
     this.states.highlight = false;
   }
@@ -1359,7 +1376,6 @@ FFBOMesh3D.prototype.setColor = function( id, color ) {
     }
   this.meshDict[id[i]].color = new THREE.Color(color);
   }
-
 }
 
 FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
@@ -1370,7 +1386,7 @@ FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
       meshobj.children[j].material.color.set( color );
       meshobj.children[j].geometry.colorsNeedUpdate = true;
       for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-    meshobj.children[j].geometry.colors[k].set( color );
+        meshobj.children[j].geometry.colors[k].set( color );
       }
     }
   }
@@ -1389,11 +1405,13 @@ FFBOMesh3D.prototype.resetVisibleView = function() {
   //this.controls.reset();
 }
 
-FFBOMesh3D.prototype.togglePin = function( id ) {
-
+FFBOMesh3D.prototype.togglePin = function( d ) {
   if (!this._metadata.allowPin)
     return;
-  this.meshDict[id]['pinned'] = !this.meshDict[id]['pinned'];
+  if (typeof(d) === 'string' && (d in this.meshDict)) {
+    d = this.meshDict[d];
+  }
+  d['pinned'] = !d['pinned'];
 }
 
 FFBOMesh3D.prototype.unpinAll = function() {
@@ -1407,42 +1425,49 @@ FFBOMesh3D.prototype.unpinAll = function() {
 
 FFBOMesh3D.prototype.createInfoPanel = function() {
   this.infoDiv = document.createElement('div');
-  this.infoDiv.style.cssText = 'position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100';
+  this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
   this.container.appendChild(this.infoDiv);
-}
-
-FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip){
-  this.UIBtns[name] = document.createElement('a');
-  this.UIBtns[name].style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + this._uibtnright + 'px; font: 15px arial; z-index: 999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-  this.UIBtns[name].innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
-  this.dispatch[name] = undefined;
-  this.UIBtns[name].addEventListener("click", (function(){this.dispatch[name]()}).bind(this));
-  this.UIBtns[name].addEventListener("mouseover", (function() {
-    this.UIBtns[name].style.color = "#fff";
-    this.show3dToolTip(tooltip);
-  }).bind(this));
-  this.UIBtns[name].addEventListener("mouseleave", (function() {
-    this.UIBtns[name].style.color = "#aaa";
-    this.hide3dToolTip();
-  }).bind(this));
-  this.container.appendChild(this.UIBtns[name]);
-  this._uibtnright += 20;
+  this.updateInfoPanel();
 }
 
 FFBOMesh3D.prototype.updateInfoPanel = function() {
   this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
 }
 
+FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip){
+  var x = 5 + 20*Object.keys(this.UIBtns).length;
+  var btn = document.createElement('a');
+  btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
+  btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
+  this.dispatch[name] = undefined;
+  btn.addEventListener("click", (function(){this.dispatch[name]()}).bind(this));
+  btn.addEventListener("mouseover",
+    (function(event) {
+      event.preventDefault();
+      btn.style.color = "#fff";
+      this.show3dToolTip(tooltip);
+    }).bind(this));
+  btn.addEventListener("mouseleave",
+    (function() {
+      btn.style.color = "#aaa";
+      this.hide3dToolTip();
+    }).bind(this));
+  this.UIBtns[name] = btn;
+  this.container.appendChild(this.UIBtns[name]);
+}
+
+
 FFBOMesh3D.prototype.createToolTip = function() {
   this.toolTipDiv = document.createElement('div');
   this.toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
   this.toolTipDiv.style.transition = "opacity 0.5s";
-  document.body.appendChild(this.toolTipDiv);
+  this.container.appendChild(this.toolTipDiv);
 }
 
 FFBOMesh3D.prototype.show3dToolTip = function (d) {
-  this.toolTipDiv.innerHTML = this.dispatch.getInfo(d);
+
   this.toolTipDiv.style.opacity = .9;
+  this.toolTipDiv.innerHTML = d;
 
   this.domRect = this.renderer.domElement.getBoundingClientRect();
   var toolTipRect = this.toolTipDiv.getBoundingClientRect();
@@ -1459,7 +1484,13 @@ FFBOMesh3D.prototype.show3dToolTip = function (d) {
 
 FFBOMesh3D.prototype.hide3dToolTip = function () {
   this.toolTipDiv.style.opacity = 0.0;
-  //console.log("hide tool tip");
+}
+
+FFBOMesh3D.prototype.onUpdateTooltip = function (e) {
+  if (e.value)
+    this.show3dToolTip(e.value);
+  else
+    this.hide3dToolTip();
 }
 
 FFBOMesh3D.prototype._getInfo = function (d) {
