@@ -33,15 +33,16 @@
   --srch-btn-background-color:#337ab7;
   --srch-btn-border-color:#2e6da4;
 
+  --srch-box-color: #000;
+  --srch-box-background: #ccc;
+  --srch-box-border: #555;
+
+
   --highlight-color: rgb(115, 201, 144);
   --highlight-color-d: rgba(115, 201, 144,0.2);
 
   --th-color:rgb(27,35,45);
   --td-color:rgb(33,43,56);
-
-  --srch-box-color: #000;
-  --srch-box-background: #ccc;
-  --srch-box-border: #555;
 
   --overview-background:#000;/* rgba(23,23,23,1);*/
   --card-background: #000;/*rgba(32,32,32,1);*/
@@ -53,5 +54,11 @@
   --boundary-horizontal-overlay: 80vw;
   --h-font-family: 'Quicksand', sans-serif;
   --u-font-family: 'Open Sans', sans-serif;
-  --title-font-family: 'Rajdhani', sans-serif;
+
+  --modal-content-background: rgba(30,30,35, 0.95);
+  --modal-content-textcolor: rgb(118, 181, 202);
+  --modal-tag-background-color: rgb(88, 137, 182);
+  --tag-el-active-background-color: #0f3150;
+  --tag-el-background-color: #0b1824;
+  --tag-el-hover-background-color: #1d2e3d;
 }
