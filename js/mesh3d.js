@@ -193,13 +193,6 @@ function FFBOMesh3D(div_id, data, metadata) {
   this.on('highlight', (function (e) { this.updateOpacity(e);  }).bind(this));
   this.on('highlight', (function (e) { this.onUpdateHighlight(e); }).bind(this));
 
-  // this.meshDict.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
-  // this.meshDict.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
-  // this.meshDict.on('change', (function (e) { this.updatePinned(e); }).bind(this), 'pinned');
-  // this.uiVars.on('change', (function () { this.updateInfoPanel(); }).bind(this), 'frontNum');
-  //
-  // this.states.on('change', (function (e) { this.updateOpacity(e); }).bind(this), 'highlight');
-
   if ( data != undefined && Object.keys(data).length > 0)
     this.addJson( data );
 
@@ -207,9 +200,15 @@ function FFBOMesh3D(div_id, data, metadata) {
 };
 
 FFBOMesh3D.prototype.on = function (key, func) {
+  if (typeof(func) !== "function") {
+    console.log("not a function");
+    return;
+  }
   if (key in this.callbackRegistry) {
     var register = this.callbackRegistry[key];
     register(func);
+  } else if (key in this.UIBtns) {
+    this.UIBtns[key]['callbacks'].push(func);
   } else {
     console.log("callback keyword '" + key + "' not recognized.");
   }
@@ -1393,13 +1392,17 @@ FFBOMesh3D.prototype.updateInfoPanel = function() {
   this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
 }
 
-FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip){
+FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip, func){
   var x = 5 + 20*Object.keys(this.UIBtns).length;
   var btn = document.createElement('a');
   btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
   btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
-  this.dispatch[name] = undefined;
-  btn.addEventListener("click", (function(){this.dispatch[name]()}).bind(this));
+  // this.dispatch[name] = undefined;
+  btn.addEventListener("click",
+    (function(){
+      for (var f of this.UIBtns[name]['callbacks'])
+        f();
+    }).bind(this));
   btn.addEventListener("mouseover",
     (function(event) {
       event.preventDefault();
@@ -1411,8 +1414,14 @@ FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip){
       btn.style.color = "#aaa";
       this.hide3dToolTip();
     }).bind(this));
-  this.UIBtns[name] = btn;
-  this.container.appendChild(this.UIBtns[name]);
+  this.UIBtns[name] = {dom: btn, callbacks: []};
+  this.container.appendChild(this.UIBtns[name]['dom']);
+  if (func !== undefined) {
+    func = this.asarray(func);
+    for (var f of func) {
+      this.on(name, f);
+    }
+  }
 }
 
 
