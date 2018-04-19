@@ -19,7 +19,7 @@ moduleExporter(
     "propertymanager",
     "lightshelper",
     "lut",
-    "trackballControls",
+    "trackballcontrols",
     "simplifymodifier",
     "copyshader",
     "convolutionshader",
