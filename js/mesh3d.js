@@ -938,8 +938,7 @@ FFBOMesh3D.prototype.onDocumentMouseLeave = function( event ) {
 
   this.states.mouseOver = false;
 
-  this.hide3dToolTip();
-  this.resume();
+  this.highlight();
 }
 //
 FFBOMesh3D.prototype.onWindowResize = function() {
@@ -1008,11 +1007,6 @@ FFBOMesh3D.prototype.render = function() {
    */
   if (this.controls.checkStateIsNone() && this.states.mouseOver) {
     var intersected = this.getIntersection([this.groups.front, this.groups.back]);
-    // if (intersected) {
-    //   this.show3dToolTip(intersected.label);
-    // } else {
-    //   this.resume();
-    // }
     if (this.uiVars.currentIntersected || intersected) {
       this.uiVars.currentIntersected = intersected;
       this.highlight(intersected);
@@ -1216,36 +1210,9 @@ FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
   if (e.value === false) {
     this.renderer.domElement.style.cursor = "auto";
   } else {
-
     this.renderer.domElement.style.cursor = "pointer";
     this.meshDict[e.value[0]]['visible'] = true;
   }
-}
-
-FFBOMesh3D.prototype._highlight = function(d) {
-  if (d === undefined || !this._metadata.allowHighlight)
-    return;
-
-  if (typeof(d) === 'string' && (d in this.meshDict))
-    d = this.meshDict[d];
-
-  if (this.states.highlight)
-    this.meshDict[this.states.highlight[0]]['visible'] =  this.states.highlight[1];
-
-  if ((d['highlight']) !== false) {
-    this.states.highlight = [d['object']['uid'], d['visible']];
-    d['visible'] = true;
-
-    this.renderer.domElement.style.cursor = "pointer";
-
-  } else {
-    this.states.highlight = false;
-  }
-}
-
-FFBOMesh3D.prototype.resume = function() {
-  this.states.highlight = false;
-  this.renderer.domElement.style.cursor = "auto";
 }
 
 FFBOMesh3D.prototype.updateOpacity = function(e) {
