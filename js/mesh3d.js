@@ -108,6 +108,7 @@ moduleExporter(
          neuron3dMode: 1,
          synapseMode: 1,
          meshWireframe: true,
+         // What about postprocessing settings?
        });
 
        this.states = new PropertyManager({
@@ -233,10 +234,12 @@ moduleExporter(
 
        this.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
        this.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
-       this.on('pinned', (function (e) { console.log('pinned'); this.updatePinned(e); }).bind(this));
+       this.on('pinned', (function (e) { this.updatePinned(e); this.updateOpacity(e); }).bind(this));
        this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
        this.on('highlight', (function (e) { this.updateOpacity(e);  }).bind(this));
        this.on('highlight', (function (e) { this.onUpdateHighlight(e); }).bind(this));
+       this.settings.on("change", (function(e){ this.updateOpacity(e)}).bind(this),
+                        ["pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity", "backgroundWireframeOpacity"]);
        if ( data != undefined && Object.keys(data).length > 0)
          this.addJson( data );
 
@@ -1275,7 +1278,7 @@ moduleExporter(
        }
        // Either entering pinned mode or pinned mode settings changing
        else if ((e.prop == 'highlight' && !this.states.highlight && this.states.pinned) ||
-                  (e.prop == 'pinned' && this.uiVars.pinnedObjs.size == 1) ||
+                  (e.prop == 'pinned' && this.uiVars.pinnedObjects.size == 1) ||
                   (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
          for (const key of Object.keys(this.meshDict)) {
            var val = this.meshDict[key];
@@ -1293,7 +1296,7 @@ moduleExporter(
          }
        }
        // New object being pinned while already in pinned mode
-       else if (e.prop == 'pinned'){
+       else if (e.prop == 'pinned' && this.states.pinned){
          for (var i in e.obj.object.children) {
            e.obj.object.children[i].material.opacity = this.settings.pinOpacity;
            e.obj.object.children[i].material.depthTest = false;
@@ -1337,7 +1340,6 @@ moduleExporter(
          this.uiVars.pinnedObjects.delete(e.path[0])
        }
        this.states.pinned = (this.uiVars.pinnedObjects.size > 0);
-       this.updateOpacity(e);
      }
 
      FFBOMesh3D.prototype.pin = function( id ) {
