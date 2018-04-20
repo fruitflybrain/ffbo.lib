@@ -231,7 +231,7 @@ moduleExporter(
          'visible': (function (func) { this.meshDict.on('change', func, 'visible'); }).bind(this),
          'num': (function (func) { this.uiVars.on('change', func, 'frontNum'); }).bind(this),
          'highlight': (function (func) { this.states.on('change', func, 'highlight'); }).bind(this),
-         'click': (function (func) { this.uiVars.selected('change', func, 'selected'); }).bind(this)
+         'click': (function (func) { this.uiVars.on('change', func, 'selected'); }).bind(this)
        }
 
        this.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
