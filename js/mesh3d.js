@@ -914,7 +914,7 @@ moduleExporter(
 
        var intersected = this.getIntersection([this.groups.front]);
 
-       if (intersected != undefined && intersected['highlight'])
+       if (intersected != undefined && intersected['highlight']){
            this.uiVars.selected = intersected.object.uid;
        }
      }
