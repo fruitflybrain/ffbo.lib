@@ -129,7 +129,8 @@ moduleExporter(
          meshNum: 0,
          frontNum: 0,
          backNum: 0,
-         tooltip: undefined
+         tooltip: undefined,
+         selected: undefined
        });
 
        this.raycaster = new THREE.Raycaster();
@@ -230,14 +231,14 @@ moduleExporter(
          'visible': (function (func) { this.meshDict.on('change', func, 'visible'); }).bind(this),
          'num': (function (func) { this.uiVars.on('change', func, 'frontNum'); }).bind(this),
          'highlight': (function (func) { this.states.on('change', func, 'highlight'); }).bind(this),
+         'click': (function (func) { this.uiVars.selected('change', func, 'selected'); }).bind(this)
        }
 
        this.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
        this.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
        this.on('pinned', (function (e) { this.updatePinned(e); this.updateOpacity(e); }).bind(this));
        this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
-       this.on('highlight', (function (e) { this.updateOpacity(e);  }).bind(this));
-       this.on('highlight', (function (e) { this.onUpdateHighlight(e); }).bind(this));
+       this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e)  }).bind(this));
        this.settings.on("change", (function(e){ this.updateOpacity(e)}).bind(this),
                         ["pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity", "backgroundWireframeOpacity"]);
        if ( data != undefined && Object.keys(data).length > 0)
@@ -913,9 +914,8 @@ moduleExporter(
 
        var intersected = this.getIntersection([this.groups.front]);
 
-       if (this.dispatch['click'] != undefined && intersected != undefined ) {
-         if (intersected['highlight'])
-           this.dispatch['click']([intersected.label, intersected.object.uid]);
+       if (intersected != undefined && intersected['highlight'])
+           this.uiVars.selected = intersected.object.uid;
        }
      }
 
@@ -940,9 +940,7 @@ moduleExporter(
        if (intersected != undefined ) {
          if (!intersected['highlight'])
            return;
-         this.togglePin(x.uid);
-         if (this.dispatch['dblclick'] !== undefined )
-           this.dispatch['dblclick'](intersected.uid, intersected.name, this.meshDict[intersected.uid]['pinned']);
+         this.togglePin(intersected);
        }
      }
 
