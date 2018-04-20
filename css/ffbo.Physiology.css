@@ -1,0 +1,64 @@
+
+.swiper-container {
+    width: 100%;
+    /*padding-top: 50px;
+    padding-bottom: 50px;*/
+    margin-top: 50px;
+/*    margin-left: 30px;
+    padding-right: 30px;		    */
+}
+.swiper-slide {
+    background-position: center;
+    background-size: cover;
+    width: 30%;
+    /*height: 600px !important;*/
+    background-color: rgb(0, 0, 0);
+}
+
+.swiper-slide.selected{
+    background-color: rgb(30, 30, 30);
+}
+
+.swiper-slide img{
+    padding: 20px;
+    width: 100%;
+}
+
+#info-physiology{
+   padding-left: 15px;
+   margin-right:15px;
+}
+.add_to_list {
+    position: relative;
+    padding: 20px;
+    /*top: -70px;*/
+}
+
+
+.dataset_list{
+    padding: 50px;
+}
+.dataset_list a{
+    margin-top: 15px;
+}
+#dataset_listing{
+    padding: 10px;
+    border-style: solid;
+    border-color: rgb(80, 80, 80);
+    color: rgb(200, 200, 200);
+    background-color: rgb(20, 20, 30);
+    border-radius: 15px;
+}
+
+#dataset_listing p{
+    margin-left: 5px;
+}
+
+.switch2d_3d{
+    list-style: none;
+    padding-top: 20px;
+    margin-left: 15%;
+}
+.switch2d_3d li{
+    display: inline;
+}

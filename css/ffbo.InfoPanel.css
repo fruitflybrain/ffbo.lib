@@ -1,0 +1,210 @@
+
+
+/*
+Info Panel
+*/
+
+#presyn-N{
+    max-width: 50px;
+    text-align:center;
+}
+#postsyn-N{
+    max-width: 50px;
+    text-align: center;
+}
+.info-input-span{
+    color: #999;
+    /*font-size: 1.5vw;*/
+}
+
+.info-input{
+    background: var(--srch-box-background);
+    border-color: var(--srch-box-background);
+    color: var(--srch-box-color);
+    border-width: 1px;
+    font-family: monospace;
+}
+
+.info-try {
+  font-weight: 400;
+  background: #377097;
+  color: #ccc;
+  /*font-size: 14px;*/
+  border: 5px solid #377097;
+  margin: -4px 0px 0px 10px
+}
+
+.info-try:focus,
+.info-try:active:focus,
+.info-try.active:focus {
+    outline: 0 none;
+}
+
+.info-try:hover,
+.info-try:focus {
+    color: #eee;
+}
+
+.info-try:active,
+.info-try.active {
+    background: #444;
+    color: #ddd;
+}
+
+.vis-info p {
+  margin-left: 10px;
+  margin-right: 10px;
+
+}
+
+.vis-info table > tbody > tr > td {
+    color: var(--font-color-p);
+}
+
+.table-inverse td, .table-inverse th, .table-inverse thead th {
+    border-color: #55595c;
+}
+
+.table-inverse th{
+    color: #eee;
+}
+.table-inverse {
+    color: #eceeef;
+}
+
+.table-custom-striped td, .table-custom-striped th {
+    text-align:center;
+}
+
+.table-custom-striped td:first-child, .table-custom-striped th:first-child {
+    text-align:left;
+}
+
+.table-custom-striped td:last-child, .table-custom-striped th:last-child {
+    text-align:right;
+    padding-right: 20px;
+}
+
+
+.vis-info {
+  background: var(--infobar-background-color);
+  border: 3px solid #1f1f1f;
+  border-radius: 3px;
+  left: 10px;
+  top: 20px;
+  position: fixed;
+  z-index: 150;
+  -webkit-transition: width .5s, height .5s;
+  transition: width .5s, height .5s;
+  box-shadow: 0px 0px 4px var(--infobar-background-color);
+}
+
+.vis-info-sm {
+  height: 35px;
+  width: 250px;
+  top: 60px;
+  overflow: hidden;
+}
+
+/* .vis-info-sm:hover */
+.vis-info-pin {
+  /*height: 400px;*/
+  top: 60px;
+  height: calc(100vh - 120px);
+  width: calc(var(--boundary-horizontal) - 15px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.vis-info > ul {
+  height: 40px;
+  width: 100%;
+  position: absolute;
+  margin-bottom: 0px;
+}
+.vis-info > ul > li:first-child > p {
+  margin-top: 7px;
+  /*margin-left: 5px;*/
+  color: var(--font-color-p);
+}
+.vis-info > ul > li > p {
+  margin-top: 5px;
+  /*margin-left: 5px;*/
+  color: white;
+}
+
+/*.vis-info > ul > li:first-child {
+  width: calc( 95% - 50px );
+}*/
+
+.vis-info > ul > li:last-child {
+  padding-right: 0px;
+  float:right;
+}
+
+.vis-info > ul > li:last-child > .btn {
+    margin-top: 7px;
+    margin-right: 2px;
+    background: transparent;
+    color: #aaa;
+    /*font-size: 15px;*/
+}
+
+.vis-info > ul > li:last-child > .btn:focus,
+.vis-info > ul > li:last-child > .btn:active:focus,
+.vis-info > ul > li:last-child > .btn.active:focus {
+    outline: 0 none;
+}
+
+.vis-info > ul > li:last-child > .btn:hover {
+    color: #eee;
+}
+
+.vis-info-pin > ul > li:first-child > p {
+  display: none;
+}
+
+.vis-info-sm > *:nth-child(2) {
+  display: none;
+}
+
+
+.ffbo-intro > p,
+.ffbo-intro > h1,
+.ffbo-intro > h2,
+.ffbo-intro > h3,
+.ffbo-intro > h4,
+.ffbo-intro > h5 {
+  margin-left: 10px;
+  margin-right: 15px;
+}
+
+#neu-id {
+  margin-top: 5px;
+}
+
+@media screen and (max-width: 768px) {
+  .vis-info-sm {
+    width: 40%;
+  }
+}
+
+@media screen and (max-width: 780px) and (orientation:portrait) {
+  .vis-hf-r,
+  .vis-3d-hf {
+    height: calc( 50vh - 65px ) !important;
+    width: calc( 100% - 20px ) !important;
+    top: calc( 50vh + 5px ) !important;
+    left: 10px !important;
+  }
+  /* .vis-info-sm:hover */
+  .vis-info-pin,
+  .vis-sm:hover,
+  .vis-sm-1:hover {
+    top: 60px;
+    height: calc( 50vh - 65px );
+    width: calc( 100% - 20px );
+    overflow-y: auto;
+  }
+}
+
