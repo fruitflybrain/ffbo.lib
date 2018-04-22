@@ -890,7 +890,7 @@ moduleExporter(
        unit['object'] = new PropertyManager(object);
        unit['pinned'] = false;
 
-       if (!hasOwnProperty(unit, 'position')) {
+       if (!unit.hasOwnProperty('position')) {
          unit['position'] = new THREE.Vector3(
            0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX),
            0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY),
