@@ -890,6 +890,14 @@ moduleExporter(
        unit['object'] = new PropertyManager(object);
        unit['pinned'] = false;
 
+       if (!hasOwnProperty(unit, 'position')) {
+         unit['position'] = new THREE.Vector3(
+           0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX),
+           0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY),
+           0.5 * (unit.boundingBox.minZ + unit.boundingBox.maxZ)
+         );
+       }
+
        // TODO: move the code below to a function
        if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
          if ( this.settings.defaultOpacity !== 1)
