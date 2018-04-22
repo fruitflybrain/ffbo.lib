@@ -542,6 +542,9 @@ moduleExporter(
          setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
          setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
+         if (Array.isArray(unit.color))
+           unit.color = new THREE.Color(...unit.color);
+
          /* read mesh */
          if ( metadata.type === "morphology_json" ) {
            this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
