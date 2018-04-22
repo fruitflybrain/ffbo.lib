@@ -540,7 +540,7 @@ moduleExporter(
          setAttrIfNotDefined(unit, 'highlight', true);
          setAttrIfNotDefined(unit, 'background', false);
          setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-         setAttrIfNotDefined(unit, 'label', getAttr(unit, 'name', key));
+         setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
          /* read mesh */
          if ( metadata.type === "morphology_json" ) {
@@ -884,10 +884,9 @@ moduleExporter(
 
      FFBOMesh3D.prototype._registerObject = function(key, unit, object) {
 
-       /* create label for tooltip if not provided */
-       object.name = unit.label;
-       object.uid = key;
+       object.rid = key; // needed rid for raycaster reference
 
+       unit['rid'] = key;
        unit['object'] = new PropertyManager(object);
        unit['pinned'] = false;
 
@@ -915,7 +914,7 @@ moduleExporter(
        var intersected = this.getIntersection([this.groups.front]);
 
        if (intersected != undefined && intersected['highlight']){
-           this.uiVars.selected = intersected.object.uid;
+           this.uiVars.selected = intersected.rid;
        }
      }
 
@@ -1068,8 +1067,8 @@ moduleExporter(
          var intersects = this.raycaster.intersectObjects( group.children, true);
          if ( intersects.length > 0 ) {
            object = intersects[0].object.parent;
-           if (object.hasOwnProperty('uid') && object.uid in this.meshDict) {
-             val =  this.meshDict[object.uid];
+           if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
+             val =  this.meshDict[object.rid];
              break;
            }
          }
@@ -1226,13 +1225,13 @@ moduleExporter(
          d = this.meshDict[d];
 
        if ((d['highlight']) !== false) {
-         this.states.highlight = [d['object']['uid'], d['object']['visible']];
+         this.states.highlight = [d['rid'], d['object']['visible']];
        } else
          this.states.highlight = false;
 
 
        if (updatePos !== undefined && updatePos === true) {
-         var pos = this.getNeuronScreenPosition(d['object']['uid']);
+         var pos = this.getNeuronScreenPosition(d['rid']);
          this.uiVars.toolTipPosition.x = pos.x;
          this.uiVars.toolTipPosition.y = pos.y;
        }
