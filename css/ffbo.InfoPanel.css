@@ -133,9 +133,9 @@ Info Panel
   color: white;
 }
 
-/*.vis-info > ul > li:first-child {
+.vis-info > #info-pin-div > ul > li:first-child {
   width: calc( 95% - 50px );
-}*/
+}
 
 #info-pin-div > ul > li:last-child {
   padding-right: 0px;
@@ -160,9 +160,9 @@ Info Panel
     color: #eee;
 }
 
-/*.vis-info-pin > ul > li:first-child > p {
+.vis-info-pin > #info-pin-div > ul > li:first-child > p {
   display: none;
-}*/
+}
 
 .vis-info-sm > *:nth-child(2) {
   display: none;
