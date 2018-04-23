@@ -1,52 +1,6 @@
 /*
  * Prevent mm-menu being showed during loading
  */
- #ui_menu_nav:not( .mm-menu ) {
-    display: none;
-}
-#sidebar-wrapper:not( .mm-menu ) {
-    display: none;
-}
-@media screen and (max-width: 512px) {
-    html.mm-opening .mm-slideout .ffbo-app {
-        display: none;
-    }
-    html.mm-opening .mm-slideout .navbar-brand {
-        display: none;
-    }
-}
-@media screen and (max-width: 768px) {
-    .mm-menu.mm-menu_offcanvas{
-        width: 170px !important;
-    }
-    html.mm-right.mm-opening .mm-slideout{
-        /*transform: translate3d(-0px,0,0) !important;*/
-        width: calc( 100% - 170px ) !important;
-    }
-    html.mm-opening .mm-slideout{
-        /*transform: translate3d(170px,0,0) !important;*/
-        width: calc( 100% - 170px ) !important;
-    }
-}
-@media screen and (min-width: 769px) {
-    .mm-menu.mm-menu_offcanvas{
-        width: 270px !important;
-    }
-    html.mm-right.mm-wrapper_opening .mm-slideout{
-        /*transform: translate3d(-0px,0,0) !important;*/
-        width: calc( 100% - 270px ) !important;
-    }
-    html.mm-wrapper_opening .mm-slideout{
-        /*transform: translate3d(270px,0,0) !important;*/
-        width: calc( 100% - 270px ) !important;
-    }
-}
-@media screen and (min-width: 900px) and (max-width: 1200px) {
-    html.mm-wrapper_opening .mm-slideout .navbar-fixed-bottom > ul > li:first-child,
-    html.mm-wrapper_opening .mm-slideout div.navbar-collapse.collapse {
-        display: none !important;
-    }
-}
 #notifications {
   cursor: pointer;
   position: fixed;
