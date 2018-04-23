@@ -116,18 +116,18 @@ Info Panel
   overflow-y: auto;
 }
 
-.vis-info > ul {
+#info-pin-div > ul {
   height: 40px;
   width: 100%;
-  position: absolute;
-  margin-bottom: 0px;
+  /* position: absolute; */
+  margin-bottom: -5px;
 }
-.vis-info > ul > li:first-child > p {
+#info-pin-div > ul > li:first-child > p {
   margin-top: 7px;
   /*margin-left: 5px;*/
   color: var(--font-color-p);
 }
-.vis-info > ul > li > p {
+#info-pin-div > ul > li > p {
   margin-top: 5px;
   /*margin-left: 5px;*/
   color: white;
@@ -137,12 +137,12 @@ Info Panel
   width: calc( 95% - 50px );
 }*/
 
-.vis-info > ul > li:last-child {
+#info-pin-div > ul > li:last-child {
   padding-right: 0px;
   float:right;
 }
 
-.vis-info > ul > li:last-child > .btn {
+#info-pin-div > ul > li:last-child > .btn {
     margin-top: 7px;
     margin-right: 2px;
     background: transparent;
@@ -150,19 +150,19 @@ Info Panel
     /*font-size: 15px;*/
 }
 
-.vis-info > ul > li:last-child > .btn:focus,
-.vis-info > ul > li:last-child > .btn:active:focus,
-.vis-info > ul > li:last-child > .btn.active:focus {
+#info-pin-div > ul > li:last-child > .btn:focus,
+#info-pin-div > ul > li:last-child > .btn:active:focus,
+#info-pin-div > ul > li:last-child > .btn.active:focus {
     outline: 0 none;
 }
 
-.vis-info > ul > li:last-child > .btn:hover {
+#info-pin-div > ul > li:last-child > .btn:hover {
     color: #eee;
 }
 
-.vis-info-pin > ul > li:first-child > p {
+/*.vis-info-pin > ul > li:first-child > p {
   display: none;
-}
+}*/
 
 .vis-info-sm > *:nth-child(2) {
   display: none;

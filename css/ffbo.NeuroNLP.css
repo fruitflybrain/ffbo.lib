@@ -44,15 +44,15 @@ h1 {
 
 @media (min-width: 43.75em) {
     h1 {
-	font-size: 2.5em;
-	line-height: 1.125;
+  font-size: 2.5em;
+  line-height: 1.125;
     }
 }
 
 @media (min-width: 56.25em) {
     h1 {
-	font-size: 3em;
-	line-height: 1.05;
+  font-size: 3em;
+  line-height: 1.05;
     }
 }
 
@@ -63,15 +63,15 @@ h2 {
 
 @media (min-width: 43.75em) {
     h2 {
-	font-size: 2em;
-	line-height: 1.25;
+  font-size: 2em;
+  line-height: 1.25;
     }
 }
 
 @media (min-width: 56.25em) {
     h2 {
-	font-size: 2.25em;
-	line-height: 1.25;
+  font-size: 2.25em;
+  line-height: 1.25;
     }
 }
 
@@ -82,15 +82,15 @@ h3 {
 
 @media (min-width: 43.75em) {
     h3 {
-	font-size: 1.5em;
-	line-height: 1.25;
+  font-size: 1.5em;
+  line-height: 1.25;
     }
 }
 
 @media (min-width: 56.25em) {
     h3 {
-	font-size: 1.75em;
-	line-height: 1.25;
+  font-size: 1.75em;
+  line-height: 1.25;
     }
 }
 
@@ -101,16 +101,16 @@ h4{
 
 @media (min-width: 43.75em) {
     h4, th {
-	line-height: 1.22222222;
+  line-height: 1.22222222;
     }
 }
 
 @media screen and (min-width: 1278px)  {
     :root{
-	--boundary-horizontal: 35vw;
+  --boundary-horizontal: 35vw;
     }
 }
-	
+
 a{
   /*font-family: 'Rajdhani', sans-serif;*/
   font-family: var(--h-font-family);
@@ -138,7 +138,7 @@ h5{
     /* font-family: 'Saira', sans-serif; */
   font-family: var(--h-font-family);
   color: var(--font-color-h5);
-  
+
   margin-left: 5px;
   margin-top: 20px;
   /*font-size: 16px;*/
@@ -224,7 +224,7 @@ Logo and Footer
   /*
    * Navigation bar
    */
-  
+
   .navbar-ffbo {
     border: none;
     background: var(--background-color);
@@ -239,7 +239,7 @@ Logo and Footer
     font-size: 30;
     color: var(--font-color-navbar);
   }
-  
+
   .navbar-brand {
     color: var(--font-color-brand) !important;
     padding: 15px 0px;
@@ -257,7 +257,7 @@ Logo and Footer
   .navbar-header a:hover {
     color: #ababab;
   }
-  
+
   /*
   Nav Menu Custom Collapse Point
   */
@@ -297,10 +297,10 @@ Logo and Footer
       display:block !important;
       }
   }
-  
+
 
 /*
- <TINGKAI> 
+ <TINGKAI>
   Following css is for overview panel only
   Dumped from lffbo.css
 */
@@ -308,21 +308,21 @@ Logo and Footer
 #overview-summary-wrapper {
 
     background-color: #000;
-  
+
     display: grid;
-  
+
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto;
-    grid-gap: 20px; 
+    grid-gap: 20px;
     grid-template-areas:
     "card1 card2 card3";
   }
   #overview-neuron-card {grid-area : "card1";}
   #overview-synapse-card {grid-area : "card2";}
   #overview-tag-card {grid-area : "card3";}
-  
-  
-  
+
+
+
   blockquote {
     background: rgba(0,182,240,0.2);
     border-left: 10px solid rgba(0,182,240,0.6);
@@ -337,13 +337,13 @@ Logo and Footer
     /*line-height: 0.1em;*/
     margin-right: 0.25em;
     vertical-align: -0.4em;
-  
+
   }
   blockquote p {
       display: inline;
-  
+
   }
-  
+
   #overview-summary-wrapper .card {
     background: var(--card-background);
     text-decoration: none;
@@ -353,37 +353,37 @@ Logo and Footer
     flex-direction: column;
     align-items: space-between;
     min-height: 100%;
-  
+
     position: relative;
     top: 0;
     transition: all .1s ease-in;
   }
-  
+
   #overview-summary-wrapper .card:hover {
     top: -2px;
   }
-  
+
   #overview-summary-wrapper .card:hover h4{
       color: var(--highlight-color);
       text-shadow:0px 0px 3px var(--highlight-color);
   }
-  
+
   #overview-summary-wrapper .card article {
     padding: 20px;
-  
+
     display: flex;
     flex: 1;
-  
+
     flex-direction: column;
     justify-content: space-between;
   }
-  
+
   #overview-summary-wrapper .card .thumb {
     padding-bottom: 60%;
     background-size: cover;
     background-position: center center;
   }
-  
+
   #overview-summary-wrapper .card h4 {
     font-family: var(--h-font-family);
     align-self: center;
@@ -391,15 +391,15 @@ Logo and Footer
     margin: 0;
     /*color: var(--font-color-blue);*/
   }
-  
+
   #overview-summary-wrapper .card a {
     align-self: center;
     text-decoration: none;
-  
+
   }
-  
+
   #overview-summary-wrapper .card p {
-    flex: 1; 
+    flex: 1;
     /*font-size: 16px;*/
     line-height: 1.4;
     /* color: var(--font-color-grey);*/
@@ -407,14 +407,14 @@ Logo and Footer
     justify-self:center;
     padding-left:20px;
     padding-right: 20px;
-  
+
   }
-  
+
   #overview-summary-wrapper .card hr{
     width:80%;
   }
-  
-  
+
+
   /*
     Intro Text class
     h1
@@ -422,52 +422,52 @@ Logo and Footer
     band2: article, images
     ...
   */
-  
+
   .overview-text {
       padding: 10px 20px 10px 10px;
       height: auto;
-      
+
     display: flex;
     flex-direction:column;
-  
+
     align-items: flex-start;
     justify-content: left;
   }
-  
+
   .overview-text band {
     display: flex;
     flex-direction: row;
-  
+
     align-items: flex-start;
     justify-content: space-between;
-    
+
   }
-  
+
   @media screen and (max-width:768px){
       .overview-text band{
       display: flex;
       flex-direction: column;
-      
+
       align-items: flex-start;
       justify-content: center;
-      
+
       }
   }
-  
-  .overview-text band >images { 
+
+  .overview-text band >images {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
   }
-  
+
   .overview-text h4 {
     font-family: var(--h-font-family);
    /* font-size: 24px;*/
     margin: 0;
    /* color: var(--font-color-blue-l);*/
   }
-  
+
   .overview-text band > article > ul > li {
     /* font-size: 16px; */
     line-height: 1.4;
@@ -475,25 +475,25 @@ Logo and Footer
     font-family: var(--u-font-family);
     margin-left: 20px;
   }
-  
+
   .overview-text band > article > p {
     /* font-size: 16px; */
-    line-height: 1.4;  
-    color: var(--font-color-p); 
+    line-height: 1.4;
+    color: var(--font-color-p);
   }
   .overview-text band > article > li {
     /* font-size: 16px; */
-    line-height: 1.4;  
-    color: var(--font-color-p); 
+    line-height: 1.4;
+    color: var(--font-color-p);
   }
-  
+
   .overview-text band > article > ul {
     /* font-size: 16px; */
       /*line-height: 1.4;*/
     padding: 0px;
     color: var(--font-color-p);
   }
-  
+
   .overview-text band > images >img {
       width: auto;
       min-width: 20vw;
@@ -501,7 +501,7 @@ Logo and Footer
       max-height:50vh;
       margin:20px 20px 20px 20px;
   }
-  
+
   @media screen and (max-width:768px){
       .overview-text band > images > img {
       display: block;
@@ -511,13 +511,13 @@ Logo and Footer
       max-height: 50vh;
       }
   }
-  
-  
-  
+
+
+
   .overview-summary a{
     text-decoration: none;
   }
-  
+
   .overview-text blockquote> p {
     color: #a7a7a7;
   }
@@ -532,11 +532,11 @@ Logo and Footer
       background: #222;
   }
   */
-  
+
   #overview-summary-wrapper{
       height: 40%;
   }
-  
+
   .slider-bar{
       top: 60px;
       width: 15px;
@@ -546,26 +546,26 @@ Logo and Footer
       position: fixed;
       height: calc( 100vh - 120px );
   }
-  
+
   #info_panel_dragger {
       left: calc( var(--boundary-horizontal) - 15px );
   }
-  
-  
+
+
   @media screen and (orientation:portrait) {
     .slider-bar {
       display: none;
     }
   }
-  
+
   .notransition {
     -webkit-transition: none !important;
     -moz-transition: none !important;
     -o-transition: none !important;
     transition: none !important;
   }
-  
-  
+
+
   #neuronlp-switch {
       width: 300px;
       left: calc( 50% - 150px ) !important;
@@ -574,12 +574,12 @@ Logo and Footer
       border: none;
       background: transparent;
       overflow: hidden;
-  }    
+  }
   #neuronlp-switch div {
       border: none;
       display: flex;
       flex-direction: column;
-  
+
       align-items: center;
       justify-content: center;
   }
@@ -609,8 +609,8 @@ Logo and Footer
   #neuronlp-switch div .info-try {
       width: 200px;
   }
-  
-  
+
+
   @media screen and (max-width: 768px){
       #neuronlp-switch{
       width: 300px;
@@ -620,25 +620,25 @@ Logo and Footer
   #ui_menu_nav a, span {
       font-size: 15px;
   }
-  
+
   .glyphicon {
       font-size: 14px;
   }
-  
-  
+
+
   .navbar a {
       font-size: 15px;
   }
-  
-  .vis-info-sm .ps__scrollbar-x-rail, 
+
+  .vis-info-sm .ps__scrollbar-x-rail,
   .vis-info-sm .ps__scrollbar-y-rail {
     display: none !important;
   }
-  
+
   .ui-loader {
     display: none !important;
   }
-  
+
   #announce-panel {
       width: 60%;
       left: 50%;
@@ -654,9 +654,9 @@ Logo and Footer
       -webkit-overflow-scrolling: touch;
       overflow-y: scroll;
   }
-  
-  
-  
+
+
+
 
 /*
  * Navbar Fixed Bottom
@@ -856,10 +856,10 @@ Logo and Footer
 
 @media screen and (max-width: 768px) {
     .overlay{
-	width: 96%;
-	left: 2%;
-	top: 15%;
-	height: 70%;
+  width: 96%;
+  left: 2%;
+  top: 15%;
+  height: 70%;
     }
 }
 
@@ -1091,7 +1091,7 @@ Arch Demo
 .vis-info::-webkit-scrollbar,
 .demo-table-wrapper::-webkit-scrollbar
 {
-  width: 12px; 
+  width: 12px;
   height: 0px;
 }
 .vis-info::-webkit-scrollbar-track,
@@ -1111,7 +1111,7 @@ Arch Demo
   border-radius: 5px;
 }
 
-.mm-panels {
+#ui_menu_nav {
   /*border-left: #434343 1px solid;*/
   background: var(--background-color);
  }
@@ -1119,8 +1119,8 @@ Arch Demo
 .mm-menu .mm-listview > li .mm-next:after {
   border-color: #545454;
 }
-.mm-panels >  .mm-panel  span,
-.mm-panels >  .mm-panel  a {
+#ui_menu_nav  .mm-panel  span,
+#ui_menu_nav  .mm-panel  a {
   color: var(--font-color-navbar);
 }
 
@@ -1485,4 +1485,3 @@ Arch Demo
     height: 30px;
     bottom: 2px;
 }
-
