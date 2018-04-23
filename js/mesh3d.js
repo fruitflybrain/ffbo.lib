@@ -1380,7 +1380,7 @@ moduleExporter(
      FFBOMesh3D.prototype.getUnpinned = function() {
 
        var list = []
-       for (var key of Object.keys(this.meshDict))
+       for (var key of Object.keys(this.meshDict)) {
          if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned'])
            list.push(key);
        }
