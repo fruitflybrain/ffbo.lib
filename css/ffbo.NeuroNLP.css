@@ -547,7 +547,7 @@ Logo and Footer
       height: calc( 100vh - 120px );
   }
 
-  #info_panel_dragger {
+  #info-panel-dragger {
       left: calc( var(--boundary-horizontal) - 15px );
   }
 
