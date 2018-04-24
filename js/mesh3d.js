@@ -228,7 +228,7 @@ moduleExporter(
          'add': (function (func) { this.meshDict.on('add', func); }).bind(this),
          'remove': (function (func) { this.meshDict.on('remove', func); }).bind(this),
          'pinned': (function (func) { this.meshDict.on('change', func, 'pinned'); }).bind(this),
-         'visible': (function (func) { this.meshDict.on('change', func, 'visible'); }).bind(this),
+         'visibility': (function (func) { this.meshDict.on('change', func, 'visibility'); }).bind(this),
          'num': (function (func) { this.uiVars.on('change', func, 'frontNum'); }).bind(this),
          'highlight': (function (func) { this.states.on('change', func, 'highlight'); }).bind(this),
          'click': (function (func) { this.uiVars.on('change', func, 'selected'); }).bind(this)
@@ -237,6 +237,7 @@ moduleExporter(
        this.on('add', (function (e) { this.onAddMesh(e); }).bind(this));
        this.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
        this.on('pinned', (function (e) { this.updatePinned(e); this.updateOpacity(e); }).bind(this));
+       this.on('visibility', (function (e) { this.onUpdateVisibility(e.path[0]) }).bind(this));
        this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
        this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e)  }).bind(this));
        this.settings.on("change", (function(e){ this.updateOpacity(e)}).bind(this),
@@ -538,6 +539,7 @@ moduleExporter(
          unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
 
          setAttrIfNotDefined(unit, 'highlight', true);
+         setAttrIfNotDefined(unit, 'visibility', true);
          setAttrIfNotDefined(unit, 'background', false);
          setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
          setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
@@ -581,7 +583,7 @@ moduleExporter(
      FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
        this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
        for(var key in this.meshDict){
-         if( this.meshDict[key].object.visible ){
+         if( this.meshDict[key].visibility ){
            if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
              this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
            if ( this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX )
@@ -890,7 +892,7 @@ moduleExporter(
        object.rid = key; // needed rid for raycaster reference
 
        unit['rid'] = key;
-       unit['object'] = new PropertyManager(object);
+       unit['object'] = object;
        unit['pinned'] = false;
 
        if (!unit.hasOwnProperty('position')) {
@@ -1089,22 +1091,18 @@ moduleExporter(
 
      FFBOMesh3D.prototype.showAll = function() {
        for (var key in this.meshDict)
-         this.meshDict[key].object.visible = true;
-       if(this.dispatch['showAll'] !== undefined)
-         this.dispatch['showAll']();
+         this.meshDict[key].visibility = true;
      };
 
      FFBOMesh3D.prototype.hideAll = function() {
        for (var key in this.meshDict)
          if (!this.meshDict[key]['pinned'])
-           this.meshDict[key].object.visible = false;
-       if(this.dispatch['hideAll'] !== undefined)
-         this.dispatch['hideAll']();
+           this.meshDict[key].visibility = false;
      };
 
      FFBOMesh3D.prototype.export_state = function() {
 
-       state_metadata = {'color':{},'pin':{},'visible':{},'camera':{'position':{},'up':{}},'target':{}};
+       state_metadata = {'color':{},'pin':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
        state_metadata['camera']['position']['x'] = this.camera.position.x;
        state_metadata['camera']['position']['y'] = this.camera.position.y;
        state_metadata['camera']['position']['z'] = this.camera.position.z;
@@ -1122,7 +1120,7 @@ moduleExporter(
        for (var key in this.meshDict) {
          if (this.meshDict.hasOwnProperty(key)) {
            state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
-           state_metadata['visible'][key] = this.meshDict[key].object.visible;
+           state_metadata['visibility'][key] = this.meshDict[key].visibility;
          }
        }
        return state_metadata;
@@ -1159,7 +1157,8 @@ moduleExporter(
            }
            meshobj.children[j].geometry.colorsNeedUpdate = true;
          }
-         meshobj.visible = state_metadata['visible'][key];
+         this.meshDict[key].visibility = state_metadata['visibility'][key];
+
        }
      }
 
@@ -1170,7 +1169,7 @@ moduleExporter(
        for (var i = 0; i < id.length; ++i ) {
          if ( !(id[i] in this.meshDict ) )
            continue;
-         this.meshDict[id[i]].object.visible = true;
+         this.meshDict[id[i]].visibility = true;
        }
      }
 
@@ -1181,7 +1180,7 @@ moduleExporter(
        for (var i = 0; i < id.length; ++i ) {
          if ( !(id[i] in this.meshDict ) )
            continue;
-         this.meshDict[id[i]].object.visible = false;
+         this.meshDict[id[i]].visibility = false;
        }
      }
 
@@ -1222,7 +1221,11 @@ moduleExporter(
 
      FFBOMesh3D.prototype.toggleVis = function(key) {
        if (key in this.meshDict)
-         this.meshDict[key].object.visible = !this.meshDict[key].object.visible;
+         this.meshDict[key].visibility = !this.meshDict[key].visibility;
+     }
+
+     FFBOMesh3D.prototype.onUpdateVisibility = function(key) {
+        this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
      }
 
      FFBOMesh3D.prototype.highlight = function(d, updatePos) {
@@ -1236,7 +1239,7 @@ moduleExporter(
          d = this.meshDict[d];
 
        if ((d['highlight']) !== false) {
-         this.states.highlight = [d['rid'], d['object']['visible']];
+         this.states.highlight = d['rid'];
        } else
          this.states.highlight = false;
 
@@ -1252,19 +1255,19 @@ moduleExporter(
      FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
 
        if (e.old_value)
-         this.meshDict[e.old_value[0]]['object']['visible'] = e.old_value[1];
+         this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
        if (e.value === false) {
          this.renderer.domElement.style.cursor = "auto";
        } else {
          this.renderer.domElement.style.cursor = "pointer";
-         this.meshDict[e.value[0]]['object']['visible'] = true;
+         this.meshDict[e.value]['object']['visible'] = true;
        }
      }
 
      FFBOMesh3D.prototype.updateOpacity = function(e) {
        // Entering highlight mode or highlighted obj change
        if (e.prop == 'highlight'  && this.states.highlight) {
-         var list = ((e !== undefined) && e.old_value[0]) ? [e.old_value[0]] : Object.keys(this.meshDict);
+         var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
          for (const key of list) {
            var val = this.meshDict[key];
            var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
@@ -1278,7 +1281,7 @@ moduleExporter(
              val.object.children[i].material.depthTest = depthTest;
            }
          }
-         var val = this.meshDict[this.states.highlight[0]];
+         var val = this.meshDict[this.states.highlight];
          for (var i in val.object.children) {
            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
            val.object.children[i].material.depthTest = false;
