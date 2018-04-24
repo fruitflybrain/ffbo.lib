@@ -39,11 +39,11 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     lh.on('change', function(e){
       light = this[e['path'][0]];
       if(e['value']){
-        light.intensity = light._intensity
+        light.object.intensity = light._intensity
       }
       else{
-        light._intensity = light.intensity;
-        light.intensity = 0;
+        light._intensity = light.object.intensity;
+        light.object.intensity = 0;
       }
     }.bind(lh), 'enabled')
 
@@ -73,10 +73,10 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     intensity = getProperty(properties, 'intensity', 1.0)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager(new THREE.AmbientLight(color, intensity));
+    this[key] = {object: new THREE.AmbientLight(color, intensity)}
     this[key]._intensity = intensity
     this[key].enabled = true;
-    scene.add(this[key])
+    scene.add(this[key].object)
     return this[key]
   }
 
@@ -90,11 +90,13 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     target = getProperty(properties, 'target', new THREE.Vector3(0,0,0))
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager(new THREE.DirectionalLight(color, intensity));
-    this[key].position.copy(position)
-    this[key].target.position.copy(target)
-    scene.add(this[key])
-    scene.add(this[key].target)
+    this[key] = {object: new THREE.DirectionalLight(color, intensity)};
+    this[key].object.position.copy(position)
+    this[key].object.target.position.copy(target)
+
+    this[key].enabled = true;
+    scene.add(this[key].object)
+    scene.add(this[key].object.target)
     return this[key]
   }
 
@@ -110,9 +112,9 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     distance = position.length() * light.distanceFactor;
     position.add(target);
 
-    light.position.copy(position);
-    light.target.position.copy(target);
-    light.distance = distance;
+    light.object.position.copy(position);
+    light.object.target.position.copy(target);
+    light.object.distance = distance;
   }
 
 
@@ -130,11 +132,11 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     track = getProperty(properties, 'track', true)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager(new THREE.SpotLight(color, intensity));
-    this[key].angle = angle;
-    this[key].decay = decay;
-    this[key].enabled = true;
+    this[key] = {object = new THREE.SpotLight(color, intensity)};
+    this[key].object.angle = angle;
+    this[key].object.decay = decay;
 
+    this[key].enabled = true;
     this[key].distanceFactor = distanceFactor;
     this[key].posAngle1 = posAngle1;
     this[key].posAngle2 = posAngle2;
@@ -145,8 +147,8 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     this._updateSpotLight(this[key])
 
 
-    scene.add(this[key])
-    scene.add(this[key].target)
+    scene.add(this[key].object)
+    scene.add(this[key].object.target)
     this[key].track = track;
     return this[key];
   }
