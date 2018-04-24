@@ -816,6 +816,14 @@ Logo and Footer
     height: 1px;
 }
 
+#ui-blocker{
+    width: 100vw;
+    height:100vh;
+    z-index:999999;
+    background-color: rgba(0,0,0,0.7);
+    position: fixed;
+}
+
 /*
  * Overlay
  */

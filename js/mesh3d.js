@@ -268,7 +268,10 @@ moduleExporter(
        var height = this.container.clientHeight;
        var width = this.container.clientWidth;
 
-       camera = new THREE.PerspectiveCamera(20, width / height, 0.1, 20000);
+       this.fov = 20;
+       this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
+
+       camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
        camera.position.z = 1800;
 
        if (width<768 && width/height < 1)
@@ -490,94 +493,97 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.addJson = function(json) {
-       if ( (json === undefined) || !("ffbo_json" in json) ) {
-         console.log( 'mesh json is undefined' );
-         return;
-       }
-       var metadata = {
-         "type": undefined,
-         "visibility": true,
-         "colormap": this._metadata.colormap,
-         "colororder": "random",
-         "showAfterLoadAll": false,
-       }
-       for (var key in metadata)
-         if ( (key in json) && (json[key] !== undefined) )
-           metadata[key] = json[key];
-
-       if ( ('reset' in json) && json.reset )
-         this.reset();
-       /* set colormap */
-       var keyList = Object.keys(json.ffbo_json);
-       var colorNum, id2float, lut;
-
-       if ( metadata.colororder === "order" ) {
-         colorNum = keyList.length;
-         id2float = function(i) {return i/colorNum};
-       } else {
-         colorNum = this.maxColorNum;
-         id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
-       }
-
-       if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
-         colorNum = keyList.length;
-         lut = new THREE.Lut( metadata.colormap, colorNum);
-         lut.setMin( 0 );
-         lut.setMax( 1 );
-       } else
-         lut = this.lut;
-       if ( metadata.showAfterLoadAll )
-         this.groups.front.visible = false;
-
-       for ( var i = 0; i < keyList.length; ++i ) {
-         var key = keyList[i];
-         if (key in this.meshDict ) {
-           console.log( 'mesh object already exists... skip rendering...' )
-           continue;
+       return new Promise((function(resolve) {
+         if ( (json === undefined) || !("ffbo_json" in json) ) {
+           console.log( 'mesh json is undefined' );
+           return;
          }
-         var unit = new PropertyManager(json.ffbo_json[key]);
-         unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
+         var metadata = {
+           "type": undefined,
+           "visibility": true,
+           "colormap": this._metadata.colormap,
+           "colororder": "random",
+           "showAfterLoadAll": false,
+         }
+         for (var key in metadata)
+           if ( (key in json) && (json[key] !== undefined) )
+             metadata[key] = json[key];
 
-         setAttrIfNotDefined(unit, 'highlight', true);
-         setAttrIfNotDefined(unit, 'visibility', true);
-         setAttrIfNotDefined(unit, 'background', false);
-         setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-         setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+         if ( ('reset' in json) && json.reset )
+           this.reset();
+         /* set colormap */
+         var keyList = Object.keys(json.ffbo_json);
+         var colorNum, id2float, lut;
 
-         if (Array.isArray(unit.color))
-           unit.color = new THREE.Color(...unit.color);
-
-         /* read mesh */
-         if ( metadata.type === "morphology_json" ) {
-           this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
-         } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
-           console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
-           continue;
-         } else if ( 'filename' in unit ) {
-           unit['filetype'] = unit.filename.split('.').pop();
-           var loader = new THREE.FileLoader( this.loadingManager );
-           if (unit['filetype'] == "json")
-             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
-           else if (unit['filetype'] == "swc" )
-             loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
-           else {
-             console.log( 'mesh object has unrecognized data format... skip rendering' );
-             continue;
-           }
-         } else if ( 'dataStr' in unit ) {
-           if (unit['filetype']  == "json")
-             this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-           else if (unit['filetype'] == "swc" )
-             this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-           else {
-             console.log( 'mesh object has unrecognized data format... skip rendering' );
-             continue;
-           }
+         if ( metadata.colororder === "order" ) {
+           colorNum = keyList.length;
+           id2float = function(i) {return i/colorNum};
          } else {
-           console.log( 'mesh object has neither filename nor data string... skip rendering' );
-           continue;
+           colorNum = this.maxColorNum;
+           id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
          }
-       }
+
+         if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
+           colorNum = keyList.length;
+           lut = new THREE.Lut( metadata.colormap, colorNum);
+           lut.setMin( 0 );
+           lut.setMax( 1 );
+         } else
+           lut = this.lut;
+         if ( metadata.showAfterLoadAll )
+           this.groups.front.visible = false;
+
+         for ( var i = 0; i < keyList.length; ++i ) {
+           var key = keyList[i];
+           if (key in this.meshDict ) {
+             console.log( 'mesh object already exists... skip rendering...' )
+             continue;
+           }
+           var unit = new PropertyManager(json.ffbo_json[key]);
+           unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
+
+           setAttrIfNotDefined(unit, 'highlight', true);
+           setAttrIfNotDefined(unit, 'visibility', true);
+           setAttrIfNotDefined(unit, 'background', false);
+           setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
+           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+
+           if (Array.isArray(unit.color))
+             unit.color = new THREE.Color(...unit.color);
+
+           /* read mesh */
+           if ( metadata.type === "morphology_json" ) {
+             this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+           } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
+             console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
+             continue;
+           } else if ( 'filename' in unit ) {
+             unit['filetype'] = unit.filename.split('.').pop();
+             var loader = new THREE.FileLoader( this.loadingManager );
+             if (unit['filetype'] == "json")
+               loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
+             else if (unit['filetype'] == "swc" )
+               loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
+             else {
+               console.log( 'mesh object has unrecognized data format... skip rendering' );
+               continue;
+             }
+           } else if ( 'dataStr' in unit ) {
+             if (unit['filetype']  == "json")
+               this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+             else if (unit['filetype'] == "swc" )
+               this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+             else {
+               console.log( 'mesh object has unrecognized data format... skip rendering' );
+               continue;
+             }
+           } else {
+             console.log( 'mesh object has neither filename nor data string... skip rendering' );
+             continue;
+           }
+         }
+         resolve();
+       }).bind(this));
      }
 
      FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
@@ -988,7 +994,24 @@ moduleExporter(
        var height = this.container.clientHeight;
        var width = this.container.clientWidth;
 
-       this.camera.aspect = width / height;
+       aspect = width/height;
+       cam_dir = new THREE.Vector3();
+       cam_dir.subVectors(this.camera.position, this.controls.target);
+       prevDist = cam_dir.length();
+       cam_dir.normalize();
+
+       hspan = prevDist*2*Math.tan(this.prevhfov/2);
+       //vspan = prevDist*2*Math.tan(Math.PI*this.fov/2/180);
+
+       this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * aspect );
+       //span = Math.max(ffbomesh.boundingBox.maxX-ffbomesh.boundingBox.minX,ffbomesh.boundingBox.maxY-ffbomesh.boundingBox.minY, ffbomesh.boundingBox.maxZ-ffbomesh.boundingBox.minZ);
+
+       //dist = Math.max(hspan/2/Math.tan(hfov/2), vspan/2/Math.tan(Math.PI*this.fov/2/180));
+       dist = hspan/2/Math.tan(this.prevhfov/2);
+       this.camera.position.copy(this.controls.target);
+       this.camera.position.addScaledVector(cam_dir, dist);
+
+       this.camera.aspect = aspect;
        this.camera.updateProjectionMatrix();
 
        this.renderer.setSize( width, height );
