@@ -1112,6 +1112,26 @@ moduleExporter(
        return val;
      }
 
+     FFBOMesh3D.prototype.showFrontAll = function() {
+       for (var val of this.groups.front.children)
+         this.meshDict[val.rid].visibility = true;
+     };
+
+     FFBOMesh3D.prototype.hideFrontAll = function() {
+       for (var val of this.groups.front.children)
+         this.meshDict[val.rid].visibility = false;
+     };
+
+     FFBOMesh3D.prototype.showBackAll = function() {
+       for (var val of this.groups.back.children)
+         this.meshDict[val.rid].visibility = true;
+     };
+
+     FFBOMesh3D.prototype.hideBackAll = function() {
+       for (var val of this.groups.back.children)
+         this.meshDict[val.rid].visibility = false;
+     };
+
      FFBOMesh3D.prototype.showAll = function() {
        for (var key in this.meshDict)
          this.meshDict[key].visibility = true;
