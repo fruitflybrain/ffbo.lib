@@ -18,6 +18,7 @@ moduleExporter(
      "detector",
      "propertymanager",
      "lightshelper",
+     "stats",
      "lut",
      "trackballcontrols",
      "simplifymodifier",
@@ -39,7 +40,7 @@ moduleExporter(
      "unrealbloompass",
      "adaptivetonemappingpass"
    ],
-   function(THREE, Dectector, PropertyManager, FFBOLightsHelper)
+   function(THREE, Dectector, PropertyManager, FFBOLightsHelper, Stats)
    {
 
      THREE = THREE || window.THREE;
@@ -138,6 +139,11 @@ moduleExporter(
 
 
        this.container = document.getElementById( div_id );
+
+       this.stats = new Stats();
+       this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+       this.stats.dom.style.position = "relative"
+       this.container.appendChild( this.stats.dom );
 
        this.camera = this.initCamera();
 
@@ -649,13 +655,18 @@ moduleExporter(
      }
      FFBOMesh3D.prototype.animate = function() {
 
-       requestAnimationFrame( this.animate.bind(this) );
+       this.stats.begin()
 
        this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
        if( this.states.mouseOver && this.dispatch.syncControls)
          this.dispatch.syncControls(this)
 
        this.render();
+
+       this.stats.end()
+
+       requestAnimationFrame( this.animate.bind(this) );
+
      }
 
      FFBOMesh3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
@@ -1090,7 +1101,6 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.getIntersection = function(groups) {
-
        if (groups === undefined)
          return undefined;
 
@@ -1560,7 +1570,6 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.show3dToolTip = function (d) {
-
        this.toolTipDiv.style.opacity = .9;
        this.toolTipDiv.innerHTML = d;
 
