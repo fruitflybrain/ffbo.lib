@@ -475,7 +475,7 @@ moduleExporter(
          this.controls.target0.set(0,0,0);
          this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
        }
-       this.controls.reset();
+       //this.controls.reset();
      }
 
      FFBOMesh3D.prototype._configureCallbacks = function(){
