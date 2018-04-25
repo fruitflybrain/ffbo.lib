@@ -73,7 +73,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     intensity = getProperty(properties, 'intensity', 1.0)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = {object: new THREE.AmbientLight(color, intensity)}
+    this[key] = new PropertyManager({object: new THREE.AmbientLight(color, intensity)});
     this[key]._intensity = intensity
     this[key].enabled = true;
     scene.add(this[key].object)
@@ -90,7 +90,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     target = getProperty(properties, 'target', new THREE.Vector3(0,0,0))
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = {object: new THREE.DirectionalLight(color, intensity)};
+    this[key] = new PropertyManager({object: new THREE.DirectionalLight(color, intensity)});
     this[key].object.position.copy(position)
     this[key].object.target.position.copy(target)
 
@@ -132,7 +132,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     track = getProperty(properties, 'track', true)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = {object = new THREE.SpotLight(color, intensity)};
+    this[key] = new PropertyManager({object: new THREE.SpotLight(color, intensity)});
     this[key].object.angle = angle;
     this[key].object.decay = decay;
 
