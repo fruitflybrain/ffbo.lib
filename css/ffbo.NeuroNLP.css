@@ -8,7 +8,7 @@ Body and Font Sizes
 
 body {
     font-size: 16px;
-    background-color: rgb(0,0,0,1);
+    background-color: rgba(0,0,0,1);
 }
 
 body, caption, th, td, input, textarea, select, option, legend, fieldset, h1, h2, h3, h4, h5, h6 {

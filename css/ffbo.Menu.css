@@ -96,6 +96,9 @@
   cursor: pointer;
   padding: 10px 10px 10px 20px !important;
 }
+.mm-listview li a {
+  display: block-inline;
+}
 
 .navbar-collapse > ul > li {
     cursor: pointer;
