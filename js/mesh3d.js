@@ -1517,7 +1517,7 @@ moduleExporter(
 
        if (!this._metadata.allowPin)
          return;
-       for (var key of Object.keys(this.uiVars.pinnedObjects))
+       for (var key of this.uiVars.pinnedObjects)
          this.meshDict[key]['pinned'] = false;
      }
 
