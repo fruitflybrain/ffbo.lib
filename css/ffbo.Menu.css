@@ -96,8 +96,19 @@
   cursor: pointer;
   padding: 10px 10px 10px 20px !important;
 }
-.mm-listview li a {
-  display: block-inline;
+
+.mm-listview li a:not(:first-of-type) {
+  float: right;
+}
+
+.mm-listview li a.btn-pinned {
+  color: #fff;
+}
+
+.mm-listview li a.btn-unpinned {
+  margin-top: -2px;
+  transform: rotate(45deg);
+  color: #666;
 }
 
 .navbar-collapse > ul > li {
@@ -157,7 +168,7 @@
 
 .mm-listview li a,
 .mm-listview li div {
-    display: block;
+  display: inline-block;
 /*    color: #ddd; */
     text-decoration: none;
     padding: 10px 15px 10px 30px;
