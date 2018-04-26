@@ -103,7 +103,7 @@ moduleExporter(
          defaultRadius: 0.5,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.3,
-         backgroundOpacity: 0.8,
+         backgroundOpacity: 0.7,
          backgroundWireframeOpacity: 0.07,
          neuron3d: false,
          neuron3dMode: 1,
@@ -1251,6 +1251,8 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onRemoveMesh = function(e) {
        // console.log(e);
+       if (this.states.highlight == e.prop)
+         this.states.highlight = false;
        if (e.value['pinned'])
          e.value['pinned'] = false;
        var meshobj = e.value.object;
@@ -1339,10 +1341,11 @@ moduleExporter(
            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
            val.object.children[i].material.depthTest = false;
          }
-       }
+       } else if (this.states.highlight) {
+         return;
        // Either entering pinned mode or pinned mode settings changing
-       else if ((e.prop == 'highlight' && !this.states.highlight && this.states.pinned) ||
-                  (e.prop == 'pinned' && this.uiVars.pinnedObjects.size == 1) ||
+       } else if ((e.prop == 'highlight' && this.states.pinned) ||
+                  (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
                   (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
          for (const key of Object.keys(this.meshDict)) {
            var val = this.meshDict[key];
@@ -1362,8 +1365,8 @@ moduleExporter(
        // New object being pinned while already in pinned mode
        else if (e.prop == 'pinned' && this.states.pinned){
          for (var i in e.obj.object.children) {
-           e.obj.object.children[i].material.opacity = this.settings.pinOpacity;
-           e.obj.object.children[i].material.depthTest = false;
+           e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+           e.obj.object.children[i].material.depthTest = !e.value;
          }
        }
        // Default opacity value change in upinned mode or exiting highlight mode
