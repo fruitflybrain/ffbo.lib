@@ -1168,7 +1168,7 @@ moduleExporter(
        state_metadata['target']['y'] = this.controls.target.y;
        state_metadata['target']['z'] = this.controls.target.z;
 
-       state_metadata['pin'] = Array.from(this.uiVars.pinnedObjects);
+       state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
 
        for (var key in this.meshDict) {
          if (this.meshDict.hasOwnProperty(key)) {
