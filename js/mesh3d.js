@@ -447,8 +447,9 @@ moduleExporter(
        return loadingManager;
      }
 
-
-
+     FFBOMesh3D.prototype.select = function(id) {
+       this.uiVars.selected = id;
+     }
 
      FFBOMesh3D.prototype.reset = function(resetBackground) {
        resetBackground = resetBackground || false;
@@ -944,7 +945,7 @@ moduleExporter(
        var intersected = this.getIntersection([this.groups.front]);
 
        if (intersected != undefined && intersected['highlight']){
-           this.uiVars.selected = intersected.rid;
+           this.select(intersected.rid);
        }
      }
 
