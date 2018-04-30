@@ -1156,7 +1156,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.export_state = function() {
 
-       state_metadata = {'color':{},'pin':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
+       state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
        state_metadata['camera']['position']['x'] = this.camera.position.x;
        state_metadata['camera']['position']['y'] = this.camera.position.y;
        state_metadata['camera']['position']['z'] = this.camera.position.z;
