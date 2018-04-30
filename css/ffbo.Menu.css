@@ -94,7 +94,7 @@
 
 .mm-listview li a {
   cursor: pointer;
-  padding: 10px 10px 10px 20px !important;
+  padding: 5px 10px 10px 10px !important;
 }
 
 .mm-listview li a:not(:first-of-type) {
@@ -106,7 +106,9 @@
 }
 
 .mm-listview li a.btn-unpinned {
-  margin-top: -2px;
+  margin-top: 1px;
+  margin-left: -5px !important;
+  padding-right: 12px !important;
   transform: rotate(45deg);
   color: #666;
 }
