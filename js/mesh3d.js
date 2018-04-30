@@ -1154,6 +1154,19 @@ moduleExporter(
            this.meshDict[key].visibility = false;
      };
 
+     FFBOMesh3D.prototype.export_settings = function() {
+       return Object.assign({}, this.settings, {'lightsHelper': this.lightsHelper.export()});
+     }
+
+     FFBOMesh3D.prototype.import_settings = function(settings) {
+       settings = {...settings};
+       if('lightsHelper' in settings){
+         this.lightsHelper.import(settings.lightsHelper);
+         delete settings.lightsHelper;
+       }
+       Object.assign(this.settings, settings);
+     }
+
      FFBOMesh3D.prototype.export_state = function() {
 
        state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
