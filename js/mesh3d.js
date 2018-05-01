@@ -76,7 +76,7 @@ moduleExporter(
      }
      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-     function FFBOMesh3D(div_id, data, metadata) {
+     function FFBOMesh3D(div_id, data, metadata, stats=false) {
 
        /* default metadata */
        this._metadata = {
@@ -141,10 +141,11 @@ moduleExporter(
        this.container = document.getElementById( div_id );
 
        this.stats = new Stats();
-       this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-       this.stats.dom.style.position = "relative"
-       this.container.appendChild( this.stats.dom );
-
+       if(stats) {
+         this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+         this.stats.dom.style.position = "relative"
+         this.container.appendChild( this.stats.dom );
+       }
        this.camera = this.initCamera();
 
        this.renderer = this.initRenderer();
@@ -1159,7 +1160,7 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.import_settings = function(settings) {
-       settings = {...settings};
+       settings = Object.assign({}, settings);
        if('lightsHelper' in settings){
          this.lightsHelper.import(settings.lightsHelper);
          delete settings.lightsHelper;
