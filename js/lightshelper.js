@@ -66,7 +66,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light._intensity,
       enabled: light.enabled,
-      color: light.object.color,
+      color: Object.assign({}, light.object.color),
       type: "AmbientLight"
     }
   }
@@ -75,7 +75,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     if(light == undefined) return this.addAmbientLight(settings)
     light.enabled = true
     light.object.intensity = settings.intensity;
-    light.object.color = settings.color;
+    Object.assign(light.object.color, settings.color);
     light.enabled = settings.enabled;
     return light;
   }
@@ -85,9 +85,9 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light.object.intensity || light._intensity,
       enabled: light.enabled,
-      color: light.object.color,
+      color: Object.assign({}, light.object.color),
       position: Object.assign({}, light.object.position),
-      target: Object.assign({}, light.object.target),
+      target: Object.assign({}, light.object.target.position),
       type: "DirectionalLight"
     }
   }
@@ -96,9 +96,9 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     if(light == undefined) return this.addDirectionalLight(settings)
     light.enabled = true
     light.object.intensity = settings.intensity;
-    light.object.color = settings.color;
+    Object.assign(light.object.color, settings.color);;
     Object.assign(light.object.position, settings.position);
-    Object.assign(light.object.target, settings.position);
+    Object.assign(light.object.target.position, settings.target);
     light.enabled = settings.enabled;
     return light;
   }
@@ -108,7 +108,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light.object.intensity || light._intensity,
       enabled: light.enabled,
-      color: light.object.color,
+      color: Object.assign({}, light.object.color),
       angle: light.object.angle,
       decay: light.object.decay,
       distanceFactor: light.distanceFactor,
@@ -123,12 +123,12 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     if(light == undefined) return this.addSpotLight(settings)
     light.enabled = true
     light.object.intensity = settings.intensity;
-    light.object.color = settings.color;
+    Object.assign(light.object.color, settings.color);;
     light.object.angle = settings.angle;
     light.object.decay = settings.decay;
-    light.object.posAngle1 = settings.posAngle1;
-    light.object.posAngle2 = settings.posAngle2;
-    light.object.distanceFactor = settings.distanceFactor;
+    light.posAngle1 = settings.posAngle1;
+    light.posAngle2 = settings.posAngle2;
+    light.distanceFactor = settings.distanceFactor;
     this._updateSpotLight(light);
     light.enabled = settings.enabled;
     return light;
@@ -143,8 +143,8 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
   FFBOLightsHelper.prototype.import = function(settings){
     for(key in settings){
       light = (key in this) ? this[key]: undefined;
-      lightImporter = settings[key].type == "AmbientLight" ? this._ambientLightImporter:
-        (settings[key].type == "DirectionalLight" ? this._directionalLightExporter: this._spotLightImporter);
+      lightImporter = (settings[key].type == "AmbientLight" ? this._ambientLightImporter:
+                       (settings[key].type == "DirectionalLight" ? this._directionalLightImporter: this._spotLightImporter)).bind(this);
       delete settings[key].type;
       try{
         this[key] = lightImporter(settings[key], light)
