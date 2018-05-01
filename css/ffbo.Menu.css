@@ -168,9 +168,8 @@
 }
 
 
-.mm-listview li a,
-.mm-listview li div {
-  display: inline-block;
+.mm-listview li a {
+    display: inline-block;
 /*    color: #ddd; */
     text-decoration: none;
     padding: 10px 15px 10px 30px;
