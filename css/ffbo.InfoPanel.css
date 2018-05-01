@@ -221,7 +221,7 @@ Info Panel
 /* making responsive table with CSS grid*/
 .table-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     grid-gap: 1px;
     border-bottom-color: rgb(221, 221, 221);
     border-bottom-width: 1.5px;
@@ -231,7 +231,7 @@ Info Panel
 
 .table-grid > div {
     display: grid;
-    grid-template-columns: minmax(110px,1fr) minmax(200px, 2fr);
+    grid-template-columns: 1fr 2fr;
     justify-content: center;
     box-sizing: border-box;
     border-bottom-color: rgb(221, 221, 221);
@@ -252,22 +252,18 @@ Info Panel
 
 #info-panel-extra-img {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     border-bottom-color: rgb(221, 221, 221);
     border-bottom-width: 1.5px;
     border-bottom-style: solid;
+    grid-column-gap: 10px;
+    justify-items: center;
 }
-
-/* #info-panel-extra-img > div { */
-/*     display: flex; */
-/*     flex-direction: column; */
-/* } */
-
 
 
 #info-panel-extra-img img {
-    max-width: 100%;
-    max-height: 250px;
+    max-width: 150px;
+    max-height: 150px;
 }
 
 
@@ -277,13 +273,18 @@ Info Panel
     align-items: start;
 }
 
+#info-panel-table .info-input{
+    width: 100%;
+    max-width: 150px;
+}
+
 
 #info-panel-conn-svg  {
     text-align: center;
 }
 
 #info-panel-conn-svg > svg {
-/*    min-width:400px;*/
+    min-width:250px;
     max-width:675px;
 }
 

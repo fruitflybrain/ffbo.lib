@@ -21,6 +21,14 @@
     border: 2px solid white;
 }
 
+.slider {
+  margin-left: 10px;
+  border-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background-color: #111;
+}
+
 .slider.slider-horizontal .slider-track {
     height: 5px !important;
     margin-top: -2.5px !important;

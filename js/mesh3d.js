@@ -134,6 +134,10 @@ moduleExporter(
          selected: undefined
        });
 
+       // In case of non-unique labels, will hold the rid for the last object
+       // added with that label
+       this._labelToRid = {};
+
        this.raycaster = new THREE.Raycaster();
        this.raycaster.linePrecision = 3;
 
@@ -331,7 +335,6 @@ moduleExporter(
        this.renderer.gammaOutput = true;
 
        this.composer = new THREE.EffectComposer( this.renderer );
-       this.composer.setSize( width, height );
        this.composer.addPass( this.backrenderScene );
        this.composer.addPass( this.backrenderSSAO );
        this.composer.addPass( this.renderScene );
@@ -339,6 +342,9 @@ moduleExporter(
        this.composer.addPass( this.toneMappingPass );
 
        this.composer.addPass( this.bloomPass );
+       this.composer.setSize( width*window.devicePixelRatio,
+                              height*window.devicePixelRatio);
+
      }
 
      FFBOMesh3D.prototype.initScenes = function () {
@@ -1028,7 +1034,8 @@ moduleExporter(
        this.camera.updateProjectionMatrix();
 
        this.renderer.setSize( width, height );
-       this.composer.setSize( width, height );
+       this.composer.setSize( width*window.devicePixelRatio,
+                              height*window.devicePixelRatio);
        this.effectFXAA.uniforms[ 'resolution' ].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900) )
 
        this.controls.handleResize();
@@ -1156,7 +1163,16 @@ moduleExporter(
      };
 
      FFBOMesh3D.prototype.export_settings = function() {
-       return Object.assign({}, this.settings, {'lightsHelper': this.lightsHelper.export()});
+       return Object.assign({}, this.settings, {
+         lightsHelper: this.lightsHelper.export(),
+         postProcessing: {
+           fxaa: ffbomesh.effectFXAA.enabled,
+           toneMappingMinLum: ffbomesh.toneMappingPass.materialToneMap.uniforms.minLuminance.value,
+           bloomRadius: ffbomesh.bloomPass.radius,
+           bloomThreshold: ffbomesh.bloomPass.threshold,
+           bloomStrength: ffbomesh.bloomPass.strength
+         }
+       });
      }
 
      FFBOMesh3D.prototype.import_settings = function(settings) {
@@ -1165,11 +1181,19 @@ moduleExporter(
          this.lightsHelper.import(settings.lightsHelper);
          delete settings.lightsHelper;
        }
+       if('postProcessing' in settings){
+         postProcessing = settings.postProcessing;
+         delete settings.postProcessing;
+         if( postProcessing.fxaa != undefined ) ffbomesh.effectFXAA.enabled = postProcessing.fxaa;
+         if( postProcessing.toneMappingMinLum != undefined ) ffbomesh.toneMappingPass.setMinLuminance(postProcessing.toneMappingMinLum);
+         if( postProcessing.bloomRadius != undefined ) ffbomesh.bloomPass.radius = postProcessing.bloomRadius;
+         if( postProcessing.bloomStrength != undefined ) ffbomesh.bloomPass.strength = postProcessing.bloomStrength;
+         if( postProcessing.bloomThreshold != undefined ) ffbomesh.bloomThreshold = postProcessing.bloomThreshold;
+       }
        Object.assign(this.settings, settings);
      }
 
      FFBOMesh3D.prototype.export_state = function() {
-
        state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
        state_metadata['camera']['position']['x'] = this.camera.position.x;
        state_metadata['camera']['position']['y'] = this.camera.position.y;
@@ -1262,6 +1286,7 @@ moduleExporter(
          ++this.uiVars.backNum;
        }
        ++this.uiVars.meshNum;
+       this._labelToRid[e.value.label] = e.prop;
      }
 
      FFBOMesh3D.prototype.onRemoveMesh = function(e) {
@@ -1287,6 +1312,7 @@ moduleExporter(
        }
        --this.uiVars.meshNum;
        delete meshobj;
+       delete this._labelToRid[e.value.label]
      }
 
      FFBOMesh3D.prototype.toggleVis = function(key) {
@@ -1550,6 +1576,7 @@ moduleExporter(
      FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip, func){
        var x = 5 + 20*Object.keys(this.UIBtns).length;
        var btn = document.createElement('a');
+       btn.setAttribute("id", "ffboUIbtn-" + name);
        btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
        btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
        // this.dispatch[name] = undefined;

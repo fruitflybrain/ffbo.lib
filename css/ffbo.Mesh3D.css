@@ -28,7 +28,7 @@
 
 .vis-3d-lg {
   border: none;
-  height: calc( 100vh - 100px );
+  height: calc( 100% - 100px );
   width: 100%;
   top: 50px;
   right: 0px;
@@ -37,7 +37,7 @@
 .vis-3d-hf {
   border: 0px solid #1f1f1f;
   border-radius: 5px;
-  height: calc( 100vh - 120px );
+  height: calc( 100% - 120px );
   width: calc(100% - var(--boundary-horizontal) - 10px);
   top: 60px;
   left: calc(var(--boundary-horizontal));

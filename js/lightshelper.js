@@ -57,7 +57,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
           if(this[k].object && this[k].object.type == "SpotLight" && this[k].track)
             this._updateSpotLight( this[k] );
         this._updatePause = false;
-      }.bind(this), 20);
+      }.bind(this), 5);
     }.bind(lh));
     return lh
   }
