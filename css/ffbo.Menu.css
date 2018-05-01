@@ -94,10 +94,23 @@
 
 .mm-listview li a {
   cursor: pointer;
-  padding: 10px 10px 10px 20px !important;
+  padding: 5px 10px 10px 10px !important;
 }
-.mm-listview li a {
-  display: block-inline;
+
+.mm-listview li a:not(:first-of-type) {
+  float: right;
+}
+
+.mm-listview li a.btn-pinned {
+  color: #fff;
+}
+
+.mm-listview li a.btn-unpinned {
+  margin-top: 1px;
+  margin-left: -5px !important;
+  padding-right: 12px !important;
+  transform: rotate(45deg);
+  color: #666;
 }
 
 .navbar-collapse > ul > li {
@@ -157,7 +170,7 @@
 
 .mm-listview li a,
 .mm-listview li div {
-    display: block;
+  display: inline-block;
 /*    color: #ddd; */
     text-decoration: none;
     padding: 10px 15px 10px 30px;

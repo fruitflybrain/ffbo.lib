@@ -76,7 +76,7 @@ moduleExporter(
      }
      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-     function FFBOMesh3D(div_id, data, metadata) {
+     function FFBOMesh3D(div_id, data, metadata, stats=false) {
 
        /* default metadata */
        this._metadata = {
@@ -103,7 +103,7 @@ moduleExporter(
          defaultRadius: 0.5,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.3,
-         backgroundOpacity: 0.8,
+         backgroundOpacity: 0.7,
          backgroundWireframeOpacity: 0.07,
          neuron3d: false,
          neuron3dMode: 1,
@@ -141,10 +141,11 @@ moduleExporter(
        this.container = document.getElementById( div_id );
 
        this.stats = new Stats();
-       this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-       this.stats.dom.style.position = "relative"
-       this.container.appendChild( this.stats.dom );
-
+       if(stats) {
+         this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+         this.stats.dom.style.position = "relative"
+         this.container.appendChild( this.stats.dom );
+       }
        this.camera = this.initCamera();
 
        this.renderer = this.initRenderer();
@@ -447,8 +448,9 @@ moduleExporter(
        return loadingManager;
      }
 
-
-
+     FFBOMesh3D.prototype.select = function(id) {
+       this.uiVars.selected = id;
+     }
 
      FFBOMesh3D.prototype.reset = function(resetBackground) {
        resetBackground = resetBackground || false;
@@ -944,7 +946,7 @@ moduleExporter(
        var intersected = this.getIntersection([this.groups.front]);
 
        if (intersected != undefined && intersected['highlight']){
-           this.uiVars.selected = intersected.rid;
+           this.select(intersected.rid);
        }
      }
 
@@ -1153,9 +1155,22 @@ moduleExporter(
            this.meshDict[key].visibility = false;
      };
 
+     FFBOMesh3D.prototype.export_settings = function() {
+       return Object.assign({}, this.settings, {'lightsHelper': this.lightsHelper.export()});
+     }
+
+     FFBOMesh3D.prototype.import_settings = function(settings) {
+       settings = Object.assign({}, settings);
+       if('lightsHelper' in settings){
+         this.lightsHelper.import(settings.lightsHelper);
+         delete settings.lightsHelper;
+       }
+       Object.assign(this.settings, settings);
+     }
+
      FFBOMesh3D.prototype.export_state = function() {
 
-       state_metadata = {'color':{},'pin':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
+       state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
        state_metadata['camera']['position']['x'] = this.camera.position.x;
        state_metadata['camera']['position']['y'] = this.camera.position.y;
        state_metadata['camera']['position']['z'] = this.camera.position.z;
@@ -1168,7 +1183,7 @@ moduleExporter(
        state_metadata['target']['y'] = this.controls.target.y;
        state_metadata['target']['z'] = this.controls.target.z;
 
-       state_metadata['pin'] = Array.from(this.uiVars.pinnedObjects);
+       state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
 
        for (var key in this.meshDict) {
          if (this.meshDict.hasOwnProperty(key)) {
@@ -1251,6 +1266,8 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onRemoveMesh = function(e) {
        // console.log(e);
+       if (this.states.highlight == e.prop)
+         this.states.highlight = false;
        if (e.value['pinned'])
          e.value['pinned'] = false;
        var meshobj = e.value.object;
@@ -1339,10 +1356,11 @@ moduleExporter(
            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
            val.object.children[i].material.depthTest = false;
          }
-       }
+       } else if (this.states.highlight) {
+         return;
        // Either entering pinned mode or pinned mode settings changing
-       else if ((e.prop == 'highlight' && !this.states.highlight && this.states.pinned) ||
-                  (e.prop == 'pinned' && this.uiVars.pinnedObjects.size == 1) ||
+       } else if ((e.prop == 'highlight' && this.states.pinned) ||
+                  (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
                   (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
          for (const key of Object.keys(this.meshDict)) {
            var val = this.meshDict[key];
@@ -1362,8 +1380,8 @@ moduleExporter(
        // New object being pinned while already in pinned mode
        else if (e.prop == 'pinned' && this.states.pinned){
          for (var i in e.obj.object.children) {
-           e.obj.object.children[i].material.opacity = this.settings.pinOpacity;
-           e.obj.object.children[i].material.depthTest = false;
+           e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+           e.obj.object.children[i].material.depthTest = !e.value;
          }
        }
        // Default opacity value change in upinned mode or exiting highlight mode
@@ -1513,7 +1531,7 @@ moduleExporter(
 
        if (!this._metadata.allowPin)
          return;
-       for (var key of Object.keys(this.uiVars.pinnedObjects))
+       for (var key of this.uiVars.pinnedObjects)
          this.meshDict[key]['pinned'] = false;
      }
 
