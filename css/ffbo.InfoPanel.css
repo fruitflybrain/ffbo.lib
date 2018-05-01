@@ -192,8 +192,8 @@ Info Panel
 @media screen and (max-width: 780px) and (orientation:portrait) {
   .vis-hf-r,
   .vis-3d-hf {
-    height: calc( 50vh - 35px - 25px - 10px ) !important;
-    width: calc( 100vw - 20px ) !important;
+    height: calc( 50% - 35px - 25px - 10px ) !important;
+    width: calc( 100% - 20px ) !important;
     top: calc( 50vh ) !important;
     left: 10px !important;
   }
@@ -202,15 +202,15 @@ Info Panel
   .vis-sm:hover,
   .vis-sm-1:hover {
     top: 60px;
-    height: calc( 50vh - 35px - 25px );
+    height: calc( 50% - 35px - 25px );
     width: calc( 100% - 20px );
     overflow-y: auto;
   }
 
   .vis-3d-lg {
       border: none;
-      height: calc( 100vh - 120px );
-      width: calc( 100vw - 20px );
+      height: calc( 100% - 120px );
+      width: calc( 100% - 20px );
       top: 60px;
       left: 10px;
   }
