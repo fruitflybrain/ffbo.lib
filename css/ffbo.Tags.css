@@ -7,7 +7,11 @@
 }
 
 .tag-text, .tag-editor{
+    border-radius: 3px;
+    height: 30px;
+    color: var(--srch-box-color);
     background-color: var(--srch-box-background);
+    border-color: var(--srch-box-border);
 }
 
 .tag-editor .ui-sortable{

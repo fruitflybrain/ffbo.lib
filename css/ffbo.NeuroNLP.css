@@ -29,14 +29,14 @@ p, td, .btn, th, ul, .overlay .row {
 
 @media (min-width: 43.75em) {
     p, td, .btn, ul, .overlay .row, #vis_set .row {
-	font-size: 0.85em;
-	line-height: 1.5;
+  font-size: 0.85em;
+  line-height: 1.5;
     }
     .btn-add{
-	padding: 2px 7px !important;
+  padding: 2px 7px !important;
     }
     .btn-remove{
-	padding: 2px 9px !important;
+  padding: 2px 9px !important;
     }
 
 }
