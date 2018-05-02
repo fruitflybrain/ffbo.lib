@@ -100,6 +100,9 @@
 #btn-store-vis-settings {
     cursor: pointer;
 }
+#toggle_visset .vis-settings-sub {
+  padding-left: 10px;
+}
 
 .slider.slider-horizontal .slider-track {
     height: 5px !important;
