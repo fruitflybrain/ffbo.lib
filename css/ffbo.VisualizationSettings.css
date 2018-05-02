@@ -70,10 +70,13 @@
 }
 
 #vis-neuropil-color {
-    right: 20px;
-    width: 25px;
     border-radius: 10px;
-    height: 15px;
+    right: 20px;
+    width: 28px;
+    height: 17px;
+    position: absolute;
+    margin-top: -17px;
+    background-color: #000;
 }
 
 .slider.slider-horizontal .slider-track {
