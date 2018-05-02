@@ -18,7 +18,7 @@
 }
 
 #toggle_visset div.wrap {
-    max-width: 200px;
+    max-width: calc(100% - 35px);
     white-space: normal !important;
 }
 
@@ -166,7 +166,10 @@
     right: 0;
 }
 
-
+.mm-listitem > a > div {
+    white-space: normal !important;
+    max-width: calc(100% - 20px);
+}
 
 #vis_set_dragger {
     left: calc( var(--boundary-horizontal) - 15px );
@@ -221,6 +224,6 @@
 }
 
 .slider{
-    max-width: 240px;
+    max-width: calc(100% - 20px);
     width: 40vw !important;
 }
