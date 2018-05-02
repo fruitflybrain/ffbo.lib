@@ -19,7 +19,7 @@ moduleExporter(
      d3 = d3 || window.d3;
      FFBODemoPlayer = function(ffbomesh, menuApi, menuSelectors, uiBtns, srchBoxSelector, srchBtnSelector, srchWrapSelector, pageWrapSelector){
        this.ffbomesh = ffbomesh;
-       this.demoJson = {};
+       this._demoJson = {};
        this._interrupt = false;
        this.srchBtn = srchBtnSelector || '#srch_box_btn';
        this.srchBox = srchBoxSelector || '#srch_box';
@@ -28,27 +28,27 @@ moduleExporter(
 
        $(this.pageWrap).append(`
                                <div id="demo-blocker" style="display:none;width:100vw;height:100vh;background-color:rgba(0,0,0,0.1);position:fixed;z-index:9999999">
-                                 <button class="btn" id="demoStopBtn" style="background-color: rgba(0,0,0,0);color: rgb(255,50,100);position: fixed; bottom: 120px; left: 50px">
-                                    <i class="fa fa-close">  Stop Demo</i>
-                                 </button>
+                               <button class="btn" id="demoStopBtn" style="background-color: rgba(0,0,0,0);color: rgb(255,50,100);position: fixed; bottom: 120px; left: 50px">
+                               <i class="fa fa-close">  Stop Demo</i>
+                               </button>
                                </div>`)
        $('#demoStopBtn').click((function(){ this._interrupt = true;}).bind(this));
        this.cursor = undefined;
        this.autoType = AutoTyper($(this.srchBox)[0]);
        this.menu = menuApi;
        this.menuSels = Object.assign({}, {singleNeu: '#single-neu',
-                                            singlePin: '#single-pin',
-                                            lpu: '#toggle_neuropil',
-                                            neu: '#toggle_neuron',
-                                            top: '#mm-0',
-                                            neuNone: '#btn-neu-none',
-                                            neuAll: '#btn-neu-all',
-                                            pinKeep: '#btn-pin-keep',
-                                            pinRemove: '#btn-pin-remove',
-                                            unpinAll: '#btn-pin-unpinall',
-                                            lpuAll: '#btn-lpu-all',
-                                            lpuNone: '#btn-lpu-none'
-                                           }, menuSelectors)
+                                          singlePin: '#single-pin',
+                                          lpu: '#toggle_neuropil',
+                                          neu: '#toggle_neuron',
+                                          top: '#mm-0',
+                                          neuHideAll: '#btn-neu-none',
+                                          neuShowAll: '#btn-neu-all',
+                                          pinKeep: '#btn-pin-keep',
+                                          pinRemove: '#btn-pin-remove',
+                                          unpinAll: '#btn-pin-unpinall',
+                                          lpuShowAll: '#btn-lpu-all',
+                                          lpuHideAll: '#btn-lpu-none'
+                                         }, menuSelectors)
        this.uiBtns = Object.assign({}, {showSettings: 'showSettings',
                                         takeScreenshot: 'takeScreenshot',
                                         showInfo: 'showInfo',
@@ -62,140 +62,463 @@ moduleExporter(
          this.uiBtns.key = '#ffboUIbtn-' + this.uiBtns.key;
        // InfoPanel API
 
+       // Settings API
+
+       // Tags API
+       this._timeOutPause = 100;
      }
 
      Object.assign(FFBODemoPlayer.prototype, {
        // For Test
        _initCursor: function(){
-         this.cursor = new mouseSVG();
+         this.cursor = new mouseSVG(ffbomesh);
          bodyRect = $('#demo-blocker')[0].getBoundingClientRect();
          this.cursor.show({x: Math.round(bodyRect.width/2), y:Math.round(bodyRect.width/2)})
        },
-       moveTo: function(t, dur){
-         return new Promise((function(resolve){
-           if(typeof t === 'string'){
-             $(t)[0].scrollIntoView({behavior: 'smooth'});
-             setTimeout((function(){ this.cursor.moveTo(t, dur);}).bind(this), 500);
-             setTimeout(function(){ resolve() }, dur + 500);
+       _moveTo: function(t, dur){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             //mouseOver = this.ffbomesh.states.mouseOver;
+             //this.ffbomesh.states.mouseOver = true;
+             if(typeof t === 'string'){
+               $(t)[0].scrollIntoView({behavior: 'smooth'});
+               setTimeout(() => { this.cursor.moveTo(t, dur); }, 500);
+               setTimeout(() => { resolve(); /*this.ffbomesh.states.mouseOver = mouseOver;*/ }, dur + 500 + this._timeOutPause);
+             }
+             else{
+               this.cursor.moveTo(t, dur);
+               setTimeout(() => { resolve(); /*this.ffbomesh.states.mouseOver = mouseOver;*/ }, dur + this._timeOutPause);
+             }
+           }catch(err){
+             reject(err)
            }
-         }).bind(this));
+         });
+       },
+       _openPanel: function(panel, moveTo=true, moveToDur=1000, panelOpenPause=500){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             if(panel == this.menuSels.singleNeu || panel == this.menuSels.singlePin){
+               this._openPanel(this.menuSels.top, moveTo, moveToDur, panelOpenPause).then(() => {
+                 this._openPanel(this.menuSels.neu, moveTo, moveToDur, panelOpenPause).then(() => {
+                   if(moveTo) {
+                     sel = this.menuSels.neu + (panel == this.menuSels.singleNeu ? ' > ul > li:nth-child(4)' : ' > ul > li:nth-child(3)')
+                     this._moveTo(sel, moveToDur).then(() =>{
+                       this.menu.openPanel($(panel));
+                       setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+                     });
+                   }
+                   else{
+                     this.menu.openPanel($(panel));
+                     setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+                   }
+                 });
+               });
+             }
+             else if (panel == this.menuSels.neu){
+               if(moveTo) {
+                 sel = this.menuSels.top + ' > ul > li:nth-child(3)'
+                 this._moveTo(sel, moveToDur).then(() =>{
+                   this.menu.openPanel($(panel));
+                   setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+                 });
+               }
+               else{
+                 this.menu.openPanel($(panel));
+                 setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+               }
+             }
+             else if(panel == this.menuSels.lpu){
+               this._openPanel(this.menuSels.top, moveTo, moveToDur, panelOpenPause).then(() => {
+                 if(moveTo) {
+                   sel = this.menuSels.top + ' > ul > li:nth-child(4)'
+                   this._moveTo(sel, moveToDur).then(() =>{
+                     this.menu.openPanel($(panel));
+                     setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+                   });
+                 }
+                 else{
+                   this.menu.openPanel($(panel));
+                   setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+                 }
+               });
+             }
+             else if(panel == this.menuSels.top){
+               this.menu.open();
+               this.menu.openPanel($(panel));
+               setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
+             }
+           }catch(err){
+             reject(err)
+           }
+         });
+       },
+       _clickMenu: function(sel, moveTo=true, moveToDur=1000, hoverPause = 500){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             if(moveTo){
+               this._moveTo(sel, moveToDur).then( () => {
+                 $(sel).mouseover();
+                 setTimeout(() => {this.cursor.click(); $(sel).click(); resolve()}, hoverPause)
+               });
+             }else{
+               $(sel).mouseover();
+               setTimeout(() => {$(sel).click(); resolve()}, hoverPause)
+             }
+           }catch(err){
+             reject(err);
+           }
+         });
        },
        /*
        // Only one of uiBtn, menu, selector label, rid will be processed in that order
        {
-         uiBtn: {
-           type:   // showSettings, takeScreenshot etc
-         }
-         menu: {
-           type:  pin/unpin-pinned/toggle/rm/neuAll/neuNone/pinKeep/pinRemove/unpinAll/lpuAll/lpuNone,
-           label/rid: ,// if type in pin/toggle/rm/unpin-pinned
-         }
-         selector: jquerySelector,  // Currently could be used for info panel, to be removed later
-         label: objectLabel,
-         rid: objectRid,
-         cursorMove: true // default,
-         cursorMoveDuration: 500 //default
+       uiBtn: {
+       type:   // showSettings, takeScreenshot etc
+       }
+       menu: {
+       type:  pinToggle/unpin-pinned/visToggle/remove/neuShowAll/neuHideAll/pinKeep/pinRemove/unpinAll/lpuShowAll/lpuHideAll,
+       label/rid: ,// if type in pinToggle/vistoggle/remove/unpin-pinned
+       }
+       selector: jquerySelector,  // Currently could be used for info panel, to be removed later
+       label: objectLabel,
+       rid: objectRid,
+       cursorMove: true // default,
+       cursorMoveDuration: 1000 //default
        }*/
 
-       _openPanel: function(panel, moveTo=true, moveToDur=500, panelOpenPause=100){
-         return new Promise((resolve) => {
-           if(panel == this.menuSels.singleNeu || panel == this.menuSels.singlePin){
-             this._openPanel(this.menuSels.top, moveTo, moveToDur, panelOpenPause).then(() => {
-               this._openPanel(this.menuSels.neu, moveTo, moveToDur, panelOpenPause).then(() => {
-                 if(moveTo) this.moveTo(panel, moveToDur);
-                 this.menu.openPanel(panel);
-                 setTimeout(function(){resolve()}, panelOpenPause);
-               });
-             });
-           }
-           else if(panel == this.menuSels.lpu){
-             this._openPanel(this.menuSels.top, moveTo, moveToDur, panelOpenPause).then(() => {
-               if(moveTo) this.moveTo(panel, moveToDur);
-               this.menu.openPanel(panel);
-               setTimeout(function(){resolve()}, panelOpenPause);
-             });
-           }
-           else{
-             if(moveTo) this.moveTo(panel, moveToDur);
-             this.menu.openPanel(panel);
-             setTimeout(function(){resolve()}, panelOpenPause);
+       _click: function(object){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             object = Object.assign({cursorMove: true, cursorMoveDuration: 1000}, object)
+             if('uiBtn' in object){
+               if(object.uiBtn in this.uiBtns)
+                 this._clickMenu(this.uiBtns[object.uiBtn], object.cursorMove, object.cursorMoveDuration).then(() => {
+                   resolve();
+                 });
+               else
+                 resolve();
+             }
+             else if('menu' in object){
+               switch(object.menu.type){
+               case "pinToggle":
+                 this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = '#btn-pin-symbol-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "unpin-pinned":
+                 this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = '#btn-pinned-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "visToggle":
+                 this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = '#btn-toggle-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "remove":
+                 this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = '#btn-rm-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "neuShowAll":
+                 this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.neuShowAll;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 })
+                 break;
+               case "neuHideAll":
+                 this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.neuHideAll;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 })
+                 break;
+               case "lpuShowAll":
+                 this._openPanel(this.menuSels.lpu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.lpuShowAll;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 })
+                 break;
+               case "lpuHideAll":
+                 this._openPanel(this.menuSels.lpu, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.lpuHideAll;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 })
+                 break;
+               case "pinKeep":
+                 this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.pinKeep;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "pinRemove":
+                 this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.pinRemove;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               case "unpinAll":
+                 this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
+                   sel = this.menuSels.unpinAll;
+                   this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
+                 });
+                 break;
+               }
+             }
+             else if('selector' in object){
+               // Can be used for Info Panel now. Should be later replaced by an API
+               this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration)
+                 .then(() => {
+                   $(object.selector).click();
+                   setTimeout(resolve, this._timeOutPause);
+                 });
+             }
+             else if('label' in object || 'rid' in object){
+               this._highlight(object).then( () => {
+                 rid = 'label' in object ? ffbomesh._labelToRid[object.label] : object.rid;
+                 if(object.cursorMove) this.cursor.click();
+                 ffbomesh.select(rid);
+                 setTimeout(() => {resolve();}, this._timeOutPause);
+               })
+             }
+             else{
+               resolve();
+             }
+           }catch(err){
+             reject(err);
            }
          });
        },
-       click: function(object){
-         object = Object.assign({cursorMove: true, cursorMoveDuration: 500}, object)
-         if('uiBtn' in object){
-         }
-         else if('menu' in object){
-
-         }
-         else if('selector' in object){
-           $(object.selector).click();
-         }
-         else if('label' in object){
-           ffbomesh.select(ffbomesh._labelToRid(object.label));
-         }
-         else if('rid' in object){
-           ffbomesh.select(object.rid);
-         }
+       /*{
+         label: objectLabel,
+         rid: objectRid,
+         cursorMove: true // default,
+         cursorMoveDuration: 1000 //default
+         }*/
+       _pin: function(object){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             object = Object.assign({}, {cursorMove: true, cursorMoveDuration: 1000}, object);
+             this._highlight(object).then( () => {
+               rid = 'label' in object ? ffbomesh._labelToRid[object.label] : object.rid;
+               if(object.cursorMove) this.cursor.dbclick();
+               ffbomesh.select(rid);
+               ffbomesh.togglePin(rid);
+               setTimeout(() => {resolve();}, this._timeOutPause);
+             })
+           }catch(err){
+             reject(err);
+           }
+         });
        },
        /*{
          label: objectLabel,
          rid: objectRid,
          cursorMove: true // default,
-         cursorMoveDuration: 500 //default
-       }*/
-       pin: function(object){
+         cursorMoveDuration: 1000 //default
+         }*/
+       _highlight: function(object){
+         return new Promise((resolve, reject) => {
+           try{
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             object = Object.assign({}, {cursorMove: true, cursorMoveDuration: 1000}, object);
+             rid = 'label' in object ? ffbomesh._labelToRid[object.label] : object.rid;
+             if(object.cursorMove){
+               pos = ffbomesh.getNeuronScreenPosition(rid);
+               this._moveTo(pos, object.cursorMoveDuration).then(() =>{
+                 this.ffbomesh.highlight(rid, true);
+                 setTimeout(() => {resolve();}, this._timeOutPause);
+               });
+             }else{
+               this.ffbomesh.highlight(rid);
+               setTimeout(() => {resolve();}, this._timeOutPause);
+             }
+           }catch(err){
+             reject(err);
+           }
+         });
        },
-       /*{
-         label: objectLabel,
-         rid: objectRid,
-         cursorMove: true // default,
-         cursorMoveDuration: 500 //default
-       }*/
-       highlight: function(object){
-
-       },
-       search: function(query){
-         return new Promise((function(resolve, reject){
-           this.menu.closeAllPanels();
-           $(this.srchWrap).toggleClass("search-middle");
-           setTimeout((function(){
-             this.autoType(query).then((function(){
-               setTimeout((function(){
-                 $(this.srchBtn).addClass("search-hover");
-               }).bind(this), 500);
-               setTimeout((function(){
-                 $(this.srchBtn).removeClass("search-hover");
-               }).bind(this), 1000);
-               setTimeout((function(){
-                 $(this.srchWrap).toggleClass("search-middle");
-               }).bind(this), 1500);
-               setTimeout(function(){
-                 NLPsearch().then(function(){ resolve(); }, function(){ reject(); });
-               }, 3500);
-             }).bind(this));
-           }).bind(this), 1000);
-         }).bind(this));
+       _search: function(query){
+         return new Promise((resolve, reject) => {
+           try{
+             if(typeof query !== 'string')
+               query = query.query;
+             if(this._interrupt){
+               resolve();
+               return;
+             }
+             this.menu.closeAllPanels();
+             this.menu.close();
+             $(this.srchWrap).toggleClass("search-middle");
+             setTimeout((function(){
+               this.autoType(query).then((function(){
+                 setTimeout((function(){
+                   $(this.srchBtn).addClass("search-hover");
+                 }).bind(this), 500);
+                 setTimeout((function(){
+                   $(this.srchBtn).removeClass("search-hover");
+                 }).bind(this), 1000);
+                 setTimeout((function(){
+                   $(this.srchWrap).toggleClass("search-middle");
+                 }).bind(this), 1500);
+                 if(this._interrupt){
+                   resolve();
+                   return;
+                 }
+                 setTimeout(function(){
+                   NLPsearch().then(function(){ resolve(); }, function(){ reject(err); });
+                 }, 3500);
+               }).bind(this));
+             }).bind(this), 1000);
+           }catch(err){
+             reject(err);
+           }
+         });
        },
        addDemos: function(demoJson){
+         Object.assign(this._demoJson, demoJson)
        },
-       getDemosTable: function(){
+       updateDemoTable: function(sel){
+         $(sel).html("");
+         this._categories = {};
+         for ( demoId in this._demoJson ) {
+           demo = this._demoJson[demoId];
+           if(demo.category == undefined)
+             demo.category = "Miscellaneous";
+           if(!(demo.category in this._categories)){
+             this._categories[demo.category] = 0;
+             $(sel).append(
+                "<h4>" + demo.category + "</h4>" +
+                 "<table id='table-demo-" + demo.category + "' class='table-demo table table-inverse table-hover'>" +
+                 "<thead class='thead-inverse'><tr><th>#</th><th>Keyword</th><th>Description</th><th></th></tr></thead>" +
+                 "<tbody id='basic-table-demo-body' class='table-demo-body'></tbody>" +
+                 "</table>"
+             );
+           }
+           $("#table-demo-" + demo.category).append(
+              "<tr><th>" + this._categories[demo.category] + "</th><td>" + demo.keyword + "</td><td>" + demo.description + "</td><td><button id='btn-demo-" + demoId + "' class='btn btn-danger btn-xs'>Launch</button></td></tr>"
+           )
+           if (demo.script !== undefined)
+             $("#btn-demo-" + demoId).click( () => {this.startDemo(demoId);} );
+           else
+             $("#btn-demo-" + demoId).prop( 'disabled', true);
+         }
 
        },
-       displayMessage: function(message, settings){},
+       // Should be overwritten by NeuroNLP.js
+       notify: function(message, settings){
+       },
+       _displayMessage: function(object){
+         object = Object.assign({pause: 2000, message:""}, object);
+         return new Promise((resolve, reject) => {
+           try{
+             this.notify(object.message, object.settings);
+             setTimeout(resolve, object.pause);
+           }catch(err){
+             reject(err);
+           }
+         });
+       },
+       _demoPlayer: function(json){
+         return new Promise((resolve, reject) => {
+           var len = json.length;
+           execute = (i) => {
+             if (i == len || this._interrupt){
+               this._onDemoEnd();
+               resolve();
+               return;
+             }
+             var p = undefined;
+             switch ( json[i][0] ){
+             case "click":
+               p = this._click(json[i][1])
+               break;
+             case "pin":
+               p = this._pin(json[i][1])
+               break;
+             case "highlight":
+               p = this._highlight(json[i][1])
+               break;
+             case "search":
+               p = this._search(json[i][1])
+               break;
+             case "notify":
+               p = this._displayMessage(json[i][1])
+               break;
+             }
+             if(p !== undefined) p.then(()=>{execute(i+1)});
+             else execute(i+1);
+           }
+           try{
+             execute(0);
+           }catch(err){
+             reject(err);
+           }
+         });
+       },
        startDemo: function(demoName){
-         this.cursor = new mouseSVG();
-         $('#demo-blocker').show();
-
-         //this.cursor.svg.remove();
-         //delete this.cursor;
-         //this.cursor = undefined;
+         return new Promise((resolve, reject) => {
+           try{
+             this._interrupt = false;
+             if(demoName in this._demoJson){
+               $('#demo-blocker').show();
+               this._initCursor();
+               this._demoPlayer(this._demoJson[demoName].script).then(resolve);
+             }
+             else{
+               reject("Demo not found");
+             }
+           }catch(err){
+             this._onDemoEnd();
+             reject(err)
+           }
+         });
        },
-       stopDemo: function(){ this._interrupt = true; }
+       stopDemo: function(){ this._interrupt = true; },
+       _onDemoEnd: function(){
+         console.log("Demo Ended");
+         if(this._interrupt)
+           this.notify("Demo stopped successfully")
+         this._interrupt = false;
+         if(this.cursor){
+           this.cursor.remove();
+           delete this.cursor;
+         }
+         this.cursor = undefined;
+         $('#demo-blocker').hide();
+         this.ffbomesh.highlight(undefined);
+         this.menu.closeAllPanels();
+         this.menu.close();
+       }
      });
 
-     function mouseSVG() {
+     function mouseSVG(ffbomesh) {
 
        var bodyRect = $('#demo-blocker')[0].getBoundingClientRect();
 
@@ -303,7 +626,7 @@ moduleExporter(
            .attr("r", 8)
            .style("opacity", 1);
        }
-       this.moveto = function (t, dur) {
+       this.moveTo = function (t, dur) {
          // if typeof(t) is a string, assume it is a selector
          if (typeof t === 'string') {
            var rect = $(t)[0].getBoundingClientRect();
@@ -358,6 +681,24 @@ moduleExporter(
            .ease("quad")
            .attrTween("transform", translateAlongHit(line.node(),this))
        }
+       // Returns an attrTween for translating along the specified path element.
+       function translateAlong(path) {
+         var l = path.getTotalLength();
+         var ps = path.getPointAtLength(0);
+         return function(d, i, a) {
+           return function(t) {
+             var mouseOver;
+             var e = document.createEvent("MouseEvents");
+             var p = path.getPointAtLength(t * l);
+             e.initMouseEvent("mousemove", true, true, window, 0, 0, 0, p.x, p.y, false, false, false, false, 0, null);
+             if (ffbomesh !== undefined )
+               ffbomesh.onDocumentMouseMove(e);
+             delete e;
+             return "translate(" + p.x + "," + p.y + ")";
+           };
+         };
+       };
+
      }
 
      function AutoTyper(element) {
@@ -383,97 +724,47 @@ moduleExporter(
        }
      }
 
-    function uidDecode(id) {
+     function uidDecode(id) {
 
-      id = id.replace(/#/g,'hashtag');
-      id = id.replace(/:/g,'colon');
-      return id;
-    }
-    function uidEncode(id) {
+       id = id.replace(/#/g,'hashtag');
+       id = id.replace(/:/g,'colon');
+       return id;
+     }
+     function uidEncode(id) {
 
-      if (id.indexOf("hashtag") > -1)
-          id = id.replace("hashtag","#");
-      if (id.indexOf("colon") > -1)
-          id = id.replace("colon",":");
-      return id;
-    }
+       if (id.indexOf("hashtag") > -1)
+         id = id.replace("hashtag","#");
+       if (id.indexOf("colon") > -1)
+         id = id.replace("colon",":");
+       return id;
+     }
 
      return FFBODemoPlayer;
    }
 )
 
 function ScriptLoader(func) {
-    return function (script, i) {
-        if (func !== undefined)
-            func();
-        if (i === undefined)
-            i = 0;
-        setTimeout( function() {
-            script[i][1]();
-            ++i;
-            if (i === script.length)
-                return;
-            if (script[i][0] === null) {
-                $("body").on( "demoproceed", function(event, e) {
-                    $("body").off( "demoproceed" );
-                    if (e === "success")
-                        script_loader(script, i);
-                    else
-                        Notify("Stopping the demo due to the previous error...", null, null, 'danger');
-                })
-            } else
-                script_loader(script, i);
-        }, script[i][0] )
-    }
-}
-
-
-function checkOnMobile() {
-
-    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) )
-        return true;
-    else
-        return false;
-}
-
-function demoBtnCallback(script) {
-  return function() {
-    $("#btn-pin-unpinall").click();
-    onHideAllClick();
-    $("#demo-panel").slideUp(500);
-    closeAllOverlay(false);
-    ffbomesh.controls.reset();
-    script_loader(script);
+  return function (script, i) {
+    if (func !== undefined)
+      func();
+    if (i === undefined)
+      i = 0;
+    setTimeout( function() {
+      script[i][1]();
+      ++i;
+      if (i === script.length)
+        return;
+      if (script[i][0] === null) {
+        $("body").on( "demoproceed", function(event, e) {
+          $("body").off( "demoproceed" );
+          if (e === "success")
+            script_loader(script, i);
+          else
+            Notify("Stopping the demo due to the previous error...", null, null, 'danger');
+        })
+      } else
+        script_loader(script, i);
+    }, script[i][0] )
   }
 }
 
-function chooseNeuron(name) {
-  for(var i in ffbomesh.meshDict) {
-    if (ffbomesh.meshDict[i].name == name) {
-      return i;
-    }
-  }
-}
-
-function fetchInfo(name) {
-  for(var i in ffbomesh.meshDict) {
-    if (ffbomesh.meshDict[i].name == name) {
-      fetchDetailInfo([name, i]);
-    }
-  }
-}
-
-function visual_highlight_neuron(demo_neuron_id) {
-  demo_neuron_name = ffbomesh.meshDict[demo_neuron_id].name;
-  cursor.dbclickshort();
-  ffbomesh.togglePin(demo_neuron_id);
-  if (ffbomesh.dispatch['dblclick'] !== undefined ) {
-    ffbomesh.dispatch['dblclick'](demo_neuron_id, demo_neuron_name, ffbomesh.meshDict[demo_neuron_id]['pinned']);
-  }
-}
-
-function add_neuron_click(demo_neuron_id) {
-  demo_neuron_name = ffbomesh.meshDict[demo_neuron_id].name;
-  ffbomesh.highlight(demo_neuron_id)
-  ffbomesh.dispatch['click'](demo_neuron_id, demo_neuron_name);
-}

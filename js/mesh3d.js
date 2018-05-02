@@ -798,6 +798,8 @@ moduleExporter(
 
          for (var idx in swcObj ) {
            var c = swcObj[idx];
+           if(idx == Math.round(len/2) && unit.position == undefined)
+             unit.position = new THREE.Vector3(c.x, c.y, c.z);
            this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
            this.updateBoundingBox(c.x,c.y,c.z);
            if (c.parent != -1) {
@@ -983,7 +985,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onDocumentMouseMove = function( event ) {
        event.preventDefault();
-
+       this.states.mouseOver = true;
        var rect = this.container.getBoundingClientRect();
 
        this.uiVars.toolTipPosition.x = event.clientX;
