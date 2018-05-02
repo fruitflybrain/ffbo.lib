@@ -1,4 +1,4 @@
- #ui_menu_nav:not( .mm-menu ) {
+#ui_menu_nav:not( .mm-menu ) {
     display: none;
 }
 #sidebar-wrapper:not( .mm-menu ) {
@@ -73,7 +73,7 @@
   border-color: var(--font-color-navbar-hl);
 }
 .mm-navbar:hover a,
-.mm-listview li:hover a,
+.mm-listview li:hover > a,
 .mm-listview li:hover span {
   color: var(--font-color-navbar-hl);
 }
@@ -95,10 +95,6 @@
 .mm-listview li a {
   cursor: pointer;
   padding: 5px 10px 10px 10px !important;
-}
-
-.mm-listview li a:not(:first-of-type) {
-  float: right;
 }
 
 .mm-listview li a.btn-pinned {
@@ -196,6 +192,21 @@
     z-index: 2;
 }
 
-#ui-menu-nav {
+#ui_menu_nav {
    z-index: 999;
+}
+
+.btn-single-ob {
+    float: left;
+    width: calc( 100% - 120px );
+    margin: 0;
+    padding-top: 6px;
+    min-width: 100px;
+}
+
+.btn-single-obj-ctrl {
+    text-align: right;
+    padding: 0;
+    width: 120px;
+    float: right;
 }

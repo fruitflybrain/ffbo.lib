@@ -103,7 +103,7 @@ moduleExporter(
          defaultRadius: 0.5,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.3,
-         backgroundOpacity: 0.7,
+         backgroundOpacity: 1.0,
          backgroundWireframeOpacity: 0.07,
          neuron3d: false,
          neuron3dMode: 1,
@@ -193,8 +193,6 @@ moduleExporter(
        this.boundingBox = Object.assign( {}, this.defaultBoundingBox )
        this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox )
 
-
-
        this.createInfoPanel();
 
        this.createToolTip();
@@ -205,10 +203,8 @@ moduleExporter(
 
        //this.composer.addPass( this.gammaCorrectionPass );
 
-
        this.passes = {'SSAO': 1, 'FXAA': 3, 'toneMappingPass': 4, 'unrealBloomPass': 5}
 
-       this.animate();
        this.UIBtns = {}
 
        this.dispatch = {
@@ -257,6 +253,7 @@ moduleExporter(
          this.addJson( data );
 
        this.animate();
+       this._defaultSettings = this.export_settings();
      };
 
      FFBOMesh3D.prototype.on = function (key, func) {
@@ -1165,15 +1162,19 @@ moduleExporter(
      };
 
      FFBOMesh3D.prototype.export_settings = function() {
+       backgroundColor = [0.15, 0.01, 0.15];
+       if( this.groups.back.children.length)
+         backgroundColor = ffbomesh.groups.back.children[0].children[0].material.color.toArray()
        return Object.assign({}, this.settings, {
          lightsHelper: this.lightsHelper.export(),
          postProcessing: {
-           fxaa: ffbomesh.effectFXAA.enabled,
-           toneMappingMinLum: ffbomesh.toneMappingPass.materialToneMap.uniforms.minLuminance.value,
-           bloomRadius: ffbomesh.bloomPass.radius,
-           bloomThreshold: ffbomesh.bloomPass.threshold,
-           bloomStrength: ffbomesh.bloomPass.strength
-         }
+           fxaa: this.effectFXAA.enabled,
+           toneMappingMinLum: this.toneMappingPass.materialToneMap.uniforms.minLuminance.value,
+           bloomRadius: this.bloomPass.radius,
+           bloomThreshold: this.bloomPass.threshold,
+           bloomStrength: this.bloomPass.strength
+         },
+         backgroundColor: backgroundColor
        });
      }
 
@@ -1186,11 +1187,15 @@ moduleExporter(
        if('postProcessing' in settings){
          postProcessing = settings.postProcessing;
          delete settings.postProcessing;
-         if( postProcessing.fxaa != undefined ) ffbomesh.effectFXAA.enabled = postProcessing.fxaa;
-         if( postProcessing.toneMappingMinLum != undefined ) ffbomesh.toneMappingPass.setMinLuminance(postProcessing.toneMappingMinLum);
-         if( postProcessing.bloomRadius != undefined ) ffbomesh.bloomPass.radius = postProcessing.bloomRadius;
-         if( postProcessing.bloomStrength != undefined ) ffbomesh.bloomPass.strength = postProcessing.bloomStrength;
-         if( postProcessing.bloomThreshold != undefined ) ffbomesh.bloomThreshold = postProcessing.bloomThreshold;
+         if( postProcessing.fxaa != undefined ) this.effectFXAA.enabled = postProcessing.fxaa;
+         if( postProcessing.toneMappingMinLum != undefined ) this.toneMappingPass.setMinLuminance(postProcessing.toneMappingMinLum);
+         if( postProcessing.bloomRadius != undefined ) this.bloomPass.radius = postProcessing.bloomRadius;
+         if( postProcessing.bloomStrength != undefined ) this.bloomPass.strength = postProcessing.bloomStrength;
+         if( postProcessing.bloomThreshold != undefined ) this.bloomThreshold = postProcessing.bloomThreshold;
+       }
+       if('backgroundColor' in settings){
+         this.setBackgroundColor(settings.backgroundColor);
+         delete settings.backgroundColor;
        }
        Object.assign(this.settings, settings);
      }
@@ -1242,6 +1247,10 @@ moduleExporter(
            this.meshDict[key]['pinned'] = true;
        }
        for (var key of Object.keys(state_metadata['color'])) {
+         if (!this.meshDict.hasOwnProperty(key))
+           continue
+         if(this.meshDict[key].background)
+           continue
          var meshobj = this.meshDict[key].object;
          var color = state_metadata['color'][key];
          for (var j = 0; j < meshobj.children.length; ++j ) {
@@ -1520,7 +1529,8 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.setBackgroundColor = function( color ) {
-
+       if( Array.isArray( color ) )
+         color = new THREE.Color().fromArray( color )
        for (var i = 0; i < this.groups.back.children.length; ++i ) {
          var meshobj = this.groups.back.children[i]
          for (var j = 0; j < meshobj.children.length; ++j ) {
@@ -1543,6 +1553,7 @@ moduleExporter(
        this.computeVisibleBoundingBox();
        this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
        this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
+       this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
        //this.controls.reset();
      }
 
