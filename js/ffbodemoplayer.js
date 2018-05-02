@@ -521,7 +521,7 @@ moduleExporter(
          if(this._interrupt)
            this.notify("Demo stopped successfully")
          if(err !== undefined){
-           this.notify("Demo was stopped due to an error", {color: "red", icon:"fa-trash"});
+           this.notify("Demo was stopped due to an error", {color: "red", icon:"ico-error", timeout: false});
            console.error(err);
          }
          this._interrupt = false;
