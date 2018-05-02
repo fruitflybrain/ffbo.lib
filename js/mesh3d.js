@@ -597,9 +597,11 @@ moduleExporter(
        }).bind(this));
      }
 
-     FFBOMesh3D.prototype.computeVisibleBoundingBox = function(){
+     FFBOMesh3D.prototype.computeVisibleBoundingBox = function(includeBackground=false){
        this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
        for(var key in this.meshDict){
+         if( this.meshDict[key].background)
+           continue;
          if( this.meshDict[key].visibility ){
            if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
              this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;

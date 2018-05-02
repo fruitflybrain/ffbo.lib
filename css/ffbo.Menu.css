@@ -59,8 +59,8 @@
   background: var(--background-color);
  }
 .mm-menu .mm-btn:after, .mm-menu .mm-btn:before,
-.mm-menu .mm-listview > li .mm-next:after {
-  border-color: #545454;
+.mm-menu .mm-listview > li .mm-next:after, .mm-menu .mm-listview .mm-btn_next:after {
+  border-color: var(--font-color-navbar);
 }
 
 /* #ui_menu_nav  .mm-panel  li, #ui_menu_nav  .mm-panel  span,
@@ -136,7 +136,7 @@
 .mm-listview > li.hover > span,
 .mm-listview > li:hover > span,
 .navbar-collapse > ul > li.hover > span {
-    color: #fff !important;
+    /* color: #fff !important; */
 }
 
 /*.mm-listview li:before {
@@ -170,6 +170,9 @@
 
 }
 
+.mm-listview li i{
+    color: var(--font-color-navbar) !important;
+}
 
 .mm-listview li a {
     display: inline-block;

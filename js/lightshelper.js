@@ -145,7 +145,6 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
       light = (key in this) ? this[key]: undefined;
       lightImporter = (settings[key].type == "AmbientLight" ? this._ambientLightImporter:
                        (settings[key].type == "DirectionalLight" ? this._directionalLightImporter: this._spotLightImporter)).bind(this);
-      delete settings[key].type;
       try{
         this[key] = lightImporter(settings[key], light)
       }catch(err){
