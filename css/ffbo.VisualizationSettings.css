@@ -34,6 +34,10 @@
     font-weight: unset;
 }
 
+#toggle_visset label:hover {
+    color: unset;
+}
+
 .tooltip-inner {
     padding: 1px 6px;
     color: #000;
