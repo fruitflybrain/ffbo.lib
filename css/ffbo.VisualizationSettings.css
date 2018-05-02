@@ -26,6 +26,10 @@
     padding-bottom: 10px;
 }
 
+#toggle_visset h5 {
+    margin-left: -5px;
+}
+
 .tooltip-inner {
     padding: 1px 6px;
     color: #000;
