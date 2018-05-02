@@ -69,6 +69,13 @@
     border: 2px solid white;
 }
 
+#vis-neuropil-color {
+    right: 20px;
+    width: 25px;
+    border-radius: 10px;
+    height: 15px;
+}
+
 .slider.slider-horizontal .slider-track {
     height: 5px !important;
     margin-top: -2.5px !important;
