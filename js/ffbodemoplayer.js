@@ -28,10 +28,12 @@ moduleExporter(
 
        $(this.pageWrap).append(`
                                <div id="demo-blocker" style="display:none;width:100vw;height:100vh;background-color:rgba(0,0,0,0.1);position:fixed;z-index:9999999">
-                               <button class="btn" id="demoStopBtn" style="background-color: rgba(0,0,0,0);color: rgb(255,50,100);position: fixed; bottom: 120px; left: 50px">
+                               <!-- <button class="btn" id="demoStopBtn" style="background-color: rgba(0,0,0,0);color: rgb(255,50,100);position: fixed; bottom: 120px; left: 50px">
                                <i class="fa fa-close">  Stop Demo</i>
-                               </button>
+                               </button> -->
                                </div>`)
+       this.stopDemo = function(){ this._interrupt = true; };
+
        $('#demoStopBtn').click((function(){ this._interrupt = true;}).bind(this));
        this.cursor = undefined;
        this.autoType = AutoTyper($(this.srchBox)[0]);
@@ -59,13 +61,14 @@ moduleExporter(
                                         removeUnpin: 'removeUnpin',
                                         downData: 'downData'}, uiBtns);
        for(key in this.uiBtns)
-         this.uiBtns.key = '#ffboUIbtn-' + this.uiBtns.key;
+         this.uiBtns[key] = '#ffboUIbtn-' + this.uiBtns[key];
        // InfoPanel API
 
        // Settings API
 
        // Tags API
        this._timeOutPause = 100;
+       this._longerPause = 400;
      }
 
      Object.assign(FFBODemoPlayer.prototype, {
@@ -87,7 +90,7 @@ moduleExporter(
              if(typeof t === 'string'){
                $(t)[0].scrollIntoView({behavior: 'smooth'});
                setTimeout(() => { this.cursor.moveTo(t, dur); }, 2000);
-               setTimeout(() => { resolve(); /*this.ffbomesh.states.mouseOver = mouseOver;*/ }, dur + 500 + this._timeOutPause);
+               setTimeout(() => { resolve(); /*this.ffbomesh.states.mouseOver = mouseOver;*/ }, dur + 2000 + this._timeOutPause);
              }
              else{
                this.cursor.moveTo(t, dur);
@@ -105,12 +108,17 @@ moduleExporter(
                resolve();
                return;
              }
+             if($(panel).hasClass('mm-panel_opened') && $('#ui_menu_nav').hasClass('mm-menu_opened')){
+               resolve();
+               return;
+             }
              if(panel == this.menuSels.singleNeu || panel == this.menuSels.singlePin){
                this._openPanel(this.menuSels.top, moveTo, moveToDur, panelOpenPause).then(() => {
                  this._openPanel(this.menuSels.neu, moveTo, moveToDur, panelOpenPause).then(() => {
                    if(moveTo) {
                      sel = this.menuSels.neu + (panel == this.menuSels.singleNeu ? ' > ul > li:nth-child(4)' : ' > ul > li:nth-child(3)')
                      this._moveTo(sel, moveToDur).then(() =>{
+                       this.cursor.click();
                        this.menu.openPanel($(panel));
                        setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
                      });
@@ -126,6 +134,7 @@ moduleExporter(
                if(moveTo) {
                  sel = this.menuSels.top + ' > ul > li:nth-child(3)'
                  this._moveTo(sel, moveToDur).then(() =>{
+                   this.cursor.click();
                    this.menu.openPanel($(panel));
                    setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
                  }).catch(reject);
@@ -140,6 +149,7 @@ moduleExporter(
                  if(moveTo) {
                    sel = this.menuSels.top + ' > ul > li:nth-child(4)'
                    this._moveTo(sel, moveToDur).then(() =>{
+                     this.cursor.click();
                      this.menu.openPanel($(panel));
                      setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
                    }).catch(reject);
@@ -170,11 +180,12 @@ moduleExporter(
              if(moveTo){
                this._moveTo(sel, moveToDur).then( () => {
                  $(sel).mouseover();
-                 setTimeout(() => {this.cursor.click(); $(sel).click(); resolve()}, hoverPause)
+                 setTimeout(() => {this.cursor.click(); $(sel)[0].click();}, hoverPause)
+                 setTimeout(() => {resolve();}, hoverPause + this._longerPause)
                }).catch(reject);
              }else{
                $(sel).mouseover();
-               setTimeout(() => {$(sel).click(); resolve()}, hoverPause)
+               setTimeout(() => {$(sel)[0].click();}, hoverPause)
              }
            }catch(err){
              reject(err);
@@ -207,8 +218,8 @@ moduleExporter(
              }
              object = Object.assign({cursorMove: true, cursorMoveDuration: 1000}, object)
              if('uiBtn' in object){
-               if(object.uiBtn in this.uiBtns)
-                 this._clickMenu(this.uiBtns[object.uiBtn], object.cursorMove, object.cursorMoveDuration).then(() => {
+               if(object.uiBtn.type in this.uiBtns)
+                 this._clickMenu(this.uiBtns[object.uiBtn.type], object.cursorMove, object.cursorMoveDuration).then(() => {
                    resolve();
                  }).catch(reject);
                else
@@ -288,7 +299,7 @@ moduleExporter(
              }
              else if('selector' in object){
                // Can be used for Info Panel now. Should be later replaced by an API
-               this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration)
+               this._clickMenu(object.selector, object.cursorMove, object.cursorMoveDuration)
                  .then(() => {
                    $(object.selector).click();
                    setTimeout(resolve, this._timeOutPause);
@@ -299,7 +310,7 @@ moduleExporter(
                  rid = 'label' in object ? ffbomesh._labelToRid[object.label] : object.rid;
                  if(object.cursorMove) this.cursor.click();
                  ffbomesh.select(rid);
-                 setTimeout(() => {resolve();}, this._timeOutPause);
+                 setTimeout(() => {resolve();}, this._longerPause);
                }).catch(reject)
              }
              else{
@@ -326,10 +337,10 @@ moduleExporter(
              object = Object.assign({}, {cursorMove: true, cursorMoveDuration: 1000}, object);
              this._highlight(object).then( () => {
                rid = 'label' in object ? ffbomesh._labelToRid[object.label] : object.rid;
-               if(object.cursorMove) this.cursor.dbclick();
                ffbomesh.select(rid);
+               if(object.cursorMove) this.cursor.dbclick();
                ffbomesh.togglePin(rid);
-               setTimeout(() => {resolve();}, this._timeOutPause);
+               setTimeout(() => {resolve();}, this._longerPause*1.2);
              }).catch(reject)
            }catch(err){
              reject(err);
@@ -394,7 +405,7 @@ moduleExporter(
                    return;
                  }
                  setTimeout(function(){
-                   NLPsearch().then(function(){ resolve(); }, function(){ reject(err); });
+                   NLPsearch().then(function(){ resolve(); }, function(err){ reject(err); });
                  }, 3500);
                }).bind(this)).catch(reject);
              }).bind(this), 1000);
@@ -417,18 +428,19 @@ moduleExporter(
              this._categories[demo.category] = 0;
              $(sel).append(
                 "<h4>" + demo.category + "</h4>" +
-                 "<table id='table-demo-" + demo.category.replace(" ","_") + "' class='table-demo table table-inverse table-hover'>" +
+                 "<table id='table-demo-" + demo.category.replace(/ /g,"_") + "' class='table-demo table table-inverse table-hover'>" +
                  "<thead class='thead-inverse'><tr><th>#</th><th>Keyword</th><th>Description</th><th></th></tr></thead>" +
                  "<tbody id='basic-table-demo-body' class='table-demo-body'></tbody>" +
                  "</table>"
              );
            }
-           $("#table-demo-" + demo.category.replace(" ", "_")).append(
+           $("#table-demo-" + demo.category.replace(/ /g,"_")).append(
               "<tr><th>" + this._categories[demo.category] + "</th><td>" + demo.keyword + "</td><td>" + demo.description + "</td><td><button id='btn-demo-" + demoId + "' class='btn btn-danger btn-xs'>Launch</button></td></tr>"
            )
+           $("#btn-demo-" + demoId).attr("demoid", demoId);
            this._categories[demo.category] ++;
            if (demo.script !== undefined)
-             $("#btn-demo-" + demoId).click( () => {this.startDemo(demoId);} );
+             $("#btn-demo-" + demoId).click( (e) => {this.startDemo($(e.target).attr("demoid"));} );
            else
              $("#btn-demo-" + demoId).prop( 'disabled', true);
          }
@@ -438,9 +450,10 @@ moduleExporter(
        notify: function(message, settings){
        },
        _displayMessage: function(object){
-         object = Object.assign({pause: 2000, message:""}, object);
+         object = Object.assign({pause: 4000, message:""}, object);
          return new Promise((resolve, reject) => {
            try{
+             object.settings = Object.assign({timeout: 6000}, object.settings);
              this.notify(object.message, object.settings);
              setTimeout(resolve, object.pause);
            }catch(err){
@@ -492,15 +505,17 @@ moduleExporter(
            }
          });
        },
-       beforeDemo: function(){
+       beforeDemo: function(keyword){
+       },
+       afterDemo: function(){
        },
        startDemo: function(demoName){
          return new Promise((resolve, reject) => {
            try{
              this._interrupt = false;
-             this.beforeDemo();
              if(demoName in this._demoJson){
                $('#demo-blocker').show();
+               this.beforeDemo(this._demoJson[demoName].keyword);
                this._initCursor();
                this._demoPlayer(this._demoJson[demoName].script).then(resolve).catch((err)=>{
                  this._onDemoEnd(err);
@@ -518,10 +533,13 @@ moduleExporter(
        },
        stopDemo: function(){ this._interrupt = true; },
        _onDemoEnd: function(err){
+         try{
+           this.afterDemo();
+         }catch(err){console.log(err);}
          if(this._interrupt)
-           this.notify("Demo stopped successfully")
+           this.notify("Demo stopped successfully", {color: "yellow"});
          if(err !== undefined){
-           this.notify("Demo was stopped due to an error", {color: "red", icon:"ico-error", timeout: false});
+           this.notify("Demo was stopped due to an error", {color: "red", icon:"ico-error"});
            console.error(err);
          }
          this._interrupt = false;
@@ -725,7 +743,7 @@ moduleExporter(
          return new Promise(function (resolve) {
            var query_str = str;
            var i = 0, text;
-           speed = speed || 80;
+           speed = speed || 40;
            (function type() {
              text = query_str.slice(0, ++i);
              element.value = text;
