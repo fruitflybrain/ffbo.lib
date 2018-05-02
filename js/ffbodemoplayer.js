@@ -120,7 +120,7 @@ moduleExporter(
                      setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
                    }
                  });
-               });
+               }).catch(reject);
              }
              else if (panel == this.menuSels.neu){
                if(moveTo) {
@@ -128,7 +128,7 @@ moduleExporter(
                  this._moveTo(sel, moveToDur).then(() =>{
                    this.menu.openPanel($(panel));
                    setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
-                 });
+                 }).catch(reject);
                }
                else{
                  this.menu.openPanel($(panel));
@@ -142,7 +142,7 @@ moduleExporter(
                    this._moveTo(sel, moveToDur).then(() =>{
                      this.menu.openPanel($(panel));
                      setTimeout(function(){resolve()}, panelOpenPause + this._timeOutPause);
-                   });
+                   }).catch(reject);
                  }
                  else{
                    this.menu.openPanel($(panel));
@@ -171,7 +171,7 @@ moduleExporter(
                this._moveTo(sel, moveToDur).then( () => {
                  $(sel).mouseover();
                  setTimeout(() => {this.cursor.click(); $(sel).click(); resolve()}, hoverPause)
-               });
+               }).catch(reject);
              }else{
                $(sel).mouseover();
                setTimeout(() => {$(sel).click(); resolve()}, hoverPause)
@@ -210,7 +210,7 @@ moduleExporter(
                if(object.uiBtn in this.uiBtns)
                  this._clickMenu(this.uiBtns[object.uiBtn], object.cursorMove, object.cursorMoveDuration).then(() => {
                    resolve();
-                 });
+                 }).catch(reject);
                else
                  resolve();
              }
@@ -220,67 +220,67 @@ moduleExporter(
                  this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = '#btn-pin-symbol-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "unpin-pinned":
                  this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = '#btn-pinned-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "visToggle":
                  this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = '#btn-toggle-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "remove":
                  this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = '#btn-rm-' + ('label' in object.menu ? uidDecode(this.ffbomesh._labelToRid[object.menu.label]) : uidDecode(object.menu.rid));
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "neuShowAll":
                  this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.neuShowAll;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 })
+                 }).catch(reject)
                  break;
                case "neuHideAll":
                  this._openPanel(this.menuSels.singleNeu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.neuHideAll;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 })
+                 }).catch(reject)
                  break;
                case "lpuShowAll":
                  this._openPanel(this.menuSels.lpu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.lpuShowAll;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 })
+                 }).catch(reject)
                  break;
                case "lpuHideAll":
                  this._openPanel(this.menuSels.lpu, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.lpuHideAll;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 })
+                 }).catch(reject)
                  break;
                case "pinKeep":
                  this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.pinKeep;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "pinRemove":
                  this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.pinRemove;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                case "unpinAll":
                  this._openPanel(this.menuSels.singlePin, object.cursorMove, object.cursorMoveDuration).then(()=>{
                    sel = this.menuSels.unpinAll;
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
-                 });
+                 }).catch(reject);
                  break;
                default:
                  reject("Unrecognized Command");
@@ -292,7 +292,7 @@ moduleExporter(
                  .then(() => {
                    $(object.selector).click();
                    setTimeout(resolve, this._timeOutPause);
-                 });
+                 }).catch(reject);
              }
              else if('label' in object || 'rid' in object){
                this._highlight(object).then( () => {
@@ -300,7 +300,7 @@ moduleExporter(
                  if(object.cursorMove) this.cursor.click();
                  ffbomesh.select(rid);
                  setTimeout(() => {resolve();}, this._timeOutPause);
-               })
+               }).catch(reject)
              }
              else{
                resolve();
@@ -330,7 +330,7 @@ moduleExporter(
                ffbomesh.select(rid);
                ffbomesh.togglePin(rid);
                setTimeout(() => {resolve();}, this._timeOutPause);
-             })
+             }).catch(reject)
            }catch(err){
              reject(err);
            }
@@ -356,7 +356,7 @@ moduleExporter(
                this._moveTo(pos, object.cursorMoveDuration).then(() =>{
                  this.ffbomesh.highlight(rid, true);
                  setTimeout(() => {resolve();}, this._timeOutPause);
-               });
+               }).catch(reject);
              }else{
                this.ffbomesh.highlight(rid);
                setTimeout(() => {resolve();}, this._timeOutPause);
@@ -396,7 +396,7 @@ moduleExporter(
                  setTimeout(function(){
                    NLPsearch().then(function(){ resolve(); }, function(){ reject(err); });
                  }, 3500);
-               }).bind(this));
+               }).bind(this)).catch(reject);
              }).bind(this), 1000);
            }catch(err){
              reject(err);
@@ -478,7 +478,7 @@ moduleExporter(
                  p = this._displayMessage(json[i][1])
                  break;
                }
-               if(p !== undefined) p.then(()=>{execute(i+1)});
+               if(p !== undefined) p.then(()=>{execute(i+1)}).catch(reject);
                else execute(i+1);
              }catch(err){
                reject(err);
@@ -502,22 +502,28 @@ moduleExporter(
              if(demoName in this._demoJson){
                $('#demo-blocker').show();
                this._initCursor();
-               this._demoPlayer(this._demoJson[demoName].script).then(resolve);
+               this._demoPlayer(this._demoJson[demoName].script).then(resolve).catch((err)=>{
+                 this._onDemoEnd(err);
+                 reject(err);
+               });
              }
              else{
                reject("Demo not found");
              }
            }catch(err){
-             this._onDemoEnd();
+             this._onDemoEnd(err);
              reject(err)
            }
          });
        },
        stopDemo: function(){ this._interrupt = true; },
-       _onDemoEnd: function(){
-         console.log("Demo Ended");
+       _onDemoEnd: function(err){
          if(this._interrupt)
            this.notify("Demo stopped successfully")
+         if(err !== undefined){
+           this.notify("Demo was stopped due to an error", {color: "red", icon:"fa-trash"});
+           console.error(err);
+         }
          this._interrupt = false;
          if(this.cursor){
            this.cursor.remove();
