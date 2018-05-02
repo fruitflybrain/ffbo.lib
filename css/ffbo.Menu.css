@@ -73,7 +73,7 @@
   border-color: var(--font-color-navbar-hl);
 }
 .mm-navbar:hover a,
-.mm-listview li:hover a,
+.mm-listview li:hover > a,
 .mm-listview li:hover span {
   color: var(--font-color-navbar-hl);
 }
