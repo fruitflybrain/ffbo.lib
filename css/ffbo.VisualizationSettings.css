@@ -30,6 +30,10 @@
     margin-left: -5px;
 }
 
+#toggle_visset label {
+    font-weight: unset;
+}
+
 .tooltip-inner {
     padding: 1px 6px;
     color: #000;
