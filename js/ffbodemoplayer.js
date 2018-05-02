@@ -425,7 +425,7 @@ moduleExporter(
            if(demo.category == undefined)
              demo.category = "Miscellaneous";
            if(!(demo.category in this._categories)){
-             this._categories[demo.category] = 0;
+             this._categories[demo.category] = 1;
              $(sel).append(
                 "<h4>" + demo.category + "</h4>" +
                  "<table id='table-demo-" + demo.category.replace(/ /g,"_") + "' class='table-demo table table-inverse table-hover'>" +
@@ -779,29 +779,4 @@ moduleExporter(
      return FFBODemoPlayer;
    }
 )
-
-function ScriptLoader(func) {
-  return function (script, i) {
-    if (func !== undefined)
-      func();
-    if (i === undefined)
-      i = 0;
-    setTimeout( function() {
-      script[i][1]();
-      ++i;
-      if (i === script.length)
-        return;
-      if (script[i][0] === null) {
-        $("body").on( "demoproceed", function(event, e) {
-          $("body").off( "demoproceed" );
-          if (e === "success")
-            script_loader(script, i);
-          else
-            Notify("Stopping the demo due to the previous error...", null, null, 'danger');
-        })
-      } else
-        script_loader(script, i);
-    }, script[i][0] )
-  }
-}
 
