@@ -196,6 +196,6 @@
     z-index: 2;
 }
 
-.mm-navbars {
+#ui-menu-nav {
    z-index: 999;
 }
