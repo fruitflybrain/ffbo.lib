@@ -17,9 +17,13 @@
     background: var(--font-color-h5);
 }
 
-#toggle_visset div.wrap {
-    max-width: calc(100% - 35px);
+#toggle_visset .mm-listitem > a > div {
     white-space: normal !important;
+    max-width: calc(100% - 10px);
+}
+
+#toggle_visset div.wrap {
+    max-width: calc(100% - 40px) !important;
 }
 
 #toggle_visset h4 {
@@ -38,6 +42,9 @@
     color: unset;
 }
 
+
+
+
 .tooltip-inner {
     padding: 1px 6px;
     color: #000;
@@ -54,7 +61,10 @@
     margin-top: -32px !important;
     margin-left: -5px !important;
 }
+#toggle_visset > ul > li > a {
+  max-width: 100%;
 
+}
 #toggle_visset input[type='radio']:checked:after {
     width: 15px;
     height: 15px;
@@ -166,10 +176,6 @@
     right: 0;
 }
 
-.mm-listitem > a > div {
-    white-space: normal !important;
-    max-width: calc(100% - 20px);
-}
 
 #vis_set_dragger {
     left: calc( var(--boundary-horizontal) - 15px );
@@ -224,6 +230,6 @@
 }
 
 .slider{
-    max-width: calc(100% - 20px);
+    max-width: calc(100% - 10px);
     width: 40vw !important;
 }
