@@ -46,7 +46,7 @@
     border: #000 solid 2px;
 }
 
-#toggle_visse input[type='radio'] {
+#toggle_visset input[type='radio'] {
     margin-right: 2px;
 }
 
@@ -55,7 +55,7 @@
     margin-left: -5px !important;
 }
 
-#toggle_visse input[type='radio']:checked:after {
+#toggle_visset input[type='radio']:checked:after {
     width: 15px;
     height: 15px;
     border-radius: 15px;
