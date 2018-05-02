@@ -86,7 +86,7 @@ moduleExporter(
              //this.ffbomesh.states.mouseOver = true;
              if(typeof t === 'string'){
                $(t)[0].scrollIntoView({behavior: 'smooth'});
-               setTimeout(() => { this.cursor.moveTo(t, dur); }, 500);
+               setTimeout(() => { this.cursor.moveTo(t, dur); }, 2000);
                setTimeout(() => { resolve(); /*this.ffbomesh.states.mouseOver = mouseOver;*/ }, dur + 500 + this._timeOutPause);
              }
              else{
@@ -282,6 +282,8 @@ moduleExporter(
                    this._clickMenu(sel, object.cursorMove, object.cursorMoveDuration).then(() => {resolve()});
                  });
                  break;
+               default:
+                 reject("Unrecognized Command");
                }
              }
              else if('selector' in object){
@@ -415,15 +417,16 @@ moduleExporter(
              this._categories[demo.category] = 0;
              $(sel).append(
                 "<h4>" + demo.category + "</h4>" +
-                 "<table id='table-demo-" + demo.category + "' class='table-demo table table-inverse table-hover'>" +
+                 "<table id='table-demo-" + demo.category.replace(" ","_") + "' class='table-demo table table-inverse table-hover'>" +
                  "<thead class='thead-inverse'><tr><th>#</th><th>Keyword</th><th>Description</th><th></th></tr></thead>" +
                  "<tbody id='basic-table-demo-body' class='table-demo-body'></tbody>" +
                  "</table>"
              );
            }
-           $("#table-demo-" + demo.category).append(
+           $("#table-demo-" + demo.category.replace(" ", "_")).append(
               "<tr><th>" + this._categories[demo.category] + "</th><td>" + demo.keyword + "</td><td>" + demo.description + "</td><td><button id='btn-demo-" + demoId + "' class='btn btn-danger btn-xs'>Launch</button></td></tr>"
            )
+           this._categories[demo.category] ++;
            if (demo.script !== undefined)
              $("#btn-demo-" + demoId).click( () => {this.startDemo(demoId);} );
            else
@@ -449,31 +452,38 @@ moduleExporter(
          return new Promise((resolve, reject) => {
            var len = json.length;
            execute = (i) => {
-             if (i == len || this._interrupt){
-               this._onDemoEnd();
-               resolve();
+             try{
+               if (i == len || this._interrupt){
+                 this._onDemoEnd();
+                 resolve();
+                 return;
+               }
+               var p = undefined;
+               //             console.log(i);
+               //             console.log(json[i]);
+               switch ( json[i][0] ){
+               case "click":
+                 p = this._click(json[i][1])
+                 break;
+               case "pin":
+                 p = this._pin(json[i][1])
+                 break;
+               case "highlight":
+                 p = this._highlight(json[i][1])
+                 break;
+               case "search":
+                 p = this._search(json[i][1])
+                 break;
+               case "notify":
+                 p = this._displayMessage(json[i][1])
+                 break;
+               }
+               if(p !== undefined) p.then(()=>{execute(i+1)});
+               else execute(i+1);
+             }catch(err){
+               reject(err);
                return;
              }
-             var p = undefined;
-             switch ( json[i][0] ){
-             case "click":
-               p = this._click(json[i][1])
-               break;
-             case "pin":
-               p = this._pin(json[i][1])
-               break;
-             case "highlight":
-               p = this._highlight(json[i][1])
-               break;
-             case "search":
-               p = this._search(json[i][1])
-               break;
-             case "notify":
-               p = this._displayMessage(json[i][1])
-               break;
-             }
-             if(p !== undefined) p.then(()=>{execute(i+1)});
-             else execute(i+1);
            }
            try{
              execute(0);
@@ -482,10 +492,13 @@ moduleExporter(
            }
          });
        },
+       beforeDemo: function(){
+       },
        startDemo: function(demoName){
          return new Promise((resolve, reject) => {
            try{
              this._interrupt = false;
+             this.beforeDemo();
              if(demoName in this._demoJson){
                $('#demo-blocker').show();
                this._initCursor();
