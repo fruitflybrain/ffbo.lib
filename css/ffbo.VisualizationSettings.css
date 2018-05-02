@@ -80,10 +80,6 @@
 }
 
 #vis-neuropil-color-wrapper {
-<<<<<<< HEAD
-=======
-
->>>>>>> 7600f60220daf9feec75b0945786c492417fc4f8
   border-radius: 10px;
   right: 20px;
   width: 28px;
@@ -101,6 +97,9 @@
     border: none;
 }
 
+#btn-store-vis-settings {
+    cursor: pointer;
+}
 
 .slider.slider-horizontal .slider-track {
     height: 5px !important;
