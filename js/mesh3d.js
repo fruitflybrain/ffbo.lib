@@ -299,7 +299,7 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.initRenderer = function () {
-       renderer = new THREE.WebGLRenderer();
+       renderer = new THREE.WebGLRenderer({'logarithmicDepthBuffer': true});
        renderer.setPixelRatio( window.devicePixelRatio );
        renderer.setSize( this.container.clientWidth, this.container.clientHeight );
        this.container.appendChild(renderer.domElement);
