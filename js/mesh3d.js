@@ -107,7 +107,8 @@ moduleExporter(
          neuron3d: false,
          neuron3dMode: 1,
          synapseMode: 1,
-         meshWireframe: true
+         meshWireframe: true,
+         backgroundColor: '#fff'
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
@@ -257,6 +258,10 @@ moduleExporter(
        this.settings.toneMappingPass.on('change', (function(e){
          this.toneMappingPass.setMinLuminance(1-this.settings.toneMappingPass.brightness);
        }).bind(this), 'brightness');
+
+       this.settings.on('change', (function (e) {
+         this.setBackgroundColor(e.value);
+       }).bind(this), 'backgroundColor');
 
        if ( data != undefined && Object.keys(data).length > 0)
          this.addJson( data );
@@ -1184,8 +1189,10 @@ moduleExporter(
 
      FFBOMesh3D.prototype.export_settings = function() {
        backgroundColor = [0.15, 0.01, 0.15];
-       if( this.groups.back.children.length)
-         backgroundColor = ffbomesh.groups.back.children[0].children[0].material.color.toArray()
+       if (this.groups.back.children.length)
+         backgroundColor = ffbomesh.groups.back.children[0].children[0].material.color.toArray();
+       if (this.settings.backgroundColor !== undefined)
+         backgroundColor = this.settings.backgroundColor;
        return Object.assign({}, this.settings, {
          lightsHelper: this.lightsHelper.export(),
          postProcessing: {
@@ -1224,7 +1231,9 @@ moduleExporter(
        }
        if('backgroundColor' in settings){
          bg = settings.backgroundColor;
-         setTimeout((function(){this.setBackgroundColor(bg)}).bind(this), 4000);
+         setTimeout((function(){
+           this.setBackgroundColor(bg)
+         }).bind(this), 4000);
          delete settings.backgroundColor;
        }
        Object.assign(this.settings, settings);
