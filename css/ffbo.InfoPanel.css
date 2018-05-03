@@ -192,9 +192,9 @@ Info Panel
 @media screen and (max-width: 780px) and (orientation:portrait) {
   .vis-hf-r,
   .vis-3d-hf {
-    height: calc( 50% - 35px - 25px - 10px ) !important;
+    height: calc( 60% - 35px - 25px ) !important;
     width: calc( 100% - 20px ) !important;
-    top: calc( 50vh ) !important;
+    top: calc( 40% ) !important;
     left: 10px !important;
   }
   /* .vis-info-sm:hover */
@@ -202,7 +202,7 @@ Info Panel
   .vis-sm:hover,
   .vis-sm-1:hover {
     top: 60px;
-    height: calc( 50% - 35px - 25px );
+    height: calc( 40% - 35px - 25px - 10px);
     width: calc( 100% - 20px );
     overflow-y: auto;
   }
