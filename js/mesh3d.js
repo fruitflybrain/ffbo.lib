@@ -108,7 +108,7 @@ moduleExporter(
          neuron3dMode: 1,
          synapseMode: 1,
          meshWireframe: true,
-         backgroundColor: '#fff'
+         backgroundColor: undefined,
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
