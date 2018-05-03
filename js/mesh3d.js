@@ -102,7 +102,7 @@ moduleExporter(
          highlightedObjectOpacity: 1.0,
          defaultRadius: 0.5,
          defaultSomaRadius: 3.0,
-         defaultSynapseRadius: 0.3,
+         defaultSynapseRadius: 0.2,
          backgroundOpacity: 1.0,
          backgroundWireframeOpacity: 0.07,
          neuron3d: false,
@@ -599,10 +599,12 @@ moduleExporter(
 
      FFBOMesh3D.prototype.computeVisibleBoundingBox = function(includeBackground=false){
        this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
+       updated = false;
        for(var key in this.meshDict){
          if( this.meshDict[key].background)
            continue;
          if( this.meshDict[key].visibility ){
+           updated = true;
            if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
              this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
            if ( this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX )
@@ -617,6 +619,8 @@ moduleExporter(
              this.visibleBoundingBox.maxZ = this.meshDict[key].boundingBox.maxZ;
          }
        }
+       if(!updated)
+         Object.assign(this.visibleBoundingBox, this.boundingBox);
      }
 
      FFBOMesh3D.prototype.updateObjectBoundingBox = function(obj, x, y, z) {
@@ -1556,6 +1560,64 @@ moduleExporter(
        this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
        this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
        this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
+       this.camera.updateProjectionMatrix();
+       setTimeout( () => {
+         positions = [
+           new THREE.Vector3(this.visibleBoundingBox.minX,
+                             this.visibleBoundingBox.minY,
+                             this.visibleBoundingBox.minZ),
+           new THREE.Vector3(this.visibleBoundingBox.minX,
+                             this.visibleBoundingBox.minY,
+                             this.visibleBoundingBox.maxZ),
+           new THREE.Vector3(this.visibleBoundingBox.minX,
+                             this.visibleBoundingBox.maxY,
+                             this.visibleBoundingBox.minZ),
+           new THREE.Vector3(this.visibleBoundingBox.minX,
+                             this.visibleBoundingBox.maxY,
+                             this.visibleBoundingBox.maxZ),
+           new THREE.Vector3(this.visibleBoundingBox.maxX,
+                             this.visibleBoundingBox.minY,
+                             this.visibleBoundingBox.minZ),
+           new THREE.Vector3(this.visibleBoundingBox.maxX,
+                             this.visibleBoundingBox.minY,
+                             this.visibleBoundingBox.maxZ),
+           new THREE.Vector3(this.visibleBoundingBox.maxX,
+                             this.visibleBoundingBox.maxY,
+                             this.visibleBoundingBox.minZ),
+           new THREE.Vector3(this.visibleBoundingBox.maxX,
+                             this.visibleBoundingBox.maxY,
+                             this.visibleBoundingBox.maxZ)
+         ]
+
+         // From https://stackoverflow.com/a/11771236
+         targetFov = 0.0;
+         for (var i=0; i<8; i++) {
+           proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+           angle = Math.max(
+              Math.abs(Math.atan(proj2d.x/proj2d.z) / camera.aspect),
+              Math.abs(Math.atan(proj2d.y/proj2d.z))
+           );
+           targetFov = Math.max(targetFov, angle);
+         }
+
+         currentFov = Math.PI*this.fov/2/180;
+         cam_dir = new THREE.Vector3();
+         cam_dir.subVectors(this.camera.position, this.controls.target);
+         prevDist = cam_dir.length();
+         cam_dir.normalize();
+
+         dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+
+         aspect = this.camera.aspect;
+         targetHfov =  2*Math.atan(Math.tan(targetFov/2)*aspect);
+         currentHfov =  2*Math.atan(Math.tan(currentFov/2)*aspect);
+         dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+
+         this.camera.position.copy(this.controls.target);
+         this.camera.position.addScaledVector(cam_dir, dist);
+
+         this.camera.updateProjectionMatrix();
+       }, 400);
        //this.controls.reset();
      }
 

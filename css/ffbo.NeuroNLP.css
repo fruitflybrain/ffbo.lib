@@ -1,3 +1,14 @@
+.ui-widget-shadow {
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+.ui-widget-content {
+    border: 1px solid #aaaaaa !important;
+    background: #222222 !important;
+    color: #ccc !important;
+    font: 12px arial !important;
+}
+
 .iziToast-wrapper-bottomRight{
     bottom: 50px !important;
 }
