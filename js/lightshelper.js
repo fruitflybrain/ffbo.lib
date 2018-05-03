@@ -39,11 +39,10 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     lh.on('change', function(e){
       light = this[e['path'][0]];
       if(e['value']){
-        light.object.intensity = light._intensity
+        light._object.intensity = light.intensity
       }
       else{
-        light._intensity = light.object.intensity;
-        light.object.intensity = 0;
+        light._object.intensity = 0;
       }
     }.bind(lh), 'enabled')
 
@@ -54,7 +53,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
       this._updatePause = true;
       setTimeout(function(){
         for( k in this )
-          if(this[k].object && this[k].object.type == "SpotLight" && this[k].track)
+          if(this[k]._object && this[k]._object.type == "SpotLight" && this[k].track)
             this._updateSpotLight( this[k] );
         this._updatePause = false;
       }.bind(this), 5);
@@ -64,53 +63,59 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
 
   function ambientLightExporter(light){
     return {
-      intensity: light._intensity,
+      intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.object.color),
+      color: Object.assign({}, light.color),
       type: "AmbientLight"
     }
   }
 
   FFBOLightsHelper.prototype._ambientLightImporter = function(settings, light){
     if(light == undefined) return this.addAmbientLight(settings)
-    light.enabled = true
-    light.object.intensity = settings.intensity;
-    Object.assign(light.object.color, settings.color);
-    light.enabled = settings.enabled;
+    /*
+      light.enabled = true
+      light.object.intensity = settings.intensity;
+      Object.assign(light.object.color, settings.color);
+      light.enabled = settings.enabled;
+    */
+    Object.assign(light, settings)
     return light;
   }
 
 
   function directionalLightExporter(light){
     return {
-      intensity: light.object.intensity || light._intensity,
+      intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.object.color),
-      position: Object.assign({}, light.object.position),
-      target: Object.assign({}, light.object.target.position),
+      color: Object.assign({}, light.color),
+      position: Object.assign({}, light.position),
+      target: Object.assign({}, light.target),
       type: "DirectionalLight"
     }
   }
 
   FFBOLightsHelper.prototype._directionalLightImporter = function(settings, light){
     if(light == undefined) return this.addDirectionalLight(settings)
-    light.enabled = true
-    light.object.intensity = settings.intensity;
-    Object.assign(light.object.color, settings.color);;
-    Object.assign(light.object.position, settings.position);
-    Object.assign(light.object.target.position, settings.target);
-    light.enabled = settings.enabled;
+    /*
+      light.enabled = true
+      light.object.intensity = settings.intensity;
+      Object.assign(light.object.color, settings.color);;
+      Object.assign(light.object.position, settings.position);
+      Object.assign(light.object.target.position, settings.target);
+      light.enabled = settings.enabled;
+    */
+    Object.assign(light, settings);
     return light;
   }
 
 
   function spotLightExporter(light){
     return {
-      intensity: light.object.intensity || light._intensity,
+      intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.object.color),
-      angle: light.object.angle,
-      decay: light.object.decay,
+      color: Object.assign({}, light.color),
+      angle: light.angle,
+      decay: light.decay,
       distanceFactor: light.distanceFactor,
       posAngle1: light.posAngle1,
       posAngle2: light.posAngle2,
@@ -121,16 +126,20 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
 
   FFBOLightsHelper.prototype._spotLightImporter = function(settings, light){
     if(light == undefined) return this.addSpotLight(settings)
-    light.enabled = true
-    light.object.intensity = settings.intensity;
-    Object.assign(light.object.color, settings.color);;
-    light.object.angle = settings.angle;
-    light.object.decay = settings.decay;
-    light.posAngle1 = settings.posAngle1;
-    light.posAngle2 = settings.posAngle2;
-    light.distanceFactor = settings.distanceFactor;
+    /*
+      light.enabled = true
+      light.object.intensity = settings.intensity;
+      Object.assign(light.object.color, settings.color);;
+      light.object.angle = settings.angle;
+      light.object.decay = settings.decay;
+      light.posAngle1 = settings.posAngle1;
+      light.posAngle2 = settings.posAngle2;
+      light.distanceFactor = settings.distanceFactor;
+      this._updateSpotLight(light);
+      light.enabled = settings.enabled;
+    */
+    Object.assign(light, settings)
     this._updateSpotLight(light);
-    light.enabled = settings.enabled;
     return light;
   }
 
@@ -154,13 +163,13 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
   FFBOLightsHelper.prototype.export = function(){
     settings = {};
     for(key in this){
-      if(!this[key].object)
+      if(!this[key]._object)
         continue;
-      if(this[key].object.type == "AmbientLight")
+      if(this[key]._object.type == "AmbientLight")
         settings[key] = ambientLightExporter(this[key])
-      if(this[key].object.type == "DirectionalLight")
+      if(this[key]._object.type == "DirectionalLight")
         settings[key] = directionalLightExporter(this[key])
-      if(this[key].object.type == "SpotLight")
+      if(this[key]._object.type == "SpotLight")
         settings[key] = spotLightExporter(this[key])
     }
     return settings;
@@ -174,11 +183,24 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     intensity = getProperty(properties, 'intensity', 1.0)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager({object: new THREE.AmbientLight(color, intensity)});
-    this[key]._intensity = intensity
-    this[key].enabled = true;
+    this[key] = new PropertyManager({
+      _object: new THREE.AmbientLight(color, intensity),
+      color: color,
+      intensity: intensity,
+      enabled: true
+    });
+
     if('enabled' in properties) this[key].enabled = properties.enabled;
-    scene.add(this[key].object)
+        this[key].on("change", function(e){
+      if( e.prop == "intensity" )
+        e.obj.enabled ? ( e.obj._object.intensity = e.value ): undefined;
+      else if( e.prop == "color" )
+        e.obj._object.color.set(e.value);
+      else
+        Object.assign(e.obj._object[e.prop], e.value);
+    }, ["color", "intensity"]);
+
+    scene.add(this[key]._object)
     return this[key]
   }
 
@@ -192,15 +214,33 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     target = getProperty(properties, 'target', new THREE.Vector3(0,0,0))
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager({object: new THREE.DirectionalLight(color, intensity)});
-    this[key].object.position.copy(position)
-    this[key].object.target.position.copy(target)
-    this[key]._intensity = intensity
+    this[key] = new PropertyManager({
+      _object: new THREE.DirectionalLight(color, intensity),
+      color: color,
+      intensity: intensity,
+      position: position,
+      target: target,
+      enabled: true
+    });
+    this[key]._object.position.copy(position)
+    this[key]._object.target.position.copy(target)
 
-    this[key].enabled = true;
     if('enabled' in properties) this[key].enabled = properties.enabled;
-    scene.add(this[key].object)
-    scene.add(this[key].object.target)
+
+    this[key].on("change", function(e){
+      if( e.prop == "intensity" )
+        e.obj.enabled ? ( e.obj._object.intensity = e.value ): undefined;
+      else if( e.prop == "color" )
+        e.obj._object.color.set(e.value);
+      else if( e.prop == "position" )
+        e.obj._object.position.copy(e.value);
+      else if( e.prop == "target" )
+        e.obj._object.target.position.copy(e.value);
+      else
+        e.obj._object[e.prop] = e.value;
+    }, ["color", "intensity", "position", "target"]);
+    scene.add(this[key]._object)
+    scene.add(this[key]._object.target)
     return this[key]
   }
 
@@ -216,9 +256,9 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     distance = position.length() * light.distanceFactor;
     position.add(target);
 
-    light.object.position.copy(position);
-    light.object.target.position.copy(target);
-    light.object.distance = distance;
+    light._object.position.copy(position);
+    light._object.target.position.copy(target);
+    light._object.distance = distance;
   }
 
 
@@ -236,17 +276,29 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     track = getProperty(properties, 'track', true)
 
     key = getProperty(properties, 'key', guidGenerator())
-    this[key] = new PropertyManager({object: new THREE.SpotLight(color, intensity)});
-    this[key]._intensity = intensity
+    this[key] = new PropertyManager({
+      _object: new THREE.SpotLight(color, intensity),
+      color: color,
+      intensity: intensity,
+      angle: angle,
+      decay: decay,
+      posAngle1: posAngle1,
+      posAngle2: posAngle2,
+      track: track,
+      distanceFactor: distanceFactor,
+      enabled: true
+    });
 
-    this[key].object.angle = angle;
-    this[key].object.decay = decay;
-
-    this[key].enabled = true;
     if('enabled' in properties) this[key].enabled = properties.enabled;
-    this[key].distanceFactor = distanceFactor;
-    this[key].posAngle1 = posAngle1;
-    this[key].posAngle2 = posAngle2;
+
+    this[key].on("change", function(e){
+      if( e.prop == "intensity" )
+        e.obj.enabled ? ( e.obj._object.intensity = e.value ): undefined;
+      else if( e.prop == "color" )
+        e.obj._object.color.set(e.value);
+      else
+        e.obj._object[e.prop] = e.value;
+    }, ["color", "intensity", "angle", "decay"]);
 
     this[key].on("change", function(e){
       this._updateSpotLight(e.obj);
@@ -254,9 +306,8 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     this._updateSpotLight(this[key])
 
 
-    scene.add(this[key].object)
-    scene.add(this[key].object.target)
-    this[key].track = track;
+    scene.add(this[key]._object)
+    scene.add(this[key]._object.target)
     return this[key];
   }
 
