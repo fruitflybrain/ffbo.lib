@@ -110,7 +110,7 @@ moduleExporter(
          meshWireframe: true
        });
 
-       this.settings.toneMappingPass = new PropertyManager({brightness: 0.25});
+       this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
        this.settings.bloomPass = new PropertyManager({radius: 0.2, strength: 0.2, threshold: 0.3});
        this.settings.effectFXAA = new PropertyManager({enabled: true});
        this.settings.backrenderSSAO = new PropertyManager({enabled: true});
@@ -255,7 +255,7 @@ moduleExporter(
        }).bind(this), ['radius', 'strength', 'threshold', 'enabled']);
 
        this.settings.toneMappingPass.on('change', (function(e){
-         this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
+         this.toneMappingPass.setMinLuminance(1-this.settings.toneMappingPass.brightness);
        }).bind(this), 'brightness');
 
        if ( data != undefined && Object.keys(data).length > 0)
@@ -393,7 +393,7 @@ moduleExporter(
        });
 
        lightsHelper.addAmbientLight({
-         intensity: 0.5,
+         intensity: 0.4,
          scene: this.scenes.back,
          key: 'backAmbient'
        });
@@ -405,7 +405,7 @@ moduleExporter(
        });
 
        lightsHelper.addDirectionalLight({
-         intensity: 0.8,
+         intensity: 0.55,
          position: new THREE.Vector3(0, 0, 5000),
          scene: this.scenes.back,
          key: 'backDirectional_1'
@@ -418,7 +418,7 @@ moduleExporter(
        });
 
        lightsHelper.addDirectionalLight({
-         intensity: 0.8,
+         intensity: 0.55,
          position: new THREE.Vector3(0, 0, -5000),
          scene: this.scenes.back,
          key: 'backDirectional_2'
@@ -433,7 +433,7 @@ moduleExporter(
        lightsHelper.addSpotLight({
          posAngle1: 80,
          posAngle2: 80,
-         intensity: 12,
+         intensity: 9,
          scene: this.scenes.back,
          key: 'backSpot_1'
        });
@@ -447,7 +447,7 @@ moduleExporter(
        lightsHelper.addSpotLight({
          posAngle1: -80,
          posAngle2: 80,
-         intensity: 12,
+         intensity: 9,
          scene: this.scenes.back,
          key: 'backSpot_2'
        });
