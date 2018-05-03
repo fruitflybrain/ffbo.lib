@@ -1223,7 +1223,8 @@ moduleExporter(
            this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
        }
        if('backgroundColor' in settings){
-         this.setBackgroundColor(settings.backgroundColor);
+         bg = settings.backgroundColor;
+         setTimeout((function(){this.setBackgroundColor(bg)}).bind(this), 4000);
          delete settings.backgroundColor;
        }
        Object.assign(this.settings, settings);
