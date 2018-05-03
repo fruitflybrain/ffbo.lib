@@ -1189,11 +1189,12 @@ moduleExporter(
        return Object.assign({}, this.settings, {
          lightsHelper: this.lightsHelper.export(),
          postProcessing: {
-           fxaa: this.effectFXAA.enabled,
-           toneMappingMinLum: this.toneMappingPass.materialToneMap.uniforms.minLuminance.value,
-           bloomRadius: this.bloomPass.radius,
-           bloomThreshold: this.bloomPass.threshold,
-           bloomStrength: this.bloomPass.strength
+           fxaa: this.settings.effectFXAA.enabled,
+           ssao: this.settings.backrenderSSAO.enabled,
+           toneMappingMinLum: this.settings.toneMappingPass.brightness,
+           bloomRadius: this.settings.bloomPass.radius,
+           bloomThreshold: this.settings.bloomPass.threshold,
+           bloomStrength: this.settings.bloomPass.strength
          },
          backgroundColor: backgroundColor
        });
@@ -1208,11 +1209,18 @@ moduleExporter(
        if('postProcessing' in settings){
          postProcessing = settings.postProcessing;
          delete settings.postProcessing;
-         if( postProcessing.fxaa != undefined ) this.effectFXAA.enabled = postProcessing.fxaa;
-         if( postProcessing.toneMappingMinLum != undefined ) this.toneMappingPass.setMinLuminance(postProcessing.toneMappingMinLum);
-         if( postProcessing.bloomRadius != undefined ) this.bloomPass.radius = postProcessing.bloomRadius;
-         if( postProcessing.bloomStrength != undefined ) this.bloomPass.strength = postProcessing.bloomStrength;
-         if( postProcessing.bloomThreshold != undefined ) this.bloomPass.threshold = postProcessing.bloomThreshold;
+         if( postProcessing.fxaa != undefined )
+           this.settings.effectFXAA.enabled = postProcessing.fxaa;
+         if( postProcessing.ssao != undefined )
+           this.settings.backrenderSSAO.enabled = postProcessing.ssao;
+         if( postProcessing.toneMappingMinLum != undefined )
+           this.settings.toneMappingPass.brightness = postProcessing.toneMappingMinLum;
+         if( postProcessing.bloomRadius != undefined )
+           this.settings.bloomPass.radius = postProcessing.bloomRadius;
+         if( postProcessing.bloomStrength != undefined )
+           this.settings.bloomPass.strength = postProcessing.bloomStrength;
+         if( postProcessing.bloomThreshold != undefined )
+           this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
        }
        if('backgroundColor' in settings){
          this.setBackgroundColor(settings.backgroundColor);
