@@ -90,7 +90,6 @@ moduleExporter(
            if ( (key in metadata) && (metadata[key] !== undefined) )
              this._metadata[key] = metadata[key]
 
-
        this.settings = new PropertyManager({
          defaultOpacity: 0.7,
          synapseOpacity: 1.0,
@@ -108,9 +107,13 @@ moduleExporter(
          neuron3d: false,
          neuron3dMode: 1,
          synapseMode: 1,
-         meshWireframe: true,
-         // What about postprocessing settings?
+         meshWireframe: true
        });
+
+       this.settings.toneMappingPass = new PropertyManager({brightness: 0.25});
+       this.settings.bloomPass = new PropertyManager({radius: 0.2, strength: 0.2, threshold: 0.3});
+       this.settings.effectFXAA = new PropertyManager({enabled: true});
+       this.settings.backrenderSSAO = new PropertyManager({enabled: true});
 
        this.states = new PropertyManager({
          mouseOver: false,
@@ -202,9 +205,6 @@ moduleExporter(
        this.initPostProcessing();
 
        //this.composer.addPass( this.gammaCorrectionPass );
-
-       this.passes = {'SSAO': 1, 'FXAA': 3, 'toneMappingPass': 4, 'unrealBloomPass': 5}
-
        this.UIBtns = {}
 
        this.dispatch = {
@@ -249,6 +249,15 @@ moduleExporter(
        this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e)  }).bind(this));
        this.settings.on("change", (function(e){ this.updateOpacity(e)}).bind(this),
                         ["pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity", "backgroundWireframeOpacity"]);
+
+       this.settings.on('change', (function(e){
+         this[e.path[0]][e.prop] = e.value;
+       }).bind(this), ['radius', 'strength', 'threshold', 'enabled']);
+
+       this.settings.toneMappingPass.on('change', (function(e){
+         this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
+       }).bind(this), 'brightness');
+
        if ( data != undefined && Object.keys(data).length > 0)
          this.addJson( data );
 
@@ -322,11 +331,17 @@ moduleExporter(
        this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
 
 
-       this.bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( width, height ), 0.2, 0.2, 0.3 ); //1.0, 9, 0.5, 512);
+       this.bloomPass = new THREE.UnrealBloomPass(
+         new THREE.Vector2( width, height ),
+         this.settings.bloomPass.strength,
+         this.settings.bloomPass.radius,
+         this.settings.bloomPass.threshold
+       );
+
        this.bloomPass.renderToScreen = true;
 
        this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
-       this.toneMappingPass.setMinLuminance(0.05);
+       this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
 
        this.renderer.gammaInput = true;
        this.renderer.gammaOutput = true;
@@ -1197,7 +1212,7 @@ moduleExporter(
          if( postProcessing.toneMappingMinLum != undefined ) this.toneMappingPass.setMinLuminance(postProcessing.toneMappingMinLum);
          if( postProcessing.bloomRadius != undefined ) this.bloomPass.radius = postProcessing.bloomRadius;
          if( postProcessing.bloomStrength != undefined ) this.bloomPass.strength = postProcessing.bloomStrength;
-         if( postProcessing.bloomThreshold != undefined ) this.bloomThreshold = postProcessing.bloomThreshold;
+         if( postProcessing.bloomThreshold != undefined ) this.bloomPass.threshold = postProcessing.bloomThreshold;
        }
        if('backgroundColor' in settings){
          this.setBackgroundColor(settings.backgroundColor);
