@@ -1,0 +1,64 @@
+/*
+ * FFBO Client (NeuroGFX or NeuroNLP)
+ */
+
+ .navbar-inverse .navbar-nav>li>a {
+    color: var(--navbar-text-color);
+}
+
+#info-panel .ui-link {
+    background: var(--info-ui-background-color);
+    color: var(--info-ui-color);
+    border-color: var(--info-ui-background-color);
+}
+
+#info-panel .ui-link:hover {
+    background: var(--info-ui-background-color-hover);
+    color: var(--info-ui-color-hover);
+    border-color: var(--info-ui-background-color-hover);
+}
+
+.btn-primary {
+    background-color: var(--srch-btn-background-color);
+    border-color: var(--srch-btn-border-color);
+}
+
+.navbar-inverse .navbar-nav>li>a {
+    color: var(--navbar-text-color);
+}
+
+.ffbo-app {
+    margin: 0px auto !important;
+    width: 100px;
+}
+
+.ffbo-app > li {
+    position: relative;
+    padding-top: 0px;
+}
+
+.ffbo-app > li > a {
+    font-size: 18px;
+    background: transparent;
+    padding: 0px 0px 0px 0px;
+    line-height: 50px
+}
+.ffbo-app-hover,
+.ffbo-app > li > a:hover {
+    color: #ff0000 !important;
+}
+.ffbo-app > li > a,
+.ffbo-app > li > a:visited {
+    color: #ff6666 !important;
+}
+.ffbo-app > .dropdown > .dropdown-menu {
+    margin: 0px auto;
+}
+
+.ffbo-app > .dropdown > .dropdown-menu > li > a {
+    color: #89cc89 !important;
+}
+
+.ffbo-app > .dropdown > .dropdown-menu > li > a:hover {
+    color: #67aa67 !important;
+}

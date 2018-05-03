@@ -1,0 +1,30 @@
+
+/*
+AddThis Share Tool
+*/
+
+html, body {
+    margin:0;
+    padding:0;
+    height: 100%;
+    background-color:#000000 !important;
+    background: rgba(21,21,21,1);
+}
+.at-expanding-share-button.at-expanding-share-button-desktop .at-expanding-share-button-toggle-bg{
+    height:34px!important;
+    width:34px !important;
+}
+.at-expanding-share-button.at-expanding-share-button-desktop .at-expanding-share-button-toggle-bg>span{
+    height:34px!important;
+    width:34px !important;
+    background-color: #377097 !important;
+
+}
+.at-expanding-share-button.at-expanding-share-button-desktop .at-expanding-share-button-toggle{
+    height: 34px !important;
+}
+
+body { -webkit-touch-callout: none !important; }
+body { -webkit-user-select: none !important; user-select: none !important}; 
+
+

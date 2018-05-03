@@ -1,0 +1,49 @@
+.modal-content {
+    background: var(--modal-content-background);
+}
+
+.modal-content h1,h2,h3,h4,h5{
+    color: var(--modal-content-textcolor);
+}
+
+.tag-text, .tag-editor{
+    border-radius: 3px;
+    height: 30px;
+    color: var(--srch-box-color);
+    background-color: var(--srch-box-background);
+    border-color: var(--srch-box-border);
+}
+
+.tag-editor .ui-sortable{
+    border-radius: 4px;
+}
+
+.tag-el.active {
+    background-color: var(--tag-el-active-background-color);
+}
+
+.tag-el{
+    background-color: var(--tag-el-background-color);
+    border: 1px solid var(--tag-el-background-color);
+}
+
+.tag-el:focus {
+    background-color: var(--tag-el-background-color) !important;
+}
+
+.tag-el small{
+    color: var(--info-ui-color);
+}
+
+.tag-el:hover {
+    background-color: var(--tag-el-hover-background-color) !important;
+}
+
+.tag-editor .tag-editor-tag, .tag-editor .tag-editor-delete{
+    background-color: var(--modal-tag-background-color);
+    color: var(--navbar-text-color);
+}
+
+.modal-footer .btn-default {
+    background-color: var(--srch-box-background);
+}
