@@ -433,7 +433,7 @@ moduleExporter(
        lightsHelper.addSpotLight({
          posAngle1: 80,
          posAngle2: 80,
-         intensity: 9,
+         intensity: 5.5,
          scene: this.scenes.back,
          key: 'backSpot_1'
        });
@@ -447,7 +447,7 @@ moduleExporter(
        lightsHelper.addSpotLight({
          posAngle1: -80,
          posAngle2: 80,
-         intensity: 9,
+         intensity: 5.5,
          scene: this.scenes.back,
          key: 'backSpot_2'
        });
