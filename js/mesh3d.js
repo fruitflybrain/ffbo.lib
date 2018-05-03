@@ -1191,7 +1191,7 @@ moduleExporter(
          postProcessing: {
            fxaa: this.settings.effectFXAA.enabled,
            ssao: this.settings.backrenderSSAO.enabled,
-           toneMappingMinLum: this.settings.toneMappingPass.brightness,
+           toneMappingMinLum: 1-this.settings.toneMappingPass.brightness,
            bloomRadius: this.settings.bloomPass.radius,
            bloomThreshold: this.settings.bloomPass.threshold,
            bloomStrength: this.settings.bloomPass.strength
@@ -1214,7 +1214,7 @@ moduleExporter(
          if( postProcessing.ssao != undefined )
            this.settings.backrenderSSAO.enabled = postProcessing.ssao;
          if( postProcessing.toneMappingMinLum != undefined )
-           this.settings.toneMappingPass.brightness = postProcessing.toneMappingMinLum;
+           this.settings.toneMappingPass.brightness = 1-postProcessing.toneMappingMinLum;
          if( postProcessing.bloomRadius != undefined )
            this.settings.bloomPass.radius = postProcessing.bloomRadius;
          if( postProcessing.bloomStrength != undefined )

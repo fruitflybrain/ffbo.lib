@@ -65,7 +65,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.color),
+      color: color,
       type: "AmbientLight"
     }
   }
@@ -87,7 +87,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.color),
+      color: light.color,
       position: Object.assign({}, light.position),
       target: Object.assign({}, light.target),
       type: "DirectionalLight"
@@ -113,7 +113,7 @@ moduleExporter("FFBOLightsHelper", ["three", "propertymanager"], function(THREE,
     return {
       intensity: light.intensity,
       enabled: light.enabled,
-      color: Object.assign({}, light.color),
+      color: light.color,
       angle: light.angle,
       decay: light.decay,
       distanceFactor: light.distanceFactor,
