@@ -1196,7 +1196,7 @@ moduleExporter(
          backgroundColor = ffbomesh.groups.back.children[0].children[0].material.color.toArray();
        if (this.settings.backgroundColor !== undefined)
          backgroundColor = this.settings.backgroundColor;
-       return Object.assign({}, this.settings, {
+       set = Object.assign({}, this.settings, {
          lightsHelper: this.lightsHelper.export(),
          postProcessing: {
            fxaa: this.settings.effectFXAA.enabled,
@@ -1208,6 +1208,11 @@ moduleExporter(
          },
          backgroundColor: backgroundColor
        });
+       delete set.effectFXAA;
+       delete set.backrenderSSAO;
+       delete set.toneMappingPass;
+       delete set.bloomPass;
+       return set;
      }
 
      FFBOMesh3D.prototype.import_settings = function(settings) {
