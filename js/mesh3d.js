@@ -252,7 +252,7 @@ moduleExporter(
          this.updateOpacity(e)}).bind(this), [
            "pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity",
            "backgroundWireframeOpacity", "synapseOpacity",
-           "highlightedObjectOpacity", "nonHighlightableOpacity". "lowOpacity"]);
+           "highlightedObjectOpacity", "nonHighlightableOpacity", "lowOpacity"]);
 
        this.settings.on('change', (function(e){
          this[e.path[0]][e.prop] = e.value;
