@@ -1193,7 +1193,7 @@ moduleExporter(
      FFBOMesh3D.prototype.export_settings = function() {
        backgroundColor = [0.15, 0.01, 0.15];
        if (this.groups.back.children.length)
-         backgroundColor = ffbomesh.groups.back.children[0].children[0].material.color.toArray();
+         backgroundColor = this.groups.back.children[0].children[0].material.color.toArray();
        if (this.settings.backgroundColor !== undefined)
          backgroundColor = this.settings.backgroundColor;
        set = Object.assign({}, this.settings, {
@@ -1293,9 +1293,10 @@ moduleExporter(
          if (this.meshDict.hasOwnProperty(key))
            this.meshDict[key]['pinned'] = true;
        }
-       for (var key of Object.keys(state_metadata['color'])) {
+       for (var key of Object.keys(state_metadata['visibility'])) {
          if (!this.meshDict.hasOwnProperty(key))
            continue
+         this.meshDict[key].visibility = state_metadata['visibility'][key];
          if(this.meshDict[key].background)
            continue
          var meshobj = this.meshDict[key].object;
@@ -1307,8 +1308,6 @@ moduleExporter(
            }
            meshobj.children[j].geometry.colorsNeedUpdate = true;
          }
-         this.meshDict[key].visibility = state_metadata['visibility'][key];
-
        }
      }
 
