@@ -248,8 +248,11 @@ moduleExporter(
        this.on('visibility', (function (e) { this.onUpdateVisibility(e.path[0]) }).bind(this));
        this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
        this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e)  }).bind(this));
-       this.settings.on("change", (function(e){ this.updateOpacity(e)}).bind(this),
-                        ["pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity", "backgroundWireframeOpacity"]);
+       this.settings.on("change", (function(e){
+         this.updateOpacity(e)}).bind(this), [
+           "pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity",
+           "backgroundWireframeOpacity", "synapseOpacity",
+           "highlightedObjectOpacity", "nonHighlightableOpacity". "lowOpacity"]);
 
        this.settings.on('change', (function(e){
          this[e.path[0]][e.prop] = e.value;
