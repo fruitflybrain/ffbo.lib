@@ -498,7 +498,6 @@ moduleExporter(
            meshobj.children[i].geometry.dispose();
            meshobj.children[i].material.dispose();
          }
-         --this.uiVars.meshNum;
          this.groups.front.remove( meshobj );
          delete meshobj;
          delete this.meshDict[key];
@@ -543,7 +542,7 @@ moduleExporter(
            "type": undefined,
            "visibility": true,
            "colormap": this._metadata.colormap,
-           "colororder": "random",
+           "colororder": "sequence",
            "showAfterLoadAll": false,
          }
          for (var key in metadata)
@@ -559,12 +558,11 @@ moduleExporter(
          if ( metadata.colororder === "order" ) {
            colorNum = keyList.length;
            id2float = function(i) {return i/colorNum};
-         } else {
-           colorNum = keyList.length;
-           
-           id2float = function(i) {return colorSeq(i)};
-           //colorNum = this.maxColorNum;
-           //id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
+         } else if (metadata.colororder === "sequence"){
+           id2float = (i) => {return colorSeq(this.uiVars.meshNum - this.uiVars.backNum + i)};
+         } else{
+           colorNum = this.maxColorNum;
+           id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
          }
 
          if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
@@ -590,6 +588,7 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'visibility', true);
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
+           console.log( id2float(i) );
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
            if (Array.isArray(unit.color))
