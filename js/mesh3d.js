@@ -559,7 +559,7 @@ moduleExporter(
            colorNum = keyList.length;
            id2float = function(i) {return i/colorNum};
          } else if (metadata.colororder === "sequence"){
-           id2float = (i) => {return colorSeq(this.uiVars.meshNum - this.uiVars.backNum + i)};
+           id2float = (i) => {return colorSeq(this.uiVars.meshNum - this.uiVars.backNum + i + 1)};
          } else{
            colorNum = this.maxColorNum;
            id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
@@ -588,7 +588,6 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'visibility', true);
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-           console.log( id2float(i) );
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
            if (Array.isArray(unit.color))
