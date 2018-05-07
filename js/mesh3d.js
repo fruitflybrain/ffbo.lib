@@ -74,6 +74,13 @@ moduleExporter(
        max = Math.floor(max);
        return Math.floor(Math.random() * (max - min + 1)) + min;
      }
+     function colorSeq(x) {
+      a = Math.pow(2,Math.ceil(Math.log2(x+1)));
+      b = Math.log2(a);
+      c = b * (b-1) / 2;
+      d = 2*(x-c)-1;
+      return d/a;
+    }
      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
      function FFBOMesh3D(div_id, data, metadata, stats=false) {
@@ -553,8 +560,11 @@ moduleExporter(
            colorNum = keyList.length;
            id2float = function(i) {return i/colorNum};
          } else {
-           colorNum = this.maxColorNum;
-           id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
+           colorNum = keyList.length;
+           
+           id2float = function(i) {return colorSeq(i)};
+           //colorNum = this.maxColorNum;
+           //id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
          }
 
          if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
