@@ -1603,67 +1603,102 @@ moduleExporter(
        this.controls.reset();
      }
 
-     FFBOMesh3D.prototype.resetVisibleView = function() {
+     FFBOMesh3D.prototype.resetVisibleView = function () {
        this.computeVisibleBoundingBox();
-       this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
-       this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
-       this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
+       this.camera_target = new THREE.Vector3();
+       this.camera_target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
+       this.camera_target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
+       this.camera_target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
+       this.original_camera_target = new THREE.Vector3();
+       this.original_camera_target.copy(this.controls.target);
+       this.controls.target.copy(this.camera_target);
        this.controls.update()
        this.camera.updateMatrixWorld();
        positions = [
          new THREE.Vector3(this.visibleBoundingBox.minX,
-                           this.visibleBoundingBox.minY,
-                           this.visibleBoundingBox.minZ),
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.minZ),
          new THREE.Vector3(this.visibleBoundingBox.minX,
-                           this.visibleBoundingBox.minY,
-                           this.visibleBoundingBox.maxZ),
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.maxZ),
          new THREE.Vector3(this.visibleBoundingBox.minX,
-                           this.visibleBoundingBox.maxY,
-                           this.visibleBoundingBox.minZ),
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.minZ),
          new THREE.Vector3(this.visibleBoundingBox.minX,
-                           this.visibleBoundingBox.maxY,
-                           this.visibleBoundingBox.maxZ),
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.maxZ),
          new THREE.Vector3(this.visibleBoundingBox.maxX,
-                           this.visibleBoundingBox.minY,
-                           this.visibleBoundingBox.minZ),
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.minZ),
          new THREE.Vector3(this.visibleBoundingBox.maxX,
-                           this.visibleBoundingBox.minY,
-                           this.visibleBoundingBox.maxZ),
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.maxZ),
          new THREE.Vector3(this.visibleBoundingBox.maxX,
-                           this.visibleBoundingBox.maxY,
-                           this.visibleBoundingBox.minZ),
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.minZ),
          new THREE.Vector3(this.visibleBoundingBox.maxX,
-                           this.visibleBoundingBox.maxY,
-                           this.visibleBoundingBox.maxZ)
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.maxZ)
        ]
 
        // From https://stackoverflow.com/a/11771236
        targetFov = 0.0;
-       for (var i=0; i<8; i++) {
+       for (var i = 0; i < 8; i++) {
          proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
          angle = Math.max(
-            Math.abs(Math.atan(proj2d.x/proj2d.z) / camera.aspect),
-            Math.abs(Math.atan(proj2d.y/proj2d.z))
+           Math.abs(Math.atan(proj2d.x / proj2d.z) / camera.aspect),
+           Math.abs(Math.atan(proj2d.y / proj2d.z))
          );
          targetFov = Math.max(targetFov, angle);
        }
-       currentFov = Math.PI*this.fov/2/180;
+       currentFov = Math.PI * this.fov / 2 / 180;
        cam_dir = new THREE.Vector3();
        cam_dir.subVectors(this.camera.position, this.controls.target);
        prevDist = cam_dir.length();
        cam_dir.normalize();
+       this.controls.target.copy(this.original_camera_target);
 
        dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
 
        aspect = this.camera.aspect;
-       targetHfov =  2*Math.atan(Math.tan(targetFov/2)*aspect);
-       currentHfov =  2*Math.atan(Math.tan(currentFov/2)*aspect);
+       targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+       currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
        dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
 
-       this.camera.position.copy(this.controls.target);
-       this.camera.position.addScaledVector(cam_dir, dist);
-
+       //this.camera.position.copy(this.controls.target);
+       //this.camera.position.addScaledVector(cam_dir, dist);
+       this.final_position = new THREE.Vector3();
+       this.final_position.copy(this.controls.target);
+       this.final_position.addScaledVector(cam_dir, dist);
        this.camera.updateProjectionMatrix();
+       this.startCameraMove();
+       
+     }
+
+     FFBOMesh3D.prototype.startCameraMove = function () {
+       this.start_target = this.controls.target.clone();
+       this.start_position = this.camera.position.clone();
+       this.alpha_cam = 0;
+       this.ang_cam = 0;
+       this.cam_move_strength = 0.015;
+       this.start_up = this.controls.object.up.clone();
+
+       this.cam_move = setInterval((function () {
+         this.ang_cam = (this.ang_cam - 1 / 180 * Math.PI * this.alpha_cam * this.alpha_cam * this.alpha_cam) % (2 * Math.PI);
+         this.alpha_cam = Math.min(1.0, this.alpha_cam + this.cam_move_strength);
+         if (this.alpha_cam < 1.0) {
+           this.camera.position.z = (this.final_position.z) * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.z;
+           this.camera.position.x = (this.final_position.x) * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.x;
+           this.camera.position.y = this.final_position.y * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.y;
+           this.controls.target.x = this.alpha_cam * this.camera_target.x + (1 - this.alpha_cam) * this.start_target.x;
+           this.controls.target.y = this.alpha_cam * this.camera_target.y + (1 - this.alpha_cam) * this.start_target.y;
+           this.controls.target.z = this.alpha_cam * this.camera_target.z + (1 - this.alpha_cam) * this.start_target.z;
+           this.controls.object.up.x = this.alpha_cam * this.start_up.x + (1 - this.alpha_cam) * this.start_up.x;
+           this.controls.object.up.y = this.alpha_cam * this.start_up.y + (1 - this.alpha_cam) * this.start_up.y;
+           this.controls.object.up.z = this.alpha_cam * this.start_up.z + (1 - this.alpha_cam) * this.start_up.z;
+         }
+       }).bind(this), 10);
+
      }
 
      FFBOMesh3D.prototype.togglePin = function( d ) {
