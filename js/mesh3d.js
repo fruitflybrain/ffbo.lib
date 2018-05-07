@@ -76,8 +76,8 @@ moduleExporter(
      }
      function colorSeq(x) {
       a = Math.pow(2,Math.ceil(Math.log2(x+1)));
-      b = Math.log2(a);
-      c = b * (b-1) / 2;
+      b = Math.log2(a)-1;
+      c = Math.pow(2,b)-1;
       d = 2*(x-c)-1;
       return d/a;
     }
