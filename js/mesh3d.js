@@ -1672,7 +1672,6 @@ moduleExporter(
        this.final_position.addScaledVector(cam_dir, dist);
        this.camera.updateProjectionMatrix();
        this.startCameraMove();
-       
      }
 
      FFBOMesh3D.prototype.startCameraMove = function () {
@@ -1680,7 +1679,7 @@ moduleExporter(
        this.start_position = this.camera.position.clone();
        this.alpha_cam = 0;
        this.ang_cam = 0;
-       this.cam_move_strength = 0.015;
+       this.cam_move_strength = 0.01;
        this.start_up = this.controls.object.up.clone();
 
        this.cam_move = setInterval((function () {
@@ -1696,6 +1695,8 @@ moduleExporter(
            this.controls.object.up.x = this.alpha_cam * this.start_up.x + (1 - this.alpha_cam) * this.start_up.x;
            this.controls.object.up.y = this.alpha_cam * this.start_up.y + (1 - this.alpha_cam) * this.start_up.y;
            this.controls.object.up.z = this.alpha_cam * this.start_up.z + (1 - this.alpha_cam) * this.start_up.z;
+         } else {
+           clearInterval( this.cam_move );
          }
        }).bind(this), 10);
 
