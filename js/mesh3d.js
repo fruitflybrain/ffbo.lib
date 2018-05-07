@@ -1668,7 +1668,7 @@ moduleExporter(
        //this.camera.position.copy(this.controls.target);
        //this.camera.position.addScaledVector(cam_dir, dist);
        this.final_position = new THREE.Vector3();
-       this.final_position.copy(this.controls.target);
+       this.final_position.copy(this.camera_target);
        this.final_position.addScaledVector(cam_dir, dist);
        this.camera.updateProjectionMatrix();
        this.startCameraMove();
