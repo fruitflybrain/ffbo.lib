@@ -166,7 +166,9 @@ moduleExporter(
        this.renderer = this.initRenderer();
 
        this.groups = {
-         front: new THREE.Group(), // for raycaster detection
+         frontLine: new THREE.Group(), // for raycaster detection
+         frontCyl: new THREE.Group(),
+         frontSyn: new THREE.Group(),
          back: new THREE.Group()
        }
 
@@ -386,7 +388,9 @@ moduleExporter(
        scenes.back.background = new THREE.Color(0x030305);
        scenes.back.add( this.camera );
 
-       scenes.front.add( this.groups.front );
+       scenes.front.add( this.groups.frontLine );
+       scenes.front.add( this.groups.frontCyl );
+       scenes.front.add( this.groups.frontSyn );
        scenes.back.add( this.groups.back );
        return scenes;
      }
@@ -476,7 +480,9 @@ moduleExporter(
          this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
          this.controls.reset();
-         this.groups.front.visible = true;
+         this.groups.frontLine.visible = true;
+         this.groups.frontCyl.visible = true;
+         this.groups.frontSyn.visible = true;
        }.bind(this);
        return loadingManager;
      }
@@ -498,7 +504,7 @@ moduleExporter(
            meshobj.children[i].geometry.dispose();
            meshobj.children[i].material.dispose();
          }
-         this.groups.front.remove( meshobj );
+         this.meshDict[key].group.remove( meshobj );
          delete meshobj;
          delete this.meshDict[key];
        }
@@ -572,9 +578,11 @@ moduleExporter(
            lut.setMax( 1 );
          } else
            lut = this.lut;
-         if ( metadata.showAfterLoadAll )
-           this.groups.front.visible = false;
-
+         if ( metadata.showAfterLoadAll ){
+           this.groups.frontLine.visible = false;
+           this.groups.frontCyl.visible = false;
+           this.groups.frontSyn.visible = false;
+         }
          for ( var i = 0; i < keyList.length; ++i ) {
            var key = keyList[i];
            if (key in this.meshDict ) {
@@ -590,6 +598,18 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
+           if(unit.background){
+             unit.group = this.groups.back;
+           } else{
+             if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+               if( this.settings.neuron3d )
+                 unit.group = this.groups.frontCyl;
+               else
+                 unit.group = this.groups.frontLine;
+             } else{
+               unit.group = this.groups.frontSyn;
+             }
+           }
            if (Array.isArray(unit.color))
              unit.color = new THREE.Color(...unit.color);
 
@@ -985,7 +1005,7 @@ moduleExporter(
        if (!this.controls.checkStateIsNone())
          return;
 
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined && intersected['highlight']){
            this.select(intersected.rid);
@@ -996,7 +1016,7 @@ moduleExporter(
        if (event !== undefined)
          event.preventDefault();
 
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined ) {
          if (!intersected['highlight'])
@@ -1008,7 +1028,7 @@ moduleExporter(
      FFBOMesh3D.prototype.onDocumentMouseDBLClickMobile = function( event ) {
        if (event !== undefined)
          event.preventDefault();
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined ) {
          if (!intersected['highlight'])
@@ -1127,7 +1147,7 @@ moduleExporter(
         * show label of mesh object when it intersects with cursor
         */
        if (this.controls.checkStateIsNone() && this.states.mouseOver) {
-         var intersected = this.getIntersection([this.groups.front, this.groups.back]);
+         var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
          if (this.uiVars.currentIntersected || intersected) {
            this.uiVars.currentIntersected = intersected;
            this.highlight(intersected);
@@ -1168,12 +1188,20 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.showFrontAll = function() {
-       for (var val of this.groups.front.children)
+       for (var val of this.groups.frontLine.children)
+         this.meshDict[val.rid].visibility = true;
+       for (var val of this.groups.frontCyl.children)
+         this.meshDict[val.rid].visibility = true;
+       for (var val of this.groups.frontSyn.children)
          this.meshDict[val.rid].visibility = true;
      };
 
      FFBOMesh3D.prototype.hideFrontAll = function() {
-       for (var val of this.groups.front.children)
+       for (var val of this.groups.frontLine.children)
+         this.meshDict[val.rid].visibility = false;
+       for (var val of this.groups.frontCyl.children)
+         this.meshDict[val.rid].visibility = false;
+       for (var val of this.groups.frontSyn.children)
          this.meshDict[val.rid].visibility = false;
      };
 
@@ -1345,11 +1373,10 @@ moduleExporter(
        if ( !e.value['background'] ) {
          if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
            ++this.uiVars.frontNum;
-         this.groups.front.add(e.value.object);
        } else {
-         this.groups.back.add(e.value.object);
          ++this.uiVars.backNum;
        }
+       e.value.group.add(e.value.object);
        ++this.uiVars.meshNum;
        this._labelToRid[e.value.label] = e.prop;
      }
@@ -1370,11 +1397,10 @@ moduleExporter(
        if ( !e.value['background'] ) {
          if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
            --this.uiVars.frontNum;
-         this.groups.front.remove( meshobj );
        } else {
-         this.groups.back.remove( meshobj );
          --this.uiVars.backNum;
        }
+       e.value.group.remove( meshobj );
        --this.uiVars.meshNum;
        delete meshobj;
        delete this._labelToRid[e.value.label]
