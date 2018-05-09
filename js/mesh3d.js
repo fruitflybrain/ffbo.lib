@@ -845,7 +845,7 @@ moduleExporter(
          }
 
          var color = unit['color'];
-         var object = new THREE.Object3D();
+         var object = new THREE.Group();
          var pointGeometry = undefined;
          var mergedGeometry = undefined;
          var geometry = undefined;
@@ -863,9 +863,9 @@ moduleExporter(
                  mergedGeometry = new THREE.Geometry()
                var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
                if(!p.radius || !c.radius)
-                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, 1.3*d.length(), 8, 1, 0);
                else
-                 var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+                 var geometry = new THREE.CylinderGeometry(p.radius, c.radius, 1.3*d.length(), 8, 1, 0);
                geometry.translate(0, 0.5*d.length(),0);
                geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
                geometry.lookAt(d.clone());
@@ -940,14 +940,27 @@ moduleExporter(
            object.add(points);
          }
          if(mergedGeometry){
-           var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-           //var modifier = new THREE.SimplifyModifier();
+          var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+          //var modifier = new THREE.SimplifyModifier();
 
-           //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-           var mesh = new THREE.Mesh(mergedGeometry, material);
-           //var mesh = new THREE.Mesh(simplified, material);
-
-           object.add(mesh);
+          //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+          var mesh = new THREE.Mesh(mergedGeometry, material);
+          //var mesh = new THREE.Mesh(simplified, material);
+          object.renderOrder = 1;
+          material.colorWrite = false;
+          object.add(mesh);
+          
+          var object2 = new THREE.Object3D();
+          var material2 = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+          var mesh2 = new THREE.Mesh(mergedGeometry, material2);
+          object2.add(mesh2);
+          object2.renderOrder = 2;
+          object2.visible = visibility;
+          material2.colorWrite = true;
+          //this.scenes.front.add(object2);
+          //this._registerObject(key + '_2', unit, object2);
+          object.add(object2);
+          //this.meshDict[key + '_2'] = unit;
          }
          if(geometry){
            var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
@@ -985,13 +998,20 @@ moduleExporter(
        }
 
        // TODO: move the code below to a function
-       if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
-         if ( this.settings.defaultOpacity !== 1)
-           for (var i=0; i < unit['object'].children.length; i++)
-             unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+       if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
+         if (this.settings.defaultOpacity !== 1)
+           for (var i = 0; i < unit['object'].children.length; i++) {
+             if ('children' in unit['object'].children[i]) {
+               for (var j = 0; j < unit['object'].children[i].children.length; j++) {
+                 unit['object'].children[i].children[j].material.opacity = this.settings.defaultOpacity;
+                 unit['object'].children[i].children[j].material.opacity = this.settings.defaultOpacity;
+               }
+             }
+           }
+         else if ('material' in unit['object'].children[i]) { unit['object'].children[i].material.opacity = this.settings.defaultOpacity; }
        } else {
-         if ( this.settings.synapseOpacity !== 1)
-           for (var i=0; i < unit['object'].children.length; i++)
+         if (this.settings.synapseOpacity !== 1)
+           for (var i = 0; i < unit['object'].children.length; i++)
              unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
        }
 
@@ -1337,12 +1357,24 @@ moduleExporter(
            continue
          var meshobj = this.meshDict[key].object;
          var color = state_metadata['color'][key];
-         for (var j = 0; j < meshobj.children.length; ++j ) {
-           meshobj.children[j].material.color.fromArray( color );
-           for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-             meshobj.children[j].geometry.colors[k].fromArray( color );
+         for (var j = 0; j < meshobj.children.length; ++j) {
+           if ('material' in meshobj.children) {
+             meshobj.children[j].material.color.fromArray(color);
+             for (var k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+               meshobj.children[j].geometry.colors[k].fromArray(color);
+             }
+             meshobj.children[j].geometry.colorsNeedUpdate = true;
            }
-           meshobj.children[j].geometry.colorsNeedUpdate = true;
+           else
+           {
+            for (var jj = 0; jj < meshobj.children[j].children.length; ++jj) {
+            meshobj.children[j].children[jj].material.color.fromArray(color);
+            for (var k = 0; k < meshobj.children[j].children[jj].geometry.colors.length; ++k) {
+              meshobj.children[j].children[jj].geometry.colors[k].fromArray(color);
+            }
+            meshobj.children[j].children[jj].geometry.colorsNeedUpdate = true;
+          }
+           }
          }
        }
      }
@@ -1464,14 +1496,30 @@ moduleExporter(
              depthTest = false;
            }
            for (var i in val.object.children) {
-             val.object.children[i].material.opacity = opacity;
-             val.object.children[i].material.depthTest = depthTest;
+             if ('material' in val.object.children[i]) {
+               val.object.children[i].material.opacity = opacity;
+               //val.object.children[i].material.depthTest = depthTest;
+             }
+             else {
+               for (var j in val.object.children[i].children) {
+                 val.object.children[i].children[j].material.opacity = opacity;
+                 //val.object.children[i].children[j].material.depthTest = depthTest;
+               }
+             }
            }
          }
          var val = this.meshDict[this.states.highlight];
          for (var i in val.object.children) {
+          if ('material' in val.object.children[i]) {
            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-           val.object.children[i].material.depthTest = false;
+           //val.object.children[i].material.depthTest = false;
+          }
+          else {
+            for (var j in val.object.children[i].children) {
+              val.object.children[i].children[j].material.opacity = this.settings.highlightedObjectOpacity;
+              //val.object.children[i].children[j].material.depthTest = false;
+            }
+          }
          }
        } else if (this.states.highlight) {
          return;
@@ -1485,9 +1533,17 @@ moduleExporter(
              var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
              var depthTest = !this.meshDict[key]['pinned'];
              for (var i in val.object.children) {
-               val.object.children[i].material.opacity = opacity;
-               val.object.children[i].material.depthTest = depthTest;
-             }
+              if ('material' in val.object.children[i]) {
+                val.object.children[i].material.opacity = opacity;
+                //val.object.children[i].material.depthTest = depthTest;
+              }
+              else {
+                for (var j in val.object.children[i].children) {
+                  val.object.children[i].children[j].material.opacity = opacity;
+                  //val.object.children[i].children[j].material.depthTest = depthTest;
+                }
+              }
+            }
            } else {
              val.object.children[0].material.opacity = this.settings.backgroundOpacity;
              val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
@@ -1497,9 +1553,17 @@ moduleExporter(
        // New object being pinned while already in pinned mode
        else if (e.prop == 'pinned' && this.states.pinned){
          for (var i in e.obj.object.children) {
-           e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-           e.obj.object.children[i].material.depthTest = !e.value;
-         }
+          if ('material' in e.obj.object.children[i]) {
+            e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+            //e.obj.object.children[i].material.depthTest = !e.value;
+          }
+          else {
+            for (var j in e.obj.object.children[i].children) {
+              e.obj.object.children[i].children[j].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+              //e.obj.object.children[i].children[j].material.depthTest = !e.value;
+            }
+          }
+        }
        }
        // Default opacity value change in upinned mode or exiting highlight mode
        else if (!this.states.pinned || e.prop == 'highlight'){
@@ -1514,14 +1578,32 @@ moduleExporter(
            if(!('morph_type' in this.meshDict[key]) ||
               (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
              for (i in this.meshDict[key].object.children)
+             if ('material' in this.meshDict[key].object.children[i]) {
                this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+             }
+             else
+             for (j in this.meshDict[key].object.children[i].children)
+             if ('material' in this.meshDict[key].object.children[i].children[j]) {
+              this.meshDict[key].object.children[i].children[j].material.opacity = this.settings.defaultOpacity;
+            }
            } else {
              for (i in this.meshDict[key].object.children)
+             if ('material' in this.meshDict[key].object.children[i]) {
                this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+             }
+             else
+             for (j in this.meshDict[key].object.children[i].children)
+             if ('material' in this.meshDict[key].object.children[i].children[j]) {
+              this.meshDict[key].object.children[i].children[j].material.opacity = this.settings.synapseOpacity;
+            }
            }
          } else {
+          if ('material' in this.meshDict[key].object.children[0]) {
            this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+          }
+          if ('material' in this.meshDict[key].object.children[1]) {
            this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+          }
          }
        }
      }
