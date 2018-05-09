@@ -500,9 +500,17 @@ moduleExporter(
          if (this.meshDict[key]['pinned'])
            this.meshDict[key]['pinned'] = false;
          var meshobj = this.meshDict[key].object;
-         for (var i = 0; i < meshobj.children.length; i++ ) {
-           meshobj.children[i].geometry.dispose();
-           meshobj.children[i].material.dispose();
+         for (var i = 0; i < meshobj.children.length; i++) {
+           if ('material' in meshobj.children[i]) {
+             meshobj.children[i].geometry.dispose();
+             meshobj.children[i].material.dispose();
+           }
+           else {
+             for (var j = 0; j < meshobj.children[i].children.length; j++) {
+               meshobj.children[i].children[j].geometry.dispose();
+               meshobj.children[i].children[j].material.dispose();
+             }
+           }
          }
          this.meshDict[key].group.remove( meshobj );
          delete meshobj;
@@ -1421,10 +1429,19 @@ moduleExporter(
          e.value['pinned'] = false;
        var meshobj = e.value.object;
 
-       for (var j = 0; j < meshobj.children.length; ++j ) {
-         meshobj.children[j].geometry.dispose();
-         meshobj.children[j].material.dispose();
+       for (var i = 0; i < meshobj.children.length; ++i ) {
+        if ('material' in meshobj.children[i]) {
+          meshobj.children[i].geometry.dispose();
+          meshobj.children[i].material.dispose();
+        }
+        else {
+          for (var j = 0; j < meshobj.children[i].children.length; j++) {
+            meshobj.children[i].children[j].geometry.dispose();
+            meshobj.children[i].children[j].material.dispose();
+          }
+        }
        }
+       
 
        if ( !e.value['background'] ) {
          if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
