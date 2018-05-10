@@ -21,6 +21,7 @@ moduleExporter(
      "stats",
      "lut",
      "trackballcontrols",
+     "sceneutils",
      "simplifymodifier",
      "copyshader",
      "convolutionshader",
@@ -83,7 +84,7 @@ moduleExporter(
     }
      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-     function FFBOMesh3D(div_id, data, metadata, stats=false) {
+     function FFBOMesh3D(div_id, data, metadata, stats=true) {
 
        /* default metadata */
        this._metadata = {
@@ -117,12 +118,13 @@ moduleExporter(
          meshWireframe: true,
          backgroundColor: undefined,
          effecttransparency: true,
+         render_resolution: 1.0,
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
        this.settings.bloomPass = new PropertyManager({radius: 0.2, strength: 0.2, threshold: 0.3});
        this.settings.effectFXAA = new PropertyManager({enabled: true});
-       this.settings.backrenderSSAO = new PropertyManager({enabled: true});
+       this.settings.backrenderSSAO = new PropertyManager({enabled: false});
 
        this.states = new PropertyManager({
          mouseOver: false,
@@ -318,10 +320,39 @@ moduleExporter(
 
      FFBOMesh3D.prototype.initRenderer = function () {
        renderer = new THREE.WebGLRenderer({'logarithmicDepthBuffer': true});
-       renderer.setPixelRatio( window.devicePixelRatio );
+       renderer.setPixelRatio( window.devicePixelRatio * this.settings.render_resolution);
        renderer.setSize( this.container.clientWidth, this.container.clientHeight );
+       this.highSettingsFPS = 60;
        this.container.appendChild(renderer.domElement);
        return renderer;
+     }
+
+     FFBOMesh3D.prototype.updateResolution = function () {
+       if (this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25) {
+         this.settings.render_resolution = this.settings.render_resolution - 0.005;
+         if (this.settings.render_resolution < 0.5)
+           this.settings.render_resolution = 0.5;
+         if (this.settings.backrenderSSAO.enabled == true)
+         this.highSettingsFPS = 1.0 + (1-1/this.stats.getFPS())*this.highSettingsFPS;
+       }
+       else if (this.stats.getFPS() > 58 && this.settings.render_resolution < 2.0) {
+         this.settings.render_resolution = this.settings.render_resolution + 0.005;
+         if (this.settings.render_resolution > 2.0)
+           this.settings.render_resolution = 2.0;
+       }
+       else if (this.stats.getFPS() > 30 && this.settings.render_resolution < 1.0) {
+        this.settings.render_resolution = this.settings.render_resolution + 0.005;
+        if (this.settings.render_resolution > 1.0)
+          this.settings.render_resolution = 1.0;
+      }
+      else if (this.stats.getFPS() > 30 && this.settings.render_resolution > 1.0) {
+        this.settings.render_resolution = this.settings.render_resolution - 0.005;
+      }
+       if (this.stats.getFPS() > 58 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45)
+         this.settings.backrenderSSAO.enabled = true;
+       else if (this.settings.render_resolution < 1.00)
+       this.settings.backrenderSSAO.enabled = false;
+       this.renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
      }
 
      FFBOMesh3D.prototype.initControls = function () {
@@ -559,7 +590,8 @@ moduleExporter(
            "colormap": this._metadata.colormap,
            "colororder": "sequence",
            "showAfterLoadAll": false,
-         }
+         };
+         this.highSettingsFPS = 60;
          for (var key in metadata)
            if ( (key in json) && (json[key] !== undefined) )
              metadata[key] = json[key];
@@ -731,8 +763,9 @@ moduleExporter(
        this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
        if( this.states.mouseOver && this.dispatch.syncControls)
          this.dispatch.syncControls(this)
-
+         this.updateResolution();
        this.render();
+       
 
        this.stats.end()
 
@@ -952,7 +985,7 @@ moduleExporter(
            var material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
            //var modifier = new THREE.SimplifyModifier();
 
-           //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+           //mergedGeometry = modifier.modify( mergedGeometry, mergedGeometry.vertices.length * 0.25 | 0 )
            var mesh = new THREE.Mesh(mergedGeometry, material);
            //var mesh = new THREE.Mesh(simplified, material);
            if (this.settings.effecttransparency) {
