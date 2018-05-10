@@ -116,6 +116,7 @@ moduleExporter(
          synapseMode: 1,
          meshWireframe: true,
          backgroundColor: undefined,
+         effecttransparency: true,
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
@@ -871,9 +872,9 @@ moduleExporter(
                  mergedGeometry = new THREE.Geometry()
                var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
                if(!p.radius || !c.radius)
-                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, 1.3*d.length(), 8, 1, 0);
+                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, (1.0 + 0.05 * this.settings.effecttransparency)*d.length(), 8, 1, 0);
                else
-                 var geometry = new THREE.CylinderGeometry(p.radius, c.radius, 1.3*d.length(), 8, 1, 0);
+                 var geometry = new THREE.CylinderGeometry(p.radius, c.radius, (1.0 + 0.3 * this.settings.effecttransparency)*d.length(), 8, 1, 0);
                geometry.translate(0, 0.5*d.length(),0);
                geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
                geometry.lookAt(d.clone());
@@ -947,30 +948,30 @@ moduleExporter(
            var points = new THREE.Points(pointGeometry, pointMaterial);
            object.add(points);
          }
-         if(mergedGeometry){
-          var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-          //var modifier = new THREE.SimplifyModifier();
+         if (mergedGeometry) {
+           var material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+           //var modifier = new THREE.SimplifyModifier();
 
-          //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-          var mesh = new THREE.Mesh(mergedGeometry, material);
-          //var mesh = new THREE.Mesh(simplified, material);
-          object.renderOrder = 1;
-          material.colorWrite = false;
-          object.add(mesh);
-          
-          var object2 = new THREE.Object3D();
-          var material2 = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-          var mesh2 = new THREE.Mesh(mergedGeometry, material2);
-          object2.add(mesh2);
-          object2.renderOrder = 2;
-          object2.visible = visibility;
-          material2.colorWrite = true;
-          //this.scenes.front.add(object2);
-          //this._registerObject(key + '_2', unit, object2);
-          object.add(object2);
-          //this.meshDict[key + '_2'] = unit;
+           //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+           var mesh = new THREE.Mesh(mergedGeometry, material);
+           //var mesh = new THREE.Mesh(simplified, material);
+           if (this.settings.effecttransparency) {
+             object.renderOrder = 1;
+             material.colorWrite = false;
+           }
+           object.add(mesh);
+           if (this.settings.effecttransparency) {
+             var object2 = new THREE.Object3D();
+             var material2 = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+             var mesh2 = new THREE.Mesh(mergedGeometry, material2);
+             object2.add(mesh2);
+             object2.renderOrder = 2;
+             object2.visible = visibility;
+             material2.colorWrite = true;
+             object.add(object2);
+           }
          }
-         if(geometry){
+         if (geometry) {
            var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
            object.add(new THREE.LineSegments(geometry, material));
          }
