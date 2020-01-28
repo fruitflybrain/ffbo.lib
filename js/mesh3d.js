@@ -74,6 +74,13 @@ moduleExporter(
        max = Math.floor(max);
        return Math.floor(Math.random() * (max - min + 1)) + min;
      }
+     function colorSeq(x) {
+      a = Math.pow(2,Math.ceil(Math.log2(x+1)));
+      b = Math.log2(a)-1;
+      c = Math.pow(2,b)-1;
+      d = 2*(x-c)-1;
+      return d/a;
+    }
      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
      function FFBOMesh3D(div_id, data, metadata, stats=false) {
@@ -159,7 +166,9 @@ moduleExporter(
        this.renderer = this.initRenderer();
 
        this.groups = {
-         front: new THREE.Group(), // for raycaster detection
+         frontLine: new THREE.Group(), // for raycaster detection
+         frontCyl: new THREE.Group(),
+         frontSyn: new THREE.Group(),
          back: new THREE.Group()
        }
 
@@ -379,7 +388,9 @@ moduleExporter(
        scenes.back.background = new THREE.Color(0x030305);
        scenes.back.add( this.camera );
 
-       scenes.front.add( this.groups.front );
+       scenes.front.add( this.groups.frontLine );
+       scenes.front.add( this.groups.frontCyl );
+       scenes.front.add( this.groups.frontSyn );
        scenes.back.add( this.groups.back );
        return scenes;
      }
@@ -469,7 +480,9 @@ moduleExporter(
          this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
          this.controls.reset();
-         this.groups.front.visible = true;
+         this.groups.frontLine.visible = true;
+         this.groups.frontCyl.visible = true;
+         this.groups.frontSyn.visible = true;
        }.bind(this);
        return loadingManager;
      }
@@ -491,8 +504,7 @@ moduleExporter(
            meshobj.children[i].geometry.dispose();
            meshobj.children[i].material.dispose();
          }
-         --this.uiVars.meshNum;
-         this.groups.front.remove( meshobj );
+         this.meshDict[key].group.remove( meshobj );
          delete meshobj;
          delete this.meshDict[key];
        }
@@ -536,7 +548,7 @@ moduleExporter(
            "type": undefined,
            "visibility": true,
            "colormap": this._metadata.colormap,
-           "colororder": "random",
+           "colororder": "sequence",
            "showAfterLoadAll": false,
          }
          for (var key in metadata)
@@ -552,7 +564,9 @@ moduleExporter(
          if ( metadata.colororder === "order" ) {
            colorNum = keyList.length;
            id2float = function(i) {return i/colorNum};
-         } else {
+         } else if (metadata.colororder === "sequence"){
+           id2float = (i) => {return colorSeq(this.uiVars.meshNum - this.uiVars.backNum + i + 1)};
+         } else{
            colorNum = this.maxColorNum;
            id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
          }
@@ -564,9 +578,11 @@ moduleExporter(
            lut.setMax( 1 );
          } else
            lut = this.lut;
-         if ( metadata.showAfterLoadAll )
-           this.groups.front.visible = false;
-
+         if ( metadata.showAfterLoadAll ){
+           this.groups.frontLine.visible = false;
+           this.groups.frontCyl.visible = false;
+           this.groups.frontSyn.visible = false;
+         }
          for ( var i = 0; i < keyList.length; ++i ) {
            var key = keyList[i];
            if (key in this.meshDict ) {
@@ -582,6 +598,18 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
+           if(unit.background){
+             unit.group = this.groups.back;
+           } else{
+             if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+               if( this.settings.neuron3d )
+                 unit.group = this.groups.frontCyl;
+               else
+                 unit.group = this.groups.frontLine;
+             } else{
+               unit.group = this.groups.frontSyn;
+             }
+           }
            if (Array.isArray(unit.color))
              unit.color = new THREE.Color(...unit.color);
 
@@ -977,7 +1005,7 @@ moduleExporter(
        if (!this.controls.checkStateIsNone())
          return;
 
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined && intersected['highlight']){
            this.select(intersected.rid);
@@ -988,7 +1016,7 @@ moduleExporter(
        if (event !== undefined)
          event.preventDefault();
 
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined ) {
          if (!intersected['highlight'])
@@ -1000,7 +1028,7 @@ moduleExporter(
      FFBOMesh3D.prototype.onDocumentMouseDBLClickMobile = function( event ) {
        if (event !== undefined)
          event.preventDefault();
-       var intersected = this.getIntersection([this.groups.front]);
+       var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
        if (intersected != undefined ) {
          if (!intersected['highlight'])
@@ -1119,7 +1147,7 @@ moduleExporter(
         * show label of mesh object when it intersects with cursor
         */
        if (this.controls.checkStateIsNone() && this.states.mouseOver) {
-         var intersected = this.getIntersection([this.groups.front, this.groups.back]);
+         var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
          if (this.uiVars.currentIntersected || intersected) {
            this.uiVars.currentIntersected = intersected;
            this.highlight(intersected);
@@ -1160,12 +1188,20 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.showFrontAll = function() {
-       for (var val of this.groups.front.children)
+       for (var val of this.groups.frontLine.children)
+         this.meshDict[val.rid].visibility = true;
+       for (var val of this.groups.frontCyl.children)
+         this.meshDict[val.rid].visibility = true;
+       for (var val of this.groups.frontSyn.children)
          this.meshDict[val.rid].visibility = true;
      };
 
      FFBOMesh3D.prototype.hideFrontAll = function() {
-       for (var val of this.groups.front.children)
+       for (var val of this.groups.frontLine.children)
+         this.meshDict[val.rid].visibility = false;
+       for (var val of this.groups.frontCyl.children)
+         this.meshDict[val.rid].visibility = false;
+       for (var val of this.groups.frontSyn.children)
          this.meshDict[val.rid].visibility = false;
      };
 
@@ -1337,11 +1373,10 @@ moduleExporter(
        if ( !e.value['background'] ) {
          if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
            ++this.uiVars.frontNum;
-         this.groups.front.add(e.value.object);
        } else {
-         this.groups.back.add(e.value.object);
          ++this.uiVars.backNum;
        }
+       e.value.group.add(e.value.object);
        ++this.uiVars.meshNum;
        this._labelToRid[e.value.label] = e.prop;
      }
@@ -1362,11 +1397,10 @@ moduleExporter(
        if ( !e.value['background'] ) {
          if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
            --this.uiVars.frontNum;
-         this.groups.front.remove( meshobj );
        } else {
-         this.groups.back.remove( meshobj );
          --this.uiVars.backNum;
        }
+       e.value.group.remove( meshobj );
        --this.uiVars.meshNum;
        delete meshobj;
        delete this._labelToRid[e.value.label]
@@ -1595,70 +1629,103 @@ moduleExporter(
        this.controls.reset();
      }
 
-     FFBOMesh3D.prototype.resetVisibleView = function() {
+     FFBOMesh3D.prototype.resetVisibleView = function () {
        this.computeVisibleBoundingBox();
-       this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
-       this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
-       this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
+       this.camera_target = new THREE.Vector3();
+       this.camera_target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
+       this.camera_target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
+       this.camera_target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
+       this.original_camera_target = new THREE.Vector3();
+       this.original_camera_target.copy(this.controls.target);
+       this.controls.target.copy(this.camera_target);
+       this.controls.update()
+       this.camera.updateMatrixWorld();
+       positions = [
+         new THREE.Vector3(this.visibleBoundingBox.minX,
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.minZ),
+         new THREE.Vector3(this.visibleBoundingBox.minX,
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.maxZ),
+         new THREE.Vector3(this.visibleBoundingBox.minX,
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.minZ),
+         new THREE.Vector3(this.visibleBoundingBox.minX,
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.maxZ),
+         new THREE.Vector3(this.visibleBoundingBox.maxX,
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.minZ),
+         new THREE.Vector3(this.visibleBoundingBox.maxX,
+           this.visibleBoundingBox.minY,
+           this.visibleBoundingBox.maxZ),
+         new THREE.Vector3(this.visibleBoundingBox.maxX,
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.minZ),
+         new THREE.Vector3(this.visibleBoundingBox.maxX,
+           this.visibleBoundingBox.maxY,
+           this.visibleBoundingBox.maxZ)
+       ]
+
+       // From https://stackoverflow.com/a/11771236
+       targetFov = 0.0;
+       for (var i = 0; i < 8; i++) {
+         proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+         angle = Math.max(
+           Math.abs(Math.atan(proj2d.x / proj2d.z) / camera.aspect),
+           Math.abs(Math.atan(proj2d.y / proj2d.z))
+         );
+         targetFov = Math.max(targetFov, angle);
+       }
+       currentFov = Math.PI * this.fov / 2 / 180;
+       cam_dir = new THREE.Vector3();
+       cam_dir.subVectors(this.camera.position, this.controls.target);
+       prevDist = cam_dir.length();
+       cam_dir.normalize();
+       this.controls.target.copy(this.original_camera_target);
+
+       dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+
+       aspect = this.camera.aspect;
+       targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+       currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
+       dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+
+       //this.camera.position.copy(this.controls.target);
+       //this.camera.position.addScaledVector(cam_dir, dist);
+       this.final_position = new THREE.Vector3();
+       this.final_position.copy(this.camera_target);
+       this.final_position.addScaledVector(cam_dir, dist);
        this.camera.updateProjectionMatrix();
-       setTimeout( () => {
-         positions = [
-           new THREE.Vector3(this.visibleBoundingBox.minX,
-                             this.visibleBoundingBox.minY,
-                             this.visibleBoundingBox.minZ),
-           new THREE.Vector3(this.visibleBoundingBox.minX,
-                             this.visibleBoundingBox.minY,
-                             this.visibleBoundingBox.maxZ),
-           new THREE.Vector3(this.visibleBoundingBox.minX,
-                             this.visibleBoundingBox.maxY,
-                             this.visibleBoundingBox.minZ),
-           new THREE.Vector3(this.visibleBoundingBox.minX,
-                             this.visibleBoundingBox.maxY,
-                             this.visibleBoundingBox.maxZ),
-           new THREE.Vector3(this.visibleBoundingBox.maxX,
-                             this.visibleBoundingBox.minY,
-                             this.visibleBoundingBox.minZ),
-           new THREE.Vector3(this.visibleBoundingBox.maxX,
-                             this.visibleBoundingBox.minY,
-                             this.visibleBoundingBox.maxZ),
-           new THREE.Vector3(this.visibleBoundingBox.maxX,
-                             this.visibleBoundingBox.maxY,
-                             this.visibleBoundingBox.minZ),
-           new THREE.Vector3(this.visibleBoundingBox.maxX,
-                             this.visibleBoundingBox.maxY,
-                             this.visibleBoundingBox.maxZ)
-         ]
+       this.startCameraMove();
+     }
 
-         // From https://stackoverflow.com/a/11771236
-         targetFov = 0.0;
-         for (var i=0; i<8; i++) {
-           proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
-           angle = Math.max(
-              Math.abs(Math.atan(proj2d.x/proj2d.z) / camera.aspect),
-              Math.abs(Math.atan(proj2d.y/proj2d.z))
-           );
-           targetFov = Math.max(targetFov, angle);
+     FFBOMesh3D.prototype.startCameraMove = function () {
+       this.start_target = this.controls.target.clone();
+       this.start_position = this.camera.position.clone();
+       this.alpha_cam = 0;
+       this.ang_cam = 0;
+       this.cam_move_strength = 0.01;
+       this.start_up = this.controls.object.up.clone();
+
+       this.cam_move = setInterval((function () {
+         this.ang_cam = (this.ang_cam - 1 / 180 * Math.PI * this.alpha_cam * this.alpha_cam * this.alpha_cam) % (2 * Math.PI);
+         this.alpha_cam = Math.min(1.0, this.alpha_cam + this.cam_move_strength);
+         if (this.alpha_cam < 1.0) {
+           this.camera.position.z = (this.final_position.z) * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.z;
+           this.camera.position.x = (this.final_position.x) * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.x;
+           this.camera.position.y = this.final_position.y * this.alpha_cam * this.alpha_cam + (1 - this.alpha_cam * this.alpha_cam) * this.start_position.y;
+           this.controls.target.x = this.alpha_cam * this.camera_target.x + (1 - this.alpha_cam) * this.start_target.x;
+           this.controls.target.y = this.alpha_cam * this.camera_target.y + (1 - this.alpha_cam) * this.start_target.y;
+           this.controls.target.z = this.alpha_cam * this.camera_target.z + (1 - this.alpha_cam) * this.start_target.z;
+           this.controls.object.up.x = this.alpha_cam * this.start_up.x + (1 - this.alpha_cam) * this.start_up.x;
+           this.controls.object.up.y = this.alpha_cam * this.start_up.y + (1 - this.alpha_cam) * this.start_up.y;
+           this.controls.object.up.z = this.alpha_cam * this.start_up.z + (1 - this.alpha_cam) * this.start_up.z;
+         } else {
+           clearInterval( this.cam_move );
          }
+       }).bind(this), 10);
 
-         currentFov = Math.PI*this.fov/2/180;
-         cam_dir = new THREE.Vector3();
-         cam_dir.subVectors(this.camera.position, this.controls.target);
-         prevDist = cam_dir.length();
-         cam_dir.normalize();
-
-         dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
-
-         aspect = this.camera.aspect;
-         targetHfov =  2*Math.atan(Math.tan(targetFov/2)*aspect);
-         currentHfov =  2*Math.atan(Math.tan(currentFov/2)*aspect);
-         dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
-
-         this.camera.position.copy(this.controls.target);
-         this.camera.position.addScaledVector(cam_dir, dist);
-
-         this.camera.updateProjectionMatrix();
-       }, 400);
-       //this.controls.reset();
      }
 
      FFBOMesh3D.prototype.togglePin = function( d ) {
