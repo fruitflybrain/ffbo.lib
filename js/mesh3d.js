@@ -921,7 +921,10 @@ moduleExporter(
                if(c.radius)
                  var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
                else
-                 var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+                 if(c.type == 7)
+                    var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+                 else
+                    var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius/2, 8, 8 );
                sphereGeometry.translate( c.x, c.y, c.z );
                //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
                //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
