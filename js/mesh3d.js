@@ -306,12 +306,18 @@ moduleExporter(
        this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
 
        camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
-       camera.position.z = 1800;
+       camera.position.x = 85;
+         camera.position.y = 1230;
+         camera.position.z = 381;
+
+         camera.up.x = -0.45;
+         camera.up.y = -0.26;
+         camera.up.z = -0.96;
 
        if (width<768 && width/height < 1)
-         camera.position.z = 3800;
-       if (width<768 && width/height >= 1)
-         camera.position.z =2600;
+         camera.position.z = 1800;
+       // if (width<768 && width/height >= 1)
+       //   camera.position.z =2600;
        return camera;
      }
 
@@ -330,6 +336,10 @@ moduleExporter(
        controls.panSpeed = 2.0;
        controls.staticMoving = true;
        controls.dynamicDampingFactor = 0.3;
+       controls.target.x = 177.1828417254846;
+       controls.target.y = 186.25752614602175;
+       controls.target.z = 174.48436406930017;
+       camera.lookAt(controls.target);
        controls.addEventListener('change', this.render.bind(this));
        return controls;
      }
@@ -419,26 +429,26 @@ moduleExporter(
 
        lightsHelper.addDirectionalLight({
          intensity: 0.1,
-         position: new THREE.Vector3(0, 0, 5000),
+         position: new THREE.Vector3(0, 5000, 0),
          key: 'frontDirectional_1'
        });
 
        lightsHelper.addDirectionalLight({
          intensity: 0.55,
-         position: new THREE.Vector3(0, 0, 5000),
+         position: new THREE.Vector3(0, 5000, 0),
          scene: this.scenes.back,
          key: 'backDirectional_1'
        });
 
        lightsHelper.addDirectionalLight({
          intensity: 0.1,
-         position: new THREE.Vector3(0, 0, -5000),
+         position: new THREE.Vector3(0, -5000, 0),
          key: 'frontDirectional_2'
        });
 
        lightsHelper.addDirectionalLight({
          intensity: 0.55,
-         position: new THREE.Vector3(0, 0, -5000),
+         position: new THREE.Vector3(0, -5000,0 ),
          scene: this.scenes.back,
          key: 'backDirectional_2'
        });
@@ -479,6 +489,7 @@ moduleExporter(
        loadingManager.onLoad = function() {
          this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+         this.controls.target0.y = 0.5*(this.boundingBox.minZ + this.boundingBox.maxZ );
          this.controls.reset();
          this.groups.frontLine.visible = true;
          this.groups.frontCyl.visible = true;
@@ -739,9 +750,9 @@ moduleExporter(
          var vtx = json['vertices'];
          var idx = json['faces'];
          for (var j = 0; j < vtx.length / 3; j++) {
-           var x = parseFloat(vtx[3*j+0]);
-           var y = parseFloat(vtx[3*j+1]);
-           var z = parseFloat(vtx[3*j+2]);
+           var x = parseFloat(vtx[3*j+0])*8;
+           var y = parseFloat(vtx[3*j+1])*8;
+           var z = parseFloat(vtx[3*j+2])*8;
            geometry.vertices.push(new THREE.Vector3(x,y,z));
            this.updateObjectBoundingBox(unit, x, y, z);
            this.updateBoundingBox(x,y,z);
@@ -792,10 +803,10 @@ moduleExporter(
            if (seg.length == 7) {
              swcObj[parseInt(seg[0])] = {
                'type'   : parseInt  (seg[1]),
-               'x'    : parseFloat(seg[2]),
-               'y'    : parseFloat(seg[3]),
-               'z'    : parseFloat(seg[4]),
-               'radius' : parseFloat(seg[5]),
+               'x'    : parseFloat(seg[2])*8,
+               'y'    : parseFloat(seg[3])*8,
+               'z'    : parseFloat(seg[4])*8,
+               'radius' : parseFloat(seg[5])*8,
                'parent' : parseInt  (seg[6]),
              };
            }
@@ -836,10 +847,10 @@ moduleExporter(
          for (var j = 0; j < len; j++) {
            swcObj[parseInt(unit['sample'][j])] = {
              'type'   : parseInt  (unit['identifier'][j]),
-             'x'    : parseFloat(unit['x'][j]),
-             'y'    : parseFloat(unit['y'][j]),
-             'z'    : parseFloat(unit['z'][j]),
-             'radius' : parseFloat(unit['r'][j]),
+             'x'    : parseFloat(unit['x'][j])*8,
+             'y'    : parseFloat(unit['y'][j])*8,
+             'z'    : parseFloat(unit['z'][j])*8,
+             'radius' : parseFloat(unit['r'][j])*8,
              'parent' : parseInt  (unit['parent'][j]),
            };
          }
