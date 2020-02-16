@@ -306,16 +306,16 @@ moduleExporter(
        this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
 
        camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
-       camera.position.x = 85;
-         camera.position.y = 1230;
-         camera.position.z = 381;
+       camera.position.x = 61.36;
+       camera.position.y = 1304.68;
+       camera.position.z = 205.3;
 
-         camera.up.x = -0.45;
-         camera.up.y = -0.26;
-         camera.up.z = -0.96;
+       camera.up.x = 0.0132266;
+       camera.up.y = -0.415534;
+       camera.up.z = -0.8719834;
 
        if (width<768 && width/height < 1)
-         camera.position.z = 1800;
+         camera.position.y = 2000;
        // if (width<768 && width/height >= 1)
        //   camera.position.z =2600;
        return camera;
@@ -336,10 +336,6 @@ moduleExporter(
        controls.panSpeed = 2.0;
        controls.staticMoving = true;
        controls.dynamicDampingFactor = 0.3;
-       controls.target.x = 177.1828417254846;
-       controls.target.y = 186.25752614602175;
-       controls.target.z = 174.48436406930017;
-       camera.lookAt(controls.target);
        controls.addEventListener('change', this.render.bind(this));
        return controls;
      }
@@ -489,7 +485,7 @@ moduleExporter(
        loadingManager.onLoad = function() {
          this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-         this.controls.target0.y = 0.5*(this.boundingBox.minZ + this.boundingBox.maxZ );
+         this.controls.target0.z = 0.5*(this.boundingBox.minZ + this.boundingBox.maxZ );
          this.controls.reset();
          this.groups.frontLine.visible = true;
          this.groups.frontCyl.visible = true;
