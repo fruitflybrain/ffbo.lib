@@ -604,6 +604,7 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+           setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', key).replace('<', '&lt').replace('>', '&gt'));
 
            if(unit.background){
              unit.group = this.groups.back;
@@ -1446,7 +1447,7 @@ moduleExporter(
          this.uiVars.toolTipPosition.x = pos.x;
          this.uiVars.toolTipPosition.y = pos.y;
        }
-       this.show3dToolTip(d['label']);
+       this.show3dToolTip(d['htmllabel']);
      }
 
      FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
