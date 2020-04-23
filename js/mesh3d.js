@@ -479,6 +479,7 @@ moduleExporter(
        loadingManager.onLoad = function() {
          this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
          this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+         this.controls.target0.z = 0.5*(this.boundingBox.minZ + this.boundingBox.maxZ );
          this.controls.reset();
          this.groups.frontLine.visible = true;
          this.groups.frontCyl.visible = true;
@@ -597,6 +598,7 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
            setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+           setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', key).replace('<', '&lt').replace('>', '&gt'));
 
            if(unit.background){
              unit.group = this.groups.back;
@@ -1436,7 +1438,7 @@ moduleExporter(
          this.uiVars.toolTipPosition.x = pos.x;
          this.uiVars.toolTipPosition.y = pos.y;
        }
-       this.show3dToolTip(d['label']);
+       this.show3dToolTip(d['htmllabel']);
      }
 
      FFBOMesh3D.prototype.onUpdateHighlight = function(e) {

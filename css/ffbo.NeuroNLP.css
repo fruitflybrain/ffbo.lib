@@ -1125,7 +1125,9 @@ Arch Demo
     border-width: 0;
 }
 
+/*
 .syn-column rect{fill:#8E554C}
+*/
 
 .syn-column.pre rect[class^='Gad1'] {fill:#FBB4AE}
 .syn-column.post rect[class^='Gad1'] {fill:#FBB4AE}
