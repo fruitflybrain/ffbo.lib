@@ -302,17 +302,17 @@ moduleExporter(
        var height = this.container.clientHeight;
        var width = this.container.clientWidth;
 
-       this.fov = 20;
+       this.fov = 10;
        this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
 
        camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
-       camera.position.x = 61.36;
-       camera.position.y = 1304.68;
-       camera.position.z = 205.3;
+       camera.position.x = 8.68;
+       camera.position.y = 1489.61;
+       camera.position.z = 111.19;
 
-       camera.up.x = 0.0132266;
-       camera.up.y = -0.415534;
-       camera.up.z = -0.8719834;
+       camera.up.x = 0.1847;
+       camera.up.y = -0.2606;
+       camera.up.z = -0.8196;
 
        if (width<768 && width/height < 1)
          camera.position.y = 2000;
@@ -747,9 +747,9 @@ moduleExporter(
          var vtx = json['vertices'];
          var idx = json['faces'];
          for (var j = 0; j < vtx.length / 3; j++) {
-           var x = parseFloat(vtx[3*j+0])*8;
-           var y = parseFloat(vtx[3*j+1])*8;
-           var z = parseFloat(vtx[3*j+2])*8;
+           var x = parseFloat(vtx[3*j+0]);
+           var y = parseFloat(vtx[3*j+1]);
+           var z = parseFloat(vtx[3*j+2]);
            geometry.vertices.push(new THREE.Vector3(x,y,z));
            this.updateObjectBoundingBox(unit, x, y, z);
            this.updateBoundingBox(x,y,z);
@@ -800,10 +800,10 @@ moduleExporter(
            if (seg.length == 7) {
              swcObj[parseInt(seg[0])] = {
                'type'   : parseInt  (seg[1]),
-               'x'    : parseFloat(seg[2])*8,
-               'y'    : parseFloat(seg[3])*8,
-               'z'    : parseFloat(seg[4])*8,
-               'radius' : parseFloat(seg[5])*8,
+               'x'    : parseFloat(seg[2]),
+               'y'    : parseFloat(seg[3]),
+               'z'    : parseFloat(seg[4]),
+               'radius' : parseFloat(seg[5]),
                'parent' : parseInt  (seg[6]),
              };
            }
@@ -844,10 +844,10 @@ moduleExporter(
          for (var j = 0; j < len; j++) {
            swcObj[parseInt(unit['sample'][j])] = {
              'type'   : parseInt  (unit['identifier'][j]),
-             'x'    : parseFloat(unit['x'][j])*8,
-             'y'    : parseFloat(unit['y'][j])*8,
-             'z'    : parseFloat(unit['z'][j])*8,
-             'radius' : parseFloat(unit['r'][j])*8,
+             'x'    : parseFloat(unit['x'][j]),
+             'y'    : parseFloat(unit['y'][j]),
+             'z'    : parseFloat(unit['z'][j]),
+             'radius' : parseFloat(unit['r'][j]),
              'parent' : parseInt  (unit['parent'][j]),
            };
          }
