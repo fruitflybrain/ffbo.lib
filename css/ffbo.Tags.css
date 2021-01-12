@@ -47,3 +47,82 @@
 .modal-footer .btn-default {
     background-color: var(--srch-box-background);
 }
+
+#tagsMenu h5#tag_name{
+    width:30%;
+    float:left;
+}
+
+#tagsMenu input.tag-text.tag-name#tag_name_input {
+    display: block;
+    margin: 10px;
+    right: 0px;
+    width: 60%;
+    position: absolute;
+}
+
+#tagsMenu textarea.tag-text#tag_desc_input {
+    display: block;
+    width:100%;
+    resize: none;
+}
+
+#tagsMenu #tagTagEditor {
+    float: left;
+    width:100%;
+}
+
+#tagsMenu div.loadtag{
+    display:flex;
+    flex-direction:column;
+}
+
+#tagsMenu div.loadtag{
+    display:flex;
+    flex-direction:column;
+}
+
+#tagsMenu div.loadtag div.retrieveTagWrapper {
+    display:block;
+}
+
+#tagsMenu div.loadtag div.retrieveTagWrapper h5#tag_name {
+    width:30%;
+    float:left;
+}
+
+#tagsMenu div.loadtag div.retrieveTagWrapper input#retrieve_tag_name_input {
+    display: block;
+    margin: 10px;
+    right: 0px;
+    width: 60%;
+    position: absolute;
+}
+
+#tagsMenu div.loadtag div#tagSearchMenuWrapper h5#tag_desc {
+    display: block;
+    width:60%;
+}
+
+#tagsMenu div.loadtag div#tagSearchMenuWrapper div#tagSearchMenu {
+    overflow:scroll;
+    height:auto;
+    position:relative;
+    max-height:40vh;
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+#tagsMenu div.tag-footer {
+    padding-top: 50px;
+}
+
+#tagsMenu div.tag-footer button {
+    margin: 10px;
+    float: right;
+}
+
+#tagsMenu.overlay {
+    max-height:70vh;
+    height:auto;
+}
