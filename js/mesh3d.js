@@ -800,10 +800,10 @@ moduleExporter(
            if (seg.length == 7) {
              swcObj[parseInt(seg[0])] = {
                'type'   : parseInt  (seg[1]),
-               'x'    : parseFloat(seg[2])*8,
-               'y'    : parseFloat(seg[3])*8,
-               'z'    : parseFloat(seg[4])*8,
-               'radius' : parseFloat(seg[5])*8,
+               'x'    : parseFloat(seg[2])*1,
+               'y'    : parseFloat(seg[3])*1,
+               'z'    : parseFloat(seg[4])*1,
+               'radius' : parseFloat(seg[5])*1,
                'parent' : parseInt  (seg[6]),
              };
            }
@@ -844,10 +844,10 @@ moduleExporter(
          for (var j = 0; j < len; j++) {
            swcObj[parseInt(unit['sample'][j])] = {
              'type'   : parseInt  (unit['identifier'][j]),
-             'x'    : parseFloat(unit['x'][j])*8,
-             'y'    : parseFloat(unit['y'][j])*8,
-             'z'    : parseFloat(unit['z'][j])*8,
-             'radius' : parseFloat(unit['r'][j])*8,
+             'x'    : parseFloat(unit['x'][j])*1,
+             'y'    : parseFloat(unit['y'][j])*1,
+             'z'    : parseFloat(unit['z'][j])*1,
+             'radius' : parseFloat(unit['r'][j])*1,
              'parent' : parseInt  (unit['parent'][j]),
            };
          }
