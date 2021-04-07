@@ -1400,3 +1400,36 @@ Arch Demo
     height: 30px;
     bottom: 2px;
 }
+
+
+#draggable-window {
+  position: absolute;
+  z-index: 9;
+  width: 512px;
+  border: 2px solid #010001;
+  text-align: center;
+}
+
+#draggable-windowheader {
+  padding: 10px;
+  cursor: move;
+  z-index: 10;
+  background-color: #121212;
+  color: #ccc;
+}
+
+.sigma-scene {
+  left: 0%;
+}
+
+.sigma-mouse {
+  left: 0%;
+}
+
+.DraggableClass{
+  right:5px;
+  position: absolute;
+  font-size: 25px;
+  opacity: 1;
+  color: #aaaaaa;
+}
