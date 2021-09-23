@@ -106,7 +106,7 @@ moduleExporter(
          pinOpacity: 0.9,
          pinLowOpacity: 0.15,
          highlightedObjectOpacity: 1.0,
-         defaultRadius: 0.5,
+         defaultRadius: 1.0,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.2,
          backgroundOpacity: 1.0,
@@ -873,7 +873,7 @@ moduleExporter(
                if(!p.radius || !c.radius)
                  var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
                else
-                 var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
                geometry.translate(0, 0.5*d.length(),0);
                geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
                geometry.lookAt(d.clone());
