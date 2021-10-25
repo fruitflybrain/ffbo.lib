@@ -634,7 +634,7 @@ moduleExporter(
              }
            } else if ( 'dataStr' in unit ) {
              if (unit['filetype']  == "json")
-               this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+               this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
              else if (unit['filetype'] == "swc" )
                this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
              else {
