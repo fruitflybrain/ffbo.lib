@@ -86,7 +86,7 @@
   height: 17px;
   position: absolute;
   margin-top: -17px;
-  background-color: #000;
+  background-color: #260226;
 }
 
 #vis-neuropil-color {
@@ -96,6 +96,25 @@
     height: 17px;
     border: none;
 }
+
+#vis-background-color-wrapper {
+    border-radius: 10px;
+    right: 20px;
+    width: 48px;
+    height: 17px;
+    position: absolute;
+    margin-top: -17px;
+    background-color: #030305;
+}
+
+#vis-background-color {
+    opacity: 0;
+    display: block;
+    width: 48px;
+    height: 17px;
+    border: none;
+}
+
 
 #btn-store-vis-settings {
     cursor: pointer;
