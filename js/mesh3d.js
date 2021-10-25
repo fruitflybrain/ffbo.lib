@@ -274,6 +274,9 @@ moduleExporter(
        this.settings.on('change', (function (e) {
          this.setBackgroundColor(e.value);
        }).bind(this), 'backgroundColor');
+       this.settings.on('change', (function (e) {
+        this.setSceneBackgroundColor(e.value);
+      }).bind(this), 'sceneBackgroundColor');
 
        if ( data != undefined && Object.keys(data).length > 0)
          this.addJson( data );
@@ -322,9 +325,10 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.initRenderer = function () {
-       renderer = new THREE.WebGLRenderer({'logarithmicDepthBuffer': true});
+      renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true, alpha: true });
        renderer.setPixelRatio( window.devicePixelRatio );
        renderer.setSize( this.container.clientWidth, this.container.clientHeight );
+       renderer.setClearColor( 0x000000, 0 );
        this.container.appendChild(renderer.domElement);
        return renderer;
      }
@@ -1639,6 +1643,10 @@ moduleExporter(
        this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
        this.controls.reset();
      }
+
+     FFBOMesh3D.prototype.setSceneBackgroundColor = function (color) {
+      this.scenes.back.background.set(color);
+    }
 
      FFBOMesh3D.prototype.resetVisibleView = function () {
        this.computeVisibleBoundingBox();
