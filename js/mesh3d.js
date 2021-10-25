@@ -101,7 +101,7 @@ moduleExporter(
          defaultOpacity: 0.7,
          synapseOpacity: 1.0,
          meshOscAmp: 0.0,
-         nonHighlightableOpacity: 0.1,
+         nonHighlightableOpacity: 0.0,
          lowOpacity: 0.1,
          pinOpacity: 0.9,
          pinLowOpacity: 0.15,
@@ -115,8 +115,8 @@ moduleExporter(
          neuron3dMode: 1,
          synapseMode: 1,
          meshWireframe: true,
-         backgroundColor: undefined,
-         sceneBackgroundColor: undefined,
+         backgroundColor: '#260226',
+         sceneBackgroundColor: '#030305',
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
