@@ -116,6 +116,7 @@ moduleExporter(
          synapseMode: 1,
          meshWireframe: true,
          backgroundColor: undefined,
+         sceneBackgroundColor: undefined,
        });
 
        this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
