@@ -614,7 +614,7 @@ moduleExporter(
            if(unit.background){
              unit.group = this.groups.back;
            } else{
-             if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+             if(unit['class' == 'Neuron']){
                if( this.settings.neuron3d )
                  unit.group = this.groups.frontCyl;
                else
@@ -871,7 +871,7 @@ moduleExporter(
            this.updateBoundingBox(c.x,c.y,c.z);
            if (c.parent != -1) {
              var p = swcObj[c.parent];
-             if(this.settings.neuron3d){
+             if(this.settings.neuron3d && unit['class'] == 'Neuron'){
                if(mergedGeometry == undefined)
                  mergedGeometry = new THREE.Geometry()
                var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
