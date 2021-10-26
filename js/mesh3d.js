@@ -926,7 +926,7 @@ moduleExporter(
              object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
              unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
            }
-           if (c.type == 7 || c.type == 8) {
+           if (unit['class'] == 'Synapse') {
              if(this.settings.synapseMode==1){
                if(mergedGeometry == undefined)
                  mergedGeometry = new THREE.Geometry()
