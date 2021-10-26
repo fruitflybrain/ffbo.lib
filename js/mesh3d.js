@@ -1001,7 +1001,7 @@ moduleExporter(
        }
 
        // TODO: move the code below to a function
-       if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+       if(unit['class'] == 'Neuron'){
          if ( this.settings.defaultOpacity !== 1)
            for (var i=0; i < unit['object'].children.length; i++)
              unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
@@ -1387,7 +1387,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onAddMesh = function(e) {
        if ( !e.value['background'] ) {
-         if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+         if(e.value['class'] == 'Neuron')
            ++this.uiVars.frontNum;
        } else {
          ++this.uiVars.backNum;
@@ -1411,7 +1411,7 @@ moduleExporter(
        }
 
        if ( !e.value['background'] ) {
-         if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+         if(e.value['class'] == 'Neuron')
            --this.uiVars.frontNum;
        } else {
          --this.uiVars.backNum;
@@ -1527,8 +1527,7 @@ moduleExporter(
        var val = this.settings.defaultOpacity;
        for (const key of Object.keys(this.meshDict)) {
          if (!this.meshDict[key]['background']){
-           if(!('morph_type' in this.meshDict[key]) ||
-              (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+           if(this.meshDict[key]['class'] == 'Neuron'){
              for (i in this.meshDict[key].object.children)
                this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
            } else {
