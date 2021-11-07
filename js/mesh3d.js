@@ -15,7 +15,8 @@ moduleExporter(
    "FFBOMesh3D",
    [
      "three",
-     "detector",
+     "webgl",
+     "buffergeometryutils",
      "propertymanager",
      "lightshelper",
      "stats",
@@ -38,13 +39,16 @@ moduleExporter(
      "maskpass",
      "bloompass",
      "unrealbloompass",
-     "adaptivetonemappingpass"
+     "adaptivetonemappingpass",
+     'linematerial',
+     'linesegmentsgeometry',
+     'linesegments2'
    ],
-   function(THREE, Dectector, PropertyManager, FFBOLightsHelper, Stats)
+   function(THREE, WebGL, BGUtils, PropertyManager, FFBOLightsHelper, Stats)
    {
-
      THREE = THREE || window.THREE;
-     Detector = Detector || window.Detector;
+     WebGL = THREE.WEBGL;
+     BGUtils = THREE.BufferGeometryUtils;
      PropertyManager = PropertyManager || window.PropertyManager;
      FFBOLightsHelper = FFBOLightsHelper || window.FFBOLightsHelper;
 
@@ -81,9 +85,9 @@ moduleExporter(
       d = 2*(x-c)-1;
       return d/a;
     }
-     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+     if ( ! WebGL.isWebGLAvailable() ) WebGL.addGetWebGLMessage();
 
-     function FFBOMesh3D(div_id, data, metadata, stats=false) {
+     function FFBOMesh3D(div_id, data, metadata, stats=true) {
 
        /* default metadata */
        this._metadata = {
@@ -102,16 +106,17 @@ moduleExporter(
          synapseOpacity: 1.0,
          meshOscAmp: 0.0,
          nonHighlightableOpacity: 0.0,
-         lowOpacity: 0.1,
+         lowOpacity: 0.05,
          pinOpacity: 0.9,
-         pinLowOpacity: 0.15,
+         pinLowOpacity: 0.1,
          highlightedObjectOpacity: 1.0,
          defaultRadius: 1.0,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.2,
-         backgroundOpacity: 1.0,
+         linewidth: 2.0,
+         brightness: 1.0,
+         backgroundOpacity: 0.5,
          backgroundWireframeOpacity: 0.07,
-         neuron3d: false,
          neuron3dMode: 1,
          synapseMode: 1,
          meshWireframe: true,
@@ -119,10 +124,10 @@ moduleExporter(
          sceneBackgroundColor: '#030305',
        });
 
-       this.settings.toneMappingPass = new PropertyManager({brightness: 0.95});
-       this.settings.bloomPass = new PropertyManager({radius: 0.2, strength: 0.2, threshold: 0.3});
-       this.settings.effectFXAA = new PropertyManager({enabled: true});
-       this.settings.backrenderSSAO = new PropertyManager({enabled: true});
+      //  this.settings.toneMappingPass = new PropertyManager({enabled: false, brightness: 0.95});
+       this.settings.bloomPass = new PropertyManager({enabled: false, radius: 0.2, strength: 0.2, threshold: 0.3});
+       this.settings.effectFXAA = new PropertyManager({enabled: false});
+       this.settings.backrenderSSAO = new PropertyManager({enabled: false});
 
        this.states = new PropertyManager({
          mouseOver: false,
@@ -152,6 +157,9 @@ moduleExporter(
 
        this.raycaster = new THREE.Raycaster();
        this.raycaster.linePrecision = 3;
+
+
+       this.sphereGeometry = new THREE.SphereGeometry(1.0, 8, 8 );
 
 
        this.container = document.getElementById( div_id );
@@ -264,13 +272,23 @@ moduleExporter(
            "backgroundWireframeOpacity", "synapseOpacity",
            "highlightedObjectOpacity", "nonHighlightableOpacity", "lowOpacity"]);
 
+       this.settings.on("change", (function(e){
+        this.updateLinewidth(e.value)}).bind(this), "linewidth");
+
+      //  this.settings.on("change", (function(e){
+      //     this.render.toneMappingExposure = e.value}).bind(this), "brightness");
+
        this.settings.on('change', (function(e){
          this[e.path[0]][e.prop] = e.value;
        }).bind(this), ['radius', 'strength', 'threshold', 'enabled']);
 
-       this.settings.toneMappingPass.on('change', (function(e){
-         this.toneMappingPass.setMinLuminance(1-this.settings.toneMappingPass.brightness);
-       }).bind(this), 'brightness');
+      //  this.settings.on('change', (function(e){
+      //   this[e.path[0]][e.prop] = e.value;
+      // }).bind(this), ['radius', 'strength', 'threshold', 'enabled']);
+
+      //  this.settings.toneMappingPass.on('change', (function(e){
+      //    this.toneMappingPass.setMinLuminance(1-this.settings.toneMappingPass.brightness);
+      //  }).bind(this), 'brightness');
 
        this.settings.on('change', (function (e) {
          this.setBackgroundColor(e.value);
@@ -326,10 +344,15 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.initRenderer = function () {
-      renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true, alpha: true });
+      renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true, alpha: false, antialias: true });
        renderer.setPixelRatio( window.devicePixelRatio );
        renderer.setSize( this.container.clientWidth, this.container.clientHeight );
-       renderer.setClearColor( 0x000000, 0 );
+       renderer.setClearColor( 0xFFFFFF, 0 );
+      //  renderer.toneMapping = THREE.LinearToneMapping;
+			// 	renderer.toneMappingExposure = 1.0;
+        renderer.autoClear = false;
+        renderer.gammaInput = true;
+       renderer.gammaOutput = true;
        this.container.appendChild(renderer.domElement);
        return renderer;
      }
@@ -348,16 +371,25 @@ moduleExporter(
      FFBOMesh3D.prototype.initPostProcessing = function () {
        var height = this.container.clientHeight;
        var width = this.container.clientWidth;
+       this.EffectComposerPasses = {};
+
        this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
        this.renderScene.clear = false;
        this.renderScene.clearDepth = true;
+       this.EffectComposerPasses['renderScene'] = this.renderScene;
+       
 
        this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
+       this.EffectComposerPasses['backrenderScene'] = this.backrenderScene
+       
        this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
+       this.backrenderSSAO.enabled = this.settings.backrenderSSAO.enabled;
+       this.EffectComposerPasses['backrenderSSAO'] = this.backrenderSSAO;
 
        this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
        this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
-
+       this.effectFXAA.enabled = this.settings.effectFXAA.enabled;
+       this.EffectComposerPasses['effectFXAA'] = this.effectFXAA;
 
        this.bloomPass = new THREE.UnrealBloomPass(
          new THREE.Vector2( width, height ),
@@ -365,26 +397,30 @@ moduleExporter(
          this.settings.bloomPass.radius,
          this.settings.bloomPass.threshold
        );
+       this.bloomPass.enabled = this.settings.bloomPass.enabled;
+       this.EffectComposerPasses['bloomPass'] = this.bloomPass;
+      //  this.bloomPass.renderToScreen = true;
 
-       this.bloomPass.renderToScreen = true;
+      //  this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
+      //  this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
 
-       this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
-       this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
+      this.effectCopy = new THREE.ShaderPass(THREE.CopyShader);
+      this.effectCopy.renderToScreen = true;
 
        this.renderer.gammaInput = true;
        this.renderer.gammaOutput = true;
 
        this.composer = new THREE.EffectComposer( this.renderer );
+
        this.composer.addPass( this.backrenderScene );
        this.composer.addPass( this.backrenderSSAO );
        this.composer.addPass( this.renderScene );
        this.composer.addPass( this.effectFXAA );
-       this.composer.addPass( this.toneMappingPass );
-
+      //  this.composer.addPass( this.toneMappingPass );
        this.composer.addPass( this.bloomPass );
+       this.composer.addPass( this.effectCopy );
        this.composer.setSize( width*window.devicePixelRatio,
                               height*window.devicePixelRatio);
-
      }
 
      FFBOMesh3D.prototype.initScenes = function () {
@@ -614,8 +650,8 @@ moduleExporter(
            if(unit.background){
              unit.group = this.groups.back;
            } else{
-             if(unit['class' == 'Neuron']){
-               if( this.settings.neuron3d )
+             if(unit['class'] === 'Neuron'){
+               if( this.settings.neuron3dMode > 1 )
                  unit.group = this.groups.frontCyl;
                else
                  unit.group = this.groups.frontLine;
@@ -636,7 +672,9 @@ moduleExporter(
              unit['filetype'] = unit.filename.split('.').pop();
              var loader = new THREE.FileLoader( this.loadingManager );
              if (unit['filetype'] == "json")
+             {
                loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
+             }
              else if (unit['filetype'] == "swc" )
                loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
              else {
@@ -746,36 +784,43 @@ moduleExporter(
 
      FFBOMesh3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
        return function (jsonString) {
+         
          var json = JSON.parse(jsonString);
          var color = unit['color'];
-         var geometry = new THREE.Geometry();
+         var geometry = new THREE.BufferGeometry();
+
          var vtx = json['vertices'];
          var idx = json['faces'];
+         const vertices = [];
+         const indices = []
          for (var j = 0; j < vtx.length / 3; j++) {
            var x = parseFloat(vtx[3*j+0])*8;
            var y = parseFloat(vtx[3*j+1])*8;
            var z = parseFloat(vtx[3*j+2])*8;
-           geometry.vertices.push(new THREE.Vector3(x,y,z));
+           vertices.push(x,y,z);
            this.updateObjectBoundingBox(unit, x, y, z);
            this.updateBoundingBox(x,y,z);
          }
          for (var j = 0; j < idx.length/3; j++) {
-           geometry.faces.push(
-              new THREE.Face3(
+           indices.push(
                  parseInt(idx[3*j+0]),
                  parseInt(idx[3*j+1]),
                  parseInt(idx[3*j+2])
-              )
            );
          }
 
-         geometry.mergeVertices();
-         geometry.computeFaceNormals();
+         geometry.setIndex(indices);
+         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
          geometry.computeVertexNormals();
+
+        delete vertices
+        //  geometry.mergeVertices();
+        //  geometry.computeFaceNormals();
+        //  geometry.computeVertexNormals();
 
          materials  = [
            //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-           new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
+           new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2}),//, flatShading: true} ),
            new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
          ];
 
@@ -857,118 +902,212 @@ moduleExporter(
            };
          }
 
-         var color = unit['color'];
+         var color = new THREE.Color(unit['color']);
          var object = new THREE.Object3D();
          var pointGeometry = undefined;
          var mergedGeometry = undefined;
+         var geometryToMerge = [];
          var geometry = undefined;
+         var geometryCylinder = undefined;
+         var geometrySphere = undefined;
+         var cylinders = undefined;
+         var spheres = undefined;
 
+         total_seg = 0;
          for (var idx in swcObj ) {
-           var c = swcObj[idx];
-           if(idx == Math.round(len/2) && unit.position == undefined)
-             unit.position = new THREE.Vector3(c.x, c.y, c.z);
-           this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-           this.updateBoundingBox(c.x,c.y,c.z);
-           if (c.parent != -1) {
-             var p = swcObj[c.parent];
-             if(this.settings.neuron3d && unit['class'] == 'Neuron'){
-               if(mergedGeometry == undefined)
-                 mergedGeometry = new THREE.Geometry()
-               var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-               if(!p.radius || !c.radius)
-                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-               else
-                 var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
-               geometry.translate(0, 0.5*d.length(),0);
-               geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-               geometry.lookAt(d.clone());
-               geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
-
-               mergedGeometry.merge(geometry);
-               delete geometry
-
-               if (this.settings.neuron3dMode == 2) {
-                 var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-                 geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-                 geometry.lookAt(d);
-                 geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
-
-                 mergedGeometry.merge(geometry);
-                 delete geometry
-               } else if (this.settings.neuron3dMode == 3) {
-                 if (p.parent != -1) {
-                   p2 = swcObj[p.parent];
-                   var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
-                   var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
-                   var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
-
-                   var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
-                   mergedGeometry.merge(geometry);
-                   delete geometry
-                 }
-               }
-             } else {
-               if (geometry == undefined)
-                 geometry = new THREE.Geometry();
-               geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-               geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-               geometry.colors.push(color);
-               geometry.colors.push(color);
-             }
-           }
-           if (c.type == 1) {
-             if(c.radius)
-               var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-             else
-               var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
-             sphereGeometry.translate( c.x, c.y, c.z );
-             var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-             object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-             unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-           }
-           if (unit['class'] == 'Synapse') {
-             if(this.settings.synapseMode==1){
-               if(mergedGeometry == undefined)
-                 mergedGeometry = new THREE.Geometry()
-
-               if(c.radius)
-                 var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-               else
-                 if(c.type == 7)
-                    var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
-                 else
-                    var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius/2, 8, 8 );
-               sphereGeometry.translate( c.x, c.y, c.z );
-               //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-               //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-               mergedGeometry.merge(sphereGeometry);
-               unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-             } else {
-               if(pointGeometry == undefined)
-                 pointGeometry = new THREE.Geometry();
-               pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-             }
-           }
+          var c = swcObj[idx];
+          if(idx == Math.round(len/2) && unit.position == undefined)
+            unit.position = new THREE.Vector3(c.x, c.y, c.z);
+          this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+          this.updateBoundingBox(c.x,c.y,c.z);
+          if (c.parent != -1) {
+            total_seg += 1;
+          }
+          if (c.type == 1) {
+            unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+          }
          }
-         if(pointGeometry){
-           var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
-           var points = new THREE.Points(pointGeometry, pointMaterial);
-           object.add(points);
-         }
-         if(mergedGeometry){
-           var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-           //var modifier = new THREE.SimplifyModifier();
 
-           //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-           var mesh = new THREE.Mesh(mergedGeometry, material);
-           //var mesh = new THREE.Mesh(simplified, material);
+         if (unit['class'] === 'Neuron') {
+          if(this.settings.neuron3dMode > 1){
 
-           object.add(mesh);
-         }
-         if(geometry){
-           var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-           object.add(new THREE.LineSegments(geometry, material));
-         }
+            var matrix = new THREE.Matrix4();
+
+            if (this.settings.neuron3dMode > 2) {
+              
+              if (false) { //experimental
+                var materialCylinder = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+                geometryCylinder = new THREE.CylinderGeometry( this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
+                cylinders = new THREE.InstancedMesh( geometryCylinder, materialCylinder, total_seg );
+              }
+            }
+            if (this.settings.neuron3dMode == 4 || this.settings.neuron3dMode == 2) {
+              var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+              // geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
+              // geometrySphere = new THREE.IcosahedronGeometry(1.0, 1);
+              geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
+              spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, len );
+            //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+            }
+            i = 0;
+            j = 0;
+            for (var idx in swcObj ) {
+              var c = swcObj[idx];
+              var p = swcObj[c.parent];
+              if (c.parent != -1) {
+                if (this.settings.neuron3dMode > 2) {
+                  
+                  
+                  var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+                  if(!p.radius || !c.radius)
+                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+                  else
+                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
+                  geometry.translate(0, 0.5*d.length(),0);
+                  geometry.applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+                  geometry.lookAt(d.clone());
+                  geometry.translate(c.x, c.y, c.z);
+
+                  geometryToMerge.push(geometry);
+                  
+                  if (false) { //experimental
+                    matrix.setPosition( c.x, c.y, c.z );
+                    cylinders.setMatrixAt( i, matrix );
+                  }
+                    i += 1;
+                  }
+
+                  if (this.settings.neuron3dMode == 5) {
+                    if (p.parent != -1) {
+                      p2 = swcObj[p.parent];
+                      var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
+                      var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
+                      var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
+
+                      var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+                      geometryToMerge.push(geometry);
+                    }
+                  }
+              }
+
+                  if (this.settings.neuron3dMode == 4 || this.settings.neuron3dMode == 2 ) {
+                    if(!c.radius) {
+                      if(c.type == 1) {
+                        scale = this.settings.defaultSomaRadius;
+                      } else {
+                        scale = this.settings.defaultRadius;
+                      }
+                    } else {
+                      scale = c.radius;
+                    }
+
+                    matrix.makeScale(scale, scale, scale);
+                    matrix.setPosition( c.x, c.y, c.z );
+                    spheres.setMatrixAt( j, matrix );
+                    j += 1;
+                  }
+              }
+            
+            if(cylinders)
+              object.add( cylinders );
+            if(spheres)
+              object.add(spheres);
+            if(geometryToMerge.length) {
+              mergedGeometry = BGUtils.mergeBufferGeometries(geometryToMerge, false);
+              for (var n of geometryToMerge) {
+                n.dispose();
+              }
+              delete geometryToMerge;
+
+              var material_merge = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+              var mesh = new THREE.Mesh(mergedGeometry, material_merge);
+              object.add(mesh);
+            }
+            
+          }
+           if (this.settings.neuron3dMode <= 2) {
+            vertices = [];
+            for (var idx in swcObj ) {
+              var c = swcObj[idx];
+              if (c.parent != -1) {
+                var p = swcObj[c.parent];
+                vertices.push(c.x);
+                vertices.push(c.y);
+                vertices.push(c.z);
+                vertices.push(p.x);
+                vertices.push(p.y);
+                vertices.push(p.z);
+              }
+
+              if (c.type == 1) { // soma
+                if(c.radius)
+                  var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+                else
+                  var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
+                sphereGeometry.translate( c.x, c.y, c.z );
+                var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+                object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+                unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+              }
+            }
+
+            if (this.settings.neuron3dMode == 1) {
+              geometry = new THREE.LineSegmentsGeometry()
+              geometry.setPositions(vertices);
+              var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: (this.settings.neuron3dMode == 1) ? 1.5 : this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: false, opacity: 0.5, resolution: this.renderer.getSize(new THREE.Vector2())}); 
+              var lines = new THREE.LineSegments2(geometry, material_lines)
+            } else {
+              geometry = new THREE.BufferGeometry();
+              geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+              var material_lines = new THREE.LineBasicMaterial({ transparent: true, color: color });
+              var lines = new THREE.LineSegments(geometry, material_lines)
+            }
+            object.add(lines);
+
+          }
+         } else { //if (unit['class'] == 'Synapse') {
+          var material_synapse = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+
+          var matrix = new THREE.Matrix4();
+
+          // var geometrySphere = new THREE.SphereGeometry( 1.0, 8, 8 );
+          // var geometrySphere = new THREE.IcosahedronGeometry( 1.0, 1 );
+          var geometrySphere = new THREE.OctahedronGeometry(1.0, 0);
+          spheres = new THREE.InstancedMesh( geometrySphere, material_synapse, len );
+          //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+          
+          geometry = new THREE.BufferGeometry();
+          vertices = [];
+          colors = [];
+
+          var scale;
+          var i = 0;
+          for (var idx in swcObj ) {
+            var c = swcObj[idx];
+              if(c.radius)
+                scale = c.radius;
+              else
+                if(c.type == 7)
+                  scale = this.settings.defaultSynapseRadius;
+                else
+                  scale = this.settings.defaultSynapseRadius/2;
+              matrix.makeScale(scale, scale, scale);
+              matrix.setPosition( c.x, c.y, c.z );
+              spheres.setMatrixAt( i, matrix );
+              i += 1;
+
+              if (c.parent != -1) {
+                var p = swcObj[c.parent];
+                vertices.push(c.x, c.y, c.z);
+                vertices.push(p.x, p.y, p.z);
+              }
+          }
+          object.add( spheres );
+
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+          var material_lines = new THREE.LineBasicMaterial({ transparent: true, color: color });
+          object.add(new THREE.LineSegments(geometry, material_lines));
+         
          object.visible = visibility;
          this._registerObject(key, unit, object);
 
@@ -1001,7 +1140,7 @@ moduleExporter(
        }
 
        // TODO: move the code below to a function
-       if(unit['class'] == 'Neuron'){
+       if(unit['class'] === 'Neuron'){
          if ( this.settings.defaultOpacity !== 1)
            for (var i=0; i < unit['object'].children.length; i++)
              unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
@@ -1172,13 +1311,14 @@ moduleExporter(
        }
 
        this.composer.render();
+       
        if(this._take_screenshot){
          this.renderer.domElement.toBlob(function(b){
            _saveImage(b, "ffbo_screenshot.png")
          })
          this._take_screenshot = false;
        }
-       //this.renderer.render( this.scene, this.camera );
+       
      }
 
      FFBOMesh3D.prototype.getIntersection = function(groups) {
@@ -1253,7 +1393,8 @@ moduleExporter(
          postProcessing: {
            fxaa: this.settings.effectFXAA.enabled,
            ssao: this.settings.backrenderSSAO.enabled,
-           toneMappingMinLum: 1-this.settings.toneMappingPass.brightness,
+          //  toneMappingMinLum: 1-this.settings.toneMappingPass.brightness,
+           bloom: this.settings.bloomPass.enabled,
            bloomRadius: this.settings.bloomPass.radius,
            bloomThreshold: this.settings.bloomPass.threshold,
            bloomStrength: this.settings.bloomPass.strength
@@ -1262,7 +1403,7 @@ moduleExporter(
        });
        delete set.effectFXAA;
        delete set.backrenderSSAO;
-       delete set.toneMappingPass;
+      //  delete set.toneMappingPass;
        delete set.bloomPass;
        return set;
      }
@@ -1280,8 +1421,10 @@ moduleExporter(
            this.settings.effectFXAA.enabled = postProcessing.fxaa;
          if( postProcessing.ssao != undefined )
            this.settings.backrenderSSAO.enabled = postProcessing.ssao;
-         if( postProcessing.toneMappingMinLum != undefined )
-           this.settings.toneMappingPass.brightness = 1-postProcessing.toneMappingMinLum;
+        //  if( postProcessing.toneMappingMinLum != undefined )
+        //    this.settings.toneMappingPass.brightness = 1-postProcessing.toneMappingMinLum;
+        if( postProcessing.bloom != undefined )
+           this.settings.bloomPass.enabled = postProcessing.bloom;
          if( postProcessing.bloomRadius != undefined )
            this.settings.bloomPass.radius = postProcessing.bloomRadius;
          if( postProcessing.bloomStrength != undefined )
@@ -1387,7 +1530,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onAddMesh = function(e) {
        if ( !e.value['background'] ) {
-         if(e.value['class'] == 'Neuron')
+         if(e.value['class'] === 'Neuron')
            ++this.uiVars.frontNum;
        } else {
          ++this.uiVars.backNum;
@@ -1411,7 +1554,7 @@ moduleExporter(
        }
 
        if ( !e.value['background'] ) {
-         if(e.value['class'] == 'Neuron')
+         if(e.value['class'] === 'Neuron')
            --this.uiVars.frontNum;
        } else {
          --this.uiVars.backNum;
@@ -1480,41 +1623,42 @@ moduleExporter(
              depthTest = false;
            }
            for (var i in val.object.children) {
-             val.object.children[i].material.opacity = opacity;
-             val.object.children[i].material.depthTest = depthTest;
+              val.object.children[i].material.opacity = opacity;
+              val.object.children[i].material.depthTest = depthTest;
            }
          }
          var val = this.meshDict[this.states.highlight];
          for (var i in val.object.children) {
-           val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-           val.object.children[i].material.depthTest = false;
+            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+            val.object.children[i].material.depthTest = false;
          }
        } else if (this.states.highlight) {
          return;
        // Either entering pinned mode or pinned mode settings changing
        } else if ((e.prop == 'highlight' && this.states.pinned) ||
                   (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
-                  (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
+                  (( (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) && this.states.pinned)){
          for (const key of Object.keys(this.meshDict)) {
            var val = this.meshDict[key];
            if (!val['background']){
              var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
              var depthTest = !this.meshDict[key]['pinned'];
              for (var i in val.object.children) {
-               val.object.children[i].material.opacity = opacity;
-               val.object.children[i].material.depthTest = depthTest;
+                val.object.children[i].material.opacity = opacity;
+                val.object.children[i].material.depthTest = depthTest;
              }
            } else {
-             val.object.children[0].material.opacity = this.settings.backgroundOpacity;
-             val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+              val.object.children[0].material.opacity = this.settings.backgroundOpacity;
+              val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+           
            }
          }
        }
        // New object being pinned while already in pinned mode
        else if (e.prop == 'pinned' && this.states.pinned){
          for (var i in e.obj.object.children) {
-           e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-           e.obj.object.children[i].material.depthTest = !e.value;
+            e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+            e.obj.object.children[i].material.depthTest = !e.value;
          }
        }
        // Default opacity value change in upinned mode or exiting highlight mode
@@ -1527,18 +1671,37 @@ moduleExporter(
        var val = this.settings.defaultOpacity;
        for (const key of Object.keys(this.meshDict)) {
          if (!this.meshDict[key]['background']){
-           if(this.meshDict[key]['class'] == 'Neuron'){
-             for (i in this.meshDict[key].object.children)
-               this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+           if(this.meshDict[key]['class'] === 'Neuron'){
+             for (i in this.meshDict[key].object.children) {
+                this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+               this.meshDict[key].object.children[i].material.depthTest = true;
+               
+             }
            } else {
-             for (i in this.meshDict[key].object.children)
+             for (i in this.meshDict[key].object.children) {
                this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+               this.meshDict[key].object.children[i].material.depthTest = true;
+             }
            }
          } else {
            this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
            this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+           this.meshDict[key].object.children[0].material.depthTest = true;
+           this.meshDict[key].object.children[1].material.depthTest = true;
          }
        }
+     }
+
+     FFBOMesh3D.prototype.updateLinewidth = function(e) {
+      for (const key of Object.keys(this.meshDict)) {
+        if(this.meshDict[key]['class'] === 'Neuron'){
+            for (i in this.meshDict[key].object.children) {
+              if (this.meshDict[key].object.children[i].material.type == 'LineMaterial'){
+                this.meshDict[key].object.children[i].material.linewidth = e;
+              }
+            }
+          }
+        }
      }
 
      FFBOMesh3D.prototype.asarray = function( variable ) {
@@ -1614,10 +1777,10 @@ moduleExporter(
          var meshobj = this.meshDict[id[i]].object;
          for (var j = 0; j < meshobj.children.length; ++j ) {
            meshobj.children[j].material.color.set( color );
-           meshobj.children[j].geometry.colorsNeedUpdate = true;
-           for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-             meshobj.children[j].geometry.colors[k].set( color );
-           }
+          //  meshobj.children[j].geometry.colorsNeedUpdate = true;
+          //  for(var k = 0; k < meshobj.children[j].geometry.attributes.color.array.length; ++k){
+          //    meshobj.children[j].geometry.attributes.color.array[k].set( color );
+          //  }
          }
          this.meshDict[id[i]].color = new THREE.Color(color);
        }
@@ -1630,10 +1793,10 @@ moduleExporter(
          var meshobj = this.groups.back.children[i]
          for (var j = 0; j < meshobj.children.length; ++j ) {
            meshobj.children[j].material.color.set( color );
-           meshobj.children[j].geometry.colorsNeedUpdate = true;
-           for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-             meshobj.children[j].geometry.colors[k].set( color );
-           }
+          //  meshobj.children[j].geometry.colorsNeedUpdate = true;
+          //  for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
+          //    meshobj.children[j].geometry.colors[k].set( color );
+          //  }
          }
        }
      }
@@ -1869,79 +2032,79 @@ moduleExporter(
      }
 
      THREE.Lut.prototype.addColorMap( 'rainbow_gist', [
-       [ 0.000000, '0xff0028' ], [ 0.031250, '0xff0100' ], [ 0.062500, '0xff2c00' ],
-       [ 0.093750, '0xff5700' ], [ 0.125000, '0xff8200' ], [ 0.156250, '0xffae00' ],
-       [ 0.187500, '0xffd900' ], [ 0.218750, '0xf9ff00' ], [ 0.250000, '0xceff00' ],
-       [ 0.281250, '0xa3ff00' ], [ 0.312500, '0x78ff00' ], [ 0.343750, '0x4dff00' ],
-       [ 0.375000, '0x22ff00' ], [ 0.406250, '0x00ff08' ], [ 0.437500, '0x00ff33' ],
-       [ 0.468750, '0x00ff5e' ], [ 0.500000, '0x00ff89' ], [ 0.531250, '0x00ffb3' ],
-       [ 0.562500, '0x00ffde' ], [ 0.593750, '0x00f4ff' ], [ 0.625000, '0x00c8ff' ],
-       [ 0.656250, '0x009dff' ], [ 0.687500, '0x0072ff' ], [ 0.718750, '0x0047ff' ],
-       [ 0.750000, '0x001bff' ], [ 0.781250, '0x0f00ff' ], [ 0.812500, '0x3a00ff' ],
-       [ 0.843750, '0x6600ff' ], [ 0.875000, '0x9100ff' ], [ 0.906250, '0xbc00ff' ],
-       [ 0.937500, '0xe800ff' ], [ 0.968750, '0xff00ea' ], [ 1.000000, '0xff00bf' ],
+       [ 0.000000, 0xff0028 ], [ 0.031250, 0xff0100 ], [ 0.062500, 0xff2c00 ],
+       [ 0.093750, 0xff5700 ], [ 0.125000, 0xff8200 ], [ 0.156250, 0xffae00 ],
+       [ 0.187500, 0xffd900 ], [ 0.218750, 0xf9ff00 ], [ 0.250000, 0xceff00 ],
+       [ 0.281250, 0xa3ff00 ], [ 0.312500, 0x78ff00 ], [ 0.343750, 0x4dff00 ],
+       [ 0.375000, 0x22ff00 ], [ 0.406250, 0x00ff08 ], [ 0.437500, 0x00ff33 ],
+       [ 0.468750, 0x00ff5e ], [ 0.500000, 0x00ff89 ], [ 0.531250, 0x00ffb3 ],
+       [ 0.562500, 0x00ffde ], [ 0.593750, 0x00f4ff ], [ 0.625000, 0x00c8ff ],
+       [ 0.656250, 0x009dff ], [ 0.687500, 0x0072ff ], [ 0.718750, 0x0047ff ],
+       [ 0.750000, 0x001bff ], [ 0.781250, 0x0f00ff ], [ 0.812500, 0x3a00ff ],
+       [ 0.843750, 0x6600ff ], [ 0.875000, 0x9100ff ], [ 0.906250, 0xbc00ff ],
+       [ 0.937500, 0xe800ff ], [ 0.968750, 0xff00ea ], [ 1.000000, 0xff00bf ],
      ]);
 
 
      THREE.Lut.prototype.addColorMap( 'no_purple', [
-       [0.000000, '0xFF4000'],
-       [0.017544, '0xFF4D00'],
-       [0.035088, '0xFF5900'],
-       [0.052632, '0xFF6600'],
-       [0.070175, '0xFF7300'],
-       [0.087719, '0xFF8000'],
-       [0.105263, '0xFF8C00'],
-       [0.122807, '0xFF9900'],
-       [0.140351, '0xFFA600'],
-       [0.157895, '0xFFB300'],
-       [0.175439, '0xFFBF00'],
-       [0.192982, '0xFFCC00'],
-       [0.210526, '0xFFD900'],
-       [0.228070, '0xFFE500'],
-       [0.245614, '0xFFF200'],
-       [0.263158, '0xFFFF00'],
-       [0.280702, '0xF2FF00'],
-       [0.298246, '0xE6FF00'],
-       [0.315789, '0xD9FF00'],
-       [0.333333, '0xCCFF00'],
-       [0.350877, '0xBFFF00'],
-       [0.368421, '0xB3FF00'],
-       [0.385965, '0xAAFF00'],
-       [0.403509, '0x8CFF00'],
-       [0.421053, '0x6EFF00'],
-       [0.438596, '0x51FF00'],
-       [0.456140, '0x33FF00'],
-       [0.473684, '0x15FF00'],
-       [0.491228, '0x00FF08'],
-       [0.508772, '0x00FF26'],
-       [0.526316, '0x00FF44'],
-       [0.543860, '0x00FF55'],
-       [0.561404, '0x00FF62'],
-       [0.578947, '0x00FF6F'],
-       [0.596491, '0x00FF7B'],
-       [0.614035, '0x00FF88'],
-       [0.631579, '0x00FF95'],
-       [0.649123, '0x00FFA2'],
-       [0.666667, '0x00FFAE'],
-       [0.684211, '0x00FFBB'],
-       [0.701754, '0x00FFC8'],
-       [0.719298, '0x00FFD4'],
-       [0.736842, '0x00FFE1'],
-       [0.754386, '0x00FFEE'],
-       [0.771930, '0x00FFFB'],
-       [0.789474, '0x00F7FF'],
-       [0.807018, '0x00EAFF'],
-       [0.824561, '0x00DDFF'],
-       [0.842105, '0x00D0FF'],
-       [0.859649, '0x00C3FF'],
-       [0.877193, '0x00B7FF'],
-       [0.894737, '0x00AAFF'],
-       [0.912281, '0x009DFF'],
-       [0.929825, '0x0091FF'],
-       [0.947368, '0x0084FF'],
-       [0.964912, '0x0077FF'],
-       [0.982456, '0x006AFF'],
-       [1.000000, '0x005EFF'],
+       [0.000000, 0xFF4000],
+       [0.017544, 0xFF4D00],
+       [0.035088, 0xFF5900],
+       [0.052632, 0xFF6600],
+       [0.070175, 0xFF7300],
+       [0.087719, 0xFF8000],
+       [0.105263, 0xFF8C00],
+       [0.122807, 0xFF9900],
+       [0.140351, 0xFFA600],
+       [0.157895, 0xFFB300],
+       [0.175439, 0xFFBF00],
+       [0.192982, 0xFFCC00],
+       [0.210526, 0xFFD900],
+       [0.228070, 0xFFE500],
+       [0.245614, 0xFFF200],
+       [0.263158, 0xFFFF00],
+       [0.280702, 0xF2FF00],
+       [0.298246, 0xE6FF00],
+       [0.315789, 0xD9FF00],
+       [0.333333, 0xCCFF00],
+       [0.350877, 0xBFFF00],
+       [0.368421, 0xB3FF00],
+       [0.385965, 0xAAFF00],
+       [0.403509, 0x8CFF00],
+       [0.421053, 0x6EFF00],
+       [0.438596, 0x51FF00],
+       [0.456140, 0x33FF00],
+       [0.473684, 0x15FF00],
+       [0.491228, 0x00FF08],
+       [0.508772, 0x00FF26],
+       [0.526316, 0x00FF44],
+       [0.543860, 0x00FF55],
+       [0.561404, 0x00FF62],
+       [0.578947, 0x00FF6F],
+       [0.596491, 0x00FF7B],
+       [0.614035, 0x00FF88],
+       [0.631579, 0x00FF95],
+       [0.649123, 0x00FFA2],
+       [0.666667, 0x00FFAE],
+       [0.684211, 0x00FFBB],
+       [0.701754, 0x00FFC8],
+       [0.719298, 0x00FFD4],
+       [0.736842, 0x00FFE1],
+       [0.754386, 0x00FFEE],
+       [0.771930, 0x00FFFB],
+       [0.789474, 0x00F7FF],
+       [0.807018, 0x00EAFF],
+       [0.824561, 0x00DDFF],
+       [0.842105, 0x00D0FF],
+       [0.859649, 0x00C3FF],
+       [0.877193, 0x00B7FF],
+       [0.894737, 0x00AAFF],
+       [0.912281, 0x009DFF],
+       [0.929825, 0x0091FF],
+       [0.947368, 0x0084FF],
+       [0.964912, 0x0077FF],
+       [0.982456, 0x006AFF],
+       [1.000000, 0x005EFF],
      ]);
      return FFBOMesh3D;
    });
