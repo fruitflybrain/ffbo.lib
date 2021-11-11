@@ -113,12 +113,12 @@ moduleExporter(
          defaultRadius: 1.0,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.2,
-         linewidth: 2.0,
+         linewidth: 1.5,
          brightness: 1.0,
          backgroundOpacity: 0.5,
          backgroundWireframeOpacity: 0.07,
-         neuron3dMode: 1,
-         synapseMode: 1,
+         neuron3dMode: 0,
+         synapseMode: 1,   
          meshWireframe: true,
          backgroundColor: '#260226',
          sceneBackgroundColor: '#030305',
@@ -275,6 +275,9 @@ moduleExporter(
        this.settings.on("change", (function(e){
         this.updateLinewidth(e.value)}).bind(this), "linewidth");
 
+      this.settings.on("change", (function(e){
+          this.updateSynapseRadius(e.value)}).bind(this), "defaultSynapseRadius");
+
       //  this.settings.on("change", (function(e){
       //     this.render.toneMappingExposure = e.value}).bind(this), "brightness");
 
@@ -351,8 +354,8 @@ moduleExporter(
       //  renderer.toneMapping = THREE.LinearToneMapping;
 			// 	renderer.toneMappingExposure = 1.0;
         renderer.autoClear = false;
-        renderer.gammaInput = true;
-       renderer.gammaOutput = true;
+        renderer.outputEncoding = THREE.GammaEncoding;
+      //  renderer.gammaOutput = true;
        this.container.appendChild(renderer.domElement);
        return renderer;
      }
@@ -407,8 +410,8 @@ moduleExporter(
       this.effectCopy = new THREE.ShaderPass(THREE.CopyShader);
       this.effectCopy.renderToScreen = true;
 
-       this.renderer.gammaInput = true;
-       this.renderer.gammaOutput = true;
+      //  this.renderer.gammaInput = true;
+      //  this.renderer.gammaOutput = true;
 
        this.composer = new THREE.EffectComposer( this.renderer );
 
@@ -491,8 +494,9 @@ moduleExporter(
        });
 
        lightsHelper.addSpotLight({
-         posAngle1: 80,
-         posAngle2: 80,
+         posAngle1: 0,
+         posAngle2: 0,
+         intensity: 2.0,
          key: 'frontSpot_1'
        });
 
@@ -505,8 +509,9 @@ moduleExporter(
        });
 
        lightsHelper.addSpotLight({
-         posAngle1: -80,
-         posAngle2: 80,
+         posAngle1: 0,
+         posAngle2: 0,
+         intensity: 0.0,
          key: 'frontSpot_2'
        });
 
@@ -929,23 +934,97 @@ moduleExporter(
          }
 
          if (unit['class'] === 'Neuron') {
-          if(this.settings.neuron3dMode > 1){
+          if(this.settings.neuron3dMode === 0){
+            var matrix = new THREE.Matrix4();
+            var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+            geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
+        
+            var sphere_params = [];
+            var n_spheres = 0;
+            var vertices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [], 10: [],
+              11: [], 12: [], 13: [], 14: [], 15: [], 16: [], 17: [], 18: [], 19: [], 20: [],
+              21: [], 22: [], 23: [], 24: [], 25: [], 26: [], 27: [], 28: [], 29: [], 30: [],
+              31: [], 32: [], 33: [], 34: [], 35: [], 36: [], 37: [], 38: [], 39: [], 40: [],
+              41: [], 42: [], 43: [], 44: [], 45: [], 46: [], 47: [], 48: [], 49: [], 50: [], 51: []};
+        
+            for (var idx in swcObj ) {
+              var c = swcObj[idx];
+              var p = swcObj[c.parent];
+              if(c.type == 1){
+                scale = this.settings.defaultSomaRadius;
+                sphere_params.push([c.x, c.y, c.z, scale])
+                n_spheres += 1;
+              }else{
+                if(c.radius > 2.0) {
+                  scale = c.radius;
+                  sphere_params.push([c.x, c.y, c.z, scale]);
+                  n_spheres += 1;
+                }
+              }
+              if (c.parent != -1) {
+                var p = swcObj[c.parent];
+                var bin = Math.ceil(c.radius/0.05);
+                if (bin > 50){
+                  bin = 51;
+                }
+                vertices[bin.toString()].push(c.x);
+                vertices[bin.toString()].push(c.y);
+                vertices[bin.toString()].push(c.z);
+                vertices[bin.toString()].push( (c.x+p.x)/2 );
+                vertices[bin.toString()].push( (c.y+p.y)/2 );
+                vertices[bin.toString()].push( (c.z+p.z)/2 );
+        
+                bin = Math.ceil(p.radius/0.05);
+                if (bin > 50){
+                  bin = 51;
+                }
+                vertices[bin.toString()].push(p.x);
+                vertices[bin.toString()].push(p.y);
+                vertices[bin.toString()].push(p.z);
+                vertices[bin.toString()].push( (c.x+p.x)/2 );
+                vertices[bin.toString()].push( (c.y+p.y)/2 );
+                vertices[bin.toString()].push( (c.z+p.z)/2 );
+              }
+            }
+        
+            spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, n_spheres );
+            j = 0;
+            for (var n of sphere_params){
+              matrix.makeScale(n[3], n[3], n[3]);
+              matrix.setPosition( n[0], n[1], n[2] );
+              spheres.setMatrixAt( j, matrix );
+              j += 1;
+            }
+            object.add(spheres)
+        
+            for (var i = 1; i <= 51; i++){
+              if (vertices[i.toString()].length){
+                geometry = new THREE.LineSegmentsGeometry();
+                geometry.setPositions(vertices[i.toString()]);
+                var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: i*0.05*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2()), alphaToCoverage: false}); 
+                var lines = new THREE.LineSegments2(geometry, material_lines)
+                lines.computeLineDistances()
+                object.add(lines)
+              }
+            }
+          }else{
+          if(this.settings.neuron3dMode > 2){
 
             var matrix = new THREE.Matrix4();
 
-            if (this.settings.neuron3dMode > 2) {
+            if (this.settings.neuron3dMode > 3) {
               
-              if (false) { //experimental
+              if (false) { //experimental 
                 var materialCylinder = new THREE.MeshLambertMaterial( {color: color, transparent: true});
                 geometryCylinder = new THREE.CylinderGeometry( this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
                 cylinders = new THREE.InstancedMesh( geometryCylinder, materialCylinder, total_seg );
               }
             }
-            if (this.settings.neuron3dMode == 4 || this.settings.neuron3dMode == 2) {
+            if (this.settings.neuron3dMode == 5 || this.settings.neuron3dMode == 3) {
               var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-              // geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
+              geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
               // geometrySphere = new THREE.IcosahedronGeometry(1.0, 1);
-              geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
+              // geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
               spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, len );
             //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
             }
@@ -955,12 +1034,12 @@ moduleExporter(
               var c = swcObj[idx];
               var p = swcObj[c.parent];
               if (c.parent != -1) {
-                if (this.settings.neuron3dMode > 2) {
+                if (this.settings.neuron3dMode > 3) {
                   
                   
                   var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
                   if(!p.radius || !c.radius)
-                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 6, 1, 0);
                   else
                     var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
                   geometry.translate(0, 0.5*d.length(),0);
@@ -977,7 +1056,7 @@ moduleExporter(
                     i += 1;
                   }
 
-                  if (this.settings.neuron3dMode == 5) {
+                  if (this.settings.neuron3dMode === 6) {
                     if (p.parent != -1) {
                       p2 = swcObj[p.parent];
                       var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
@@ -990,10 +1069,12 @@ moduleExporter(
                   }
               }
 
-                  if (this.settings.neuron3dMode == 4 || this.settings.neuron3dMode == 2 ) {
+                  if (this.settings.neuron3dMode === 5 || this.settings.neuron3dMode === 3 ) {
+                    // render spheres for sphere mode or sphere+cylinder mode
                     if(!c.radius) {
                       if(c.type == 1) {
                         scale = this.settings.defaultSomaRadius;
+                        spheres.soma_index = j;
                       } else {
                         scale = this.settings.defaultRadius;
                       }
@@ -1025,7 +1106,7 @@ moduleExporter(
             }
             
           }
-           if (this.settings.neuron3dMode <= 2) {
+           if (this.settings.neuron3dMode <= 3) {
             vertices = [];
             for (var idx in swcObj ) {
               var c = swcObj[idx];
@@ -1046,16 +1127,19 @@ moduleExporter(
                   var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
                 sphereGeometry.translate( c.x, c.y, c.z );
                 var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-                object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+                var soma = new THREE.Mesh( sphereGeometry, sphereMaterial);
+                soma.soma_index = 0;
+                object.add(soma);
                 unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
               }
             }
 
-            if (this.settings.neuron3dMode == 1) {
+            if (this.settings.neuron3dMode == 2) {
               geometry = new THREE.LineSegmentsGeometry()
               geometry.setPositions(vertices);
-              var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: (this.settings.neuron3dMode == 1) ? 1.5 : this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: false, opacity: 0.5, resolution: this.renderer.getSize(new THREE.Vector2())}); 
+              var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: false, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
               var lines = new THREE.LineSegments2(geometry, material_lines)
+              lines.computeLineDistances()
             } else {
               geometry = new THREE.BufferGeometry();
               geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -1065,14 +1149,15 @@ moduleExporter(
             object.add(lines);
 
           }
+        }
          } else { //if (unit['class'] == 'Synapse') {
           var material_synapse = new THREE.MeshLambertMaterial( {color: color, transparent: true});
 
           var matrix = new THREE.Matrix4();
 
-          // var geometrySphere = new THREE.SphereGeometry( 1.0, 8, 8 );
+          var geometrySphere = new THREE.SphereGeometry( 1.0, 8, 8 );
           // var geometrySphere = new THREE.IcosahedronGeometry( 1.0, 1 );
-          var geometrySphere = new THREE.OctahedronGeometry(1.0, 0);
+          // var geometrySphere = new THREE.OctahedronGeometry(1.0, 0);
           spheres = new THREE.InstancedMesh( geometrySphere, material_synapse, len );
           //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
           
@@ -1085,7 +1170,7 @@ moduleExporter(
           for (var idx in swcObj ) {
             var c = swcObj[idx];
               if(c.radius)
-                scale = c.radius;
+                scale = c.radius * this.settings.defaultSynapseRadius;
               else
                 if(c.type == 7)
                   scale = this.settings.defaultSynapseRadius;
@@ -1102,11 +1187,13 @@ moduleExporter(
                 vertices.push(p.x, p.y, p.z);
               }
           }
+          spheres.overallScale = this.settings.defaultSynapseRadius;
           object.add( spheres );
 
           geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
           var material_lines = new THREE.LineBasicMaterial({ transparent: true, color: color });
           object.add(new THREE.LineSegments(geometry, material_lines));
+        }
          
          object.visible = visibility;
          this._registerObject(key, unit, object);
@@ -1120,8 +1207,10 @@ moduleExporter(
          delete unit['parent'];
          delete unit['sample'];
          delete unit['type'];
+
        };
      };
+
 
      FFBOMesh3D.prototype._registerObject = function(key, unit, object) {
 
@@ -1702,6 +1791,32 @@ moduleExporter(
             }
           }
         }
+     }
+
+     FFBOMesh3D.prototype.updateSynapseRadius = function(e) {
+      var matrix = new THREE.Matrix4();
+      var new_matrix = new THREE.Matrix4();
+      var scale_vec = new THREE.Vector3();
+      for (const key of Object.keys(this.meshDict)) {
+        if(this.meshDict[key]['class'] === 'Synapse'){
+            for (i in this.meshDict[key].object.children) {
+              if ( this.meshDict[key].object.children[i].type === 'Mesh' ){
+                overallScale = this.meshDict[key].object.children[i].overallScale;
+                for(var j = 0; j < this.meshDict[key].object.children[i].count; j++){
+                  this.meshDict[key].object.children[i].getMatrixAt(j, matrix);
+                  scale_vec.setFromMatrixScale(matrix);
+                  new_matrix.makeScale(scale_vec.x/overallScale*e, scale_vec.y/overallScale*e, scale_vec.z/overallScale*e);
+                  new_matrix.copyPosition(matrix);
+                  this.meshDict[key].object.children[i].setMatrixAt( j, new_matrix );
+                }
+                this.meshDict[key].object.children[i].instanceMatrix.needsUpdate=true;
+                this.meshDict[key].object.children[i].overallScale = e;
+
+              }
+            }
+          }
+        }
+        
      }
 
      FFBOMesh3D.prototype.asarray = function( variable ) {
