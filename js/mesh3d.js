@@ -1472,7 +1472,7 @@ moduleExporter(
      };
 
      FFBOMesh3D.prototype.export_settings = function() {
-       backgroundColor = [0.15, 0.01, 0.15];
+       backgroundColor = '#260226';
        if (this.groups.back.children.length)
          backgroundColor = this.groups.back.children[0].children[0].material.color.toArray();
        if (this.settings.backgroundColor !== undefined)
@@ -1709,7 +1709,7 @@ moduleExporter(
            var depthTest = true;
            if (val['pinned']) {
              opacity = this.settings.pinOpacity;
-             depthTest = false;
+             depthTest = true;
            }
            for (var i in val.object.children) {
               val.object.children[i].material.opacity = opacity;
