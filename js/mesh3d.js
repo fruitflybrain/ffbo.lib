@@ -655,7 +655,7 @@ moduleExporter(
            if(unit.background){
              unit.group = this.groups.back;
            } else{
-             if(unit['class'] === 'Neuron'){
+             if(unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment'){
                if( this.settings.neuron3dMode > 1 )
                  unit.group = this.groups.frontCyl;
                else
@@ -933,7 +933,7 @@ moduleExporter(
           }
          }
 
-         if (unit['class'] === 'Neuron') {
+         if (unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment') {
           if(this.settings.neuron3dMode === 0){
             var matrix = new THREE.Matrix4();
             var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
@@ -1229,7 +1229,7 @@ moduleExporter(
        }
 
        // TODO: move the code below to a function
-       if(unit['class'] === 'Neuron'){
+       if(unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment'){
          if ( this.settings.defaultOpacity !== 1)
            for (var i=0; i < unit['object'].children.length; i++)
              unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
@@ -1619,7 +1619,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onAddMesh = function(e) {
        if ( !e.value['background'] ) {
-         if(e.value['class'] === 'Neuron')
+         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment')
            ++this.uiVars.frontNum;
        } else {
          ++this.uiVars.backNum;
@@ -1643,7 +1643,7 @@ moduleExporter(
        }
 
        if ( !e.value['background'] ) {
-         if(e.value['class'] === 'Neuron')
+         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment')
            --this.uiVars.frontNum;
        } else {
          --this.uiVars.backNum;
@@ -1760,7 +1760,7 @@ moduleExporter(
        var val = this.settings.defaultOpacity;
        for (const key of Object.keys(this.meshDict)) {
          if (!this.meshDict[key]['background']){
-           if(this.meshDict[key]['class'] === 'Neuron'){
+           if(this.meshDict[key]['class'] === 'Neuron' || this.meshDict[key]['class'] === 'NeuronFragment'){
              for (i in this.meshDict[key].object.children) {
                 this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
                this.meshDict[key].object.children[i].material.depthTest = true;
@@ -1783,7 +1783,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.updateLinewidth = function(e) {
       for (const key of Object.keys(this.meshDict)) {
-        if(this.meshDict[key]['class'] === 'Neuron'){
+        if(this.meshDict[key]['class'] === 'Neuron' || uthis.meshDict[key]['class'] === 'NeuronFragment'){
             for (i in this.meshDict[key].object.children) {
               if (this.meshDict[key].object.children[i].material.type == 'LineMaterial'){
                 this.meshDict[key].object.children[i].material.linewidth = e;
