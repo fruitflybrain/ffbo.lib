@@ -1037,7 +1037,7 @@ moduleExporter(
               object.add(spheres)
           
               var width;
-              for (var i = 1; i <= 51; i++){
+              for (var i = 1; i <= 49; i++){
                 if (i <= 40) {
                   width = Math.pow(10, (i-40)*0.05);
                 } else {
