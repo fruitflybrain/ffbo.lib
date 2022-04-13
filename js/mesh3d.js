@@ -113,7 +113,7 @@ moduleExporter(
          defaultRadius: 1.0,
          defaultSomaRadius: 3.0,
          defaultSynapseRadius: 0.2,
-         linewidth: 1.5,
+         linewidth: 0.8,
          brightness: 1.0,
          backgroundOpacity: 0.5,
          backgroundWireframeOpacity: 0.07,
@@ -890,267 +890,309 @@ moduleExporter(
      };
 
      FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
-       return function() {
-         /*
-          * process string
-          */
-         var swcObj = {};
-         var len = unit['sample'].length;
-         for (var j = 0; j < len; j++) {
-           swcObj[parseInt(unit['sample'][j])] = {
-             'type'   : parseInt  (unit['identifier'][j]),
-             'x'    : parseFloat(unit['x'][j])*1,
-             'y'    : parseFloat(unit['y'][j])*1,
-             'z'    : parseFloat(unit['z'][j])*1,
-             'radius' : parseFloat(unit['r'][j])*1,
-             'parent' : parseInt  (unit['parent'][j]),
-           };
-         }
-
-         var color = new THREE.Color(unit['color']);
-         var object = new THREE.Object3D();
-         var pointGeometry = undefined;
-         var mergedGeometry = undefined;
-         var geometryToMerge = [];
-         var geometry = undefined;
-         var geometryCylinder = undefined;
-         var geometrySphere = undefined;
-         var cylinders = undefined;
-         var spheres = undefined;
-
-         total_seg = 0;
-         for (var idx in swcObj ) {
-          var c = swcObj[idx];
-          if(idx == Math.round(len/2) && unit.position == undefined)
-            unit.position = new THREE.Vector3(c.x, c.y, c.z);
-          this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-          this.updateBoundingBox(c.x,c.y,c.z);
-          if (c.parent != -1) {
-            total_seg += 1;
+        return function() {
+          /*
+            * process string
+            */
+          var swcObj = {};
+          var len = unit['sample'].length;
+          for (var j = 0; j < len; j++) {
+            swcObj[parseInt(unit['sample'][j])] = {
+              'type'   : parseInt  (unit['identifier'][j]),
+              'x'    : parseFloat(unit['x'][j])*1,
+              'y'    : parseFloat(unit['y'][j])*1,
+              'z'    : parseFloat(unit['z'][j])*1,
+              'radius' : parseFloat(unit['r'][j])*1,
+              'parent' : parseInt  (unit['parent'][j]),
+            };
           }
-          if (c.type == 1) {
-            unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+
+          var color = new THREE.Color(unit['color']);
+          var object = new THREE.Object3D();
+          var pointGeometry = undefined;
+          var mergedGeometry = undefined;
+          var geometryToMerge = [];
+          var geometry = undefined;
+          var geometryCylinder = undefined;
+          var geometrySphere = undefined;
+          var cylinders = undefined;
+          var spheres = undefined;
+
+          total_seg = 0;
+          for (var idx in swcObj ) {
+            var c = swcObj[idx];
+            if(idx == Math.round(len/2) && unit.position == undefined)
+              unit.position = new THREE.Vector3(c.x, c.y, c.z);
+            this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+            this.updateBoundingBox(c.x,c.y,c.z);
+            if (c.parent != -1) {
+              total_seg += 1;
+            }
+            if (c.type == 1) {
+              unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+            }
           }
-         }
 
-         if (unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment') {
-          if(this.settings.neuron3dMode === 0){
-            var matrix = new THREE.Matrix4();
-            var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-            geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
-        
-            var sphere_params = [];
-            var n_spheres = 0;
-            var vertices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [], 10: [],
-              11: [], 12: [], 13: [], 14: [], 15: [], 16: [], 17: [], 18: [], 19: [], 20: [],
-              21: [], 22: [], 23: [], 24: [], 25: [], 26: [], 27: [], 28: [], 29: [], 30: [],
-              31: [], 32: [], 33: [], 34: [], 35: [], 36: [], 37: [], 38: [], 39: [], 40: [],
-              41: [], 42: [], 43: [], 44: [], 45: [], 46: [], 47: [], 48: [], 49: [], 50: [], 51: []};
-        
-            for (var idx in swcObj ) {
-              var c = swcObj[idx];
-              var p = swcObj[c.parent];
-              if(c.type == 1){
-                scale = this.settings.defaultSomaRadius;
-                sphere_params.push([c.x, c.y, c.z, scale])
-                n_spheres += 1;
-              }else{
-                if(c.radius > 2.0) {
-                  scale = c.radius;
-                  sphere_params.push([c.x, c.y, c.z, scale]);
-                  n_spheres += 1;
-                }
-              }
-              if (c.parent != -1) {
-                var p = swcObj[c.parent];
-                var bin = Math.ceil(c.radius/0.05);
-                if (bin > 50){
-                  bin = 51;
-                }
-                vertices[bin.toString()].push(c.x);
-                vertices[bin.toString()].push(c.y);
-                vertices[bin.toString()].push(c.z);
-                vertices[bin.toString()].push( (c.x+p.x)/2 );
-                vertices[bin.toString()].push( (c.y+p.y)/2 );
-                vertices[bin.toString()].push( (c.z+p.z)/2 );
-        
-                bin = Math.ceil(p.radius/0.05);
-                if (bin > 50){
-                  bin = 51;
-                }
-                vertices[bin.toString()].push(p.x);
-                vertices[bin.toString()].push(p.y);
-                vertices[bin.toString()].push(p.z);
-                vertices[bin.toString()].push( (c.x+p.x)/2 );
-                vertices[bin.toString()].push( (c.y+p.y)/2 );
-                vertices[bin.toString()].push( (c.z+p.z)/2 );
-              }
-            }
-        
-            spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, n_spheres );
-            j = 0;
-            for (var n of sphere_params){
-              matrix.makeScale(n[3], n[3], n[3]);
-              matrix.setPosition( n[0], n[1], n[2] );
-              spheres.setMatrixAt( j, matrix );
-              j += 1;
-            }
-            object.add(spheres)
-        
-            for (var i = 1; i <= 51; i++){
-              if (vertices[i.toString()].length){
-                geometry = new THREE.LineSegmentsGeometry();
-                geometry.setPositions(vertices[i.toString()]);
-                var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: i*0.05*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2()), alphaToCoverage: false}); 
-                var lines = new THREE.LineSegments2(geometry, material_lines)
-                lines.computeLineDistances()
-                object.add(lines)
-              }
-            }
-          }else{
-          if(this.settings.neuron3dMode > 2){
-
-            var matrix = new THREE.Matrix4();
-
-            if (this.settings.neuron3dMode > 3) {
-              
-              if (false) { //experimental 
-                var materialCylinder = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-                geometryCylinder = new THREE.CylinderGeometry( this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
-                cylinders = new THREE.InstancedMesh( geometryCylinder, materialCylinder, total_seg );
-              }
-            }
-            if (this.settings.neuron3dMode == 5 || this.settings.neuron3dMode == 3) {
+          if (unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment') {
+            if(this.settings.neuron3dMode === 0){
+              var matrix = new THREE.Matrix4();
               var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
               geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
-              // geometrySphere = new THREE.IcosahedronGeometry(1.0, 1);
-              // geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
-              spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, len );
-            //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
-            }
-            i = 0;
-            j = 0;
-            for (var idx in swcObj ) {
-              var c = swcObj[idx];
-              var p = swcObj[c.parent];
-              if (c.parent != -1) {
-                if (this.settings.neuron3dMode > 3) {
-                  
-                  
-                  var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-                  if(!p.radius || !c.radius)
-                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 6, 1, 0);
-                  else
-                    var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
-                  geometry.translate(0, 0.5*d.length(),0);
-                  geometry.applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-                  geometry.lookAt(d.clone());
-                  geometry.translate(c.x, c.y, c.z);
+          
+              var sphere_params = [];
+              var n_spheres = 0;
+              var vertices = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [], 10: [],
+                11: [], 12: [], 13: [], 14: [], 15: [], 16: [], 17: [], 18: [], 19: [], 20: [],
+                21: [], 22: [], 23: [], 24: [], 25: [], 26: [], 27: [], 28: [], 29: [], 30: [],
+                31: [], 32: [], 33: [], 34: [], 35: [], 36: [], 37: [], 38: [], 39: [], 40: [],
+                41: [], 42: [], 43: [], 44: [], 45: [], 46: [], 47: [], 48: [], 49: []
+              };
 
-                  geometryToMerge.push(geometry);
-                  
-                  if (false) { //experimental
-                    matrix.setPosition( c.x, c.y, c.z );
-                    cylinders.setMatrixAt( i, matrix );
+              var bin, defaultBin;
+              if (this.settings.defaultRadius <= 1) {
+                defaultBin = Math.max(Math.ceil(Math.log10(this.settings.defaultRadius)/0.05)+40, 1);
+              } else {
+                defaultBin = Math.floor(this.settings.defaultRadius);
+              }
+              if (defaultBin > 48){
+                  defaultBin = 49;
+              }
+          
+              for (var idx in swcObj ) {
+                var c = swcObj[idx];
+                var p = swcObj[c.parent];
+                if(c.type == 1){
+                  if (c.radius == 0){
+                    scale = this.settings.defaultSomaRadius;
+                  } else {
+                    scale = c.radius;
                   }
-                    i += 1;
-                  }
-
-                  if (this.settings.neuron3dMode === 6) {
-                    if (p.parent != -1) {
-                      p2 = swcObj[p.parent];
-                      var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
-                      var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
-                      var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
-
-                      var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
-                      geometryToMerge.push(geometry);
+                  sphere_params.push([c.x, c.y, c.z, scale])
+                  n_spheres += 1;
+                }else{
+                  if (c.radius) {
+                    if (c.radius > 1.0) {
+                      bin = Math.floor(c.radius)+40;
+                      
+                      if (bin > 48){
+                        bin = 49;
+                      }
+                      scale = bin-40+0.5;
+                      sphere_params.push([c.x, c.y, c.z, scale]);
+                      n_spheres += 1;
                     }
                   }
+                }
+  
+                if (c.parent != -1) {
+                  var p = swcObj[c.parent];
+                  if (c.radius) {
+                    if (c.radius <= 1) {
+                      bin = Math.max(Math.ceil(Math.log10(c.radius)/0.05)+40, 1);
+                    } else {
+                      bin = Math.floor(c.radius)+40;
+                    }
+                    if (bin > 48){
+                      bin = 49;
+                    }
+                  } else {
+                    bin = defaultBin;
+                  }
+                  vertices[bin.toString()].push(c.x);
+                  vertices[bin.toString()].push(c.y);
+                  vertices[bin.toString()].push(c.z);
+                  vertices[bin.toString()].push( (c.x+p.x)/2 );
+                  vertices[bin.toString()].push( (c.y+p.y)/2 );
+                  vertices[bin.toString()].push( (c.z+p.z)/2 );
+          
+                  if (p.radius) {
+                    if (p.radius <= 1) {
+                        bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
+                    } else {
+                        bin = Math.floor(p.radius)+40;
+                    }
+                    if (bin > 48){
+                        bin = 49;
+                    }
+                  } else {
+                      bin = defaultBin;
+                  }
+                  vertices[bin.toString()].push(p.x);
+                  vertices[bin.toString()].push(p.y);
+                  vertices[bin.toString()].push(p.z);
+                  vertices[bin.toString()].push( (c.x+p.x)/2 );
+                  vertices[bin.toString()].push( (c.y+p.y)/2 );
+                  vertices[bin.toString()].push( (c.z+p.z)/2 );
+                }
               }
+          
+              spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, n_spheres );
+              j = 0;
+              for (var n of sphere_params){
+                matrix.makeScale(n[3], n[3], n[3]);
+                matrix.setPosition( n[0], n[1], n[2] );
+                spheres.setMatrixAt( j, matrix );
+                j += 1;
+              }
+              object.add(spheres)
+          
+              var width;
+              for (var i = 1; i <= 51; i++){
+                if (i <= 40) {
+                  width = Math.pow(10, (i-40)*0.05);
+                } else {
+                  width = i-40+0.5;
+                }
+                if (vertices[i.toString()].length){
+                  geometry = new THREE.LineSegmentsGeometry();
+                  geometry.setPositions(vertices[i.toString()]);
+                  var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: width*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2()), alphaToCoverage: false}); 
+                  var lines = new THREE.LineSegments2(geometry, material_lines)
+                  lines.computeLineDistances()
+                  object.add(lines)
+                }
+              }
+            } else {
+              if(this.settings.neuron3dMode > 2){
+
+                var matrix = new THREE.Matrix4();
+
+                if (this.settings.neuron3dMode > 3) {
+                  if (false) { //experimental 
+                    var materialCylinder = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+                    geometryCylinder = new THREE.CylinderGeometry( this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
+                    cylinders = new THREE.InstancedMesh( geometryCylinder, materialCylinder, total_seg );
+                  }
+                }
+                if (this.settings.neuron3dMode == 5 || this.settings.neuron3dMode == 3) {
+                  var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+                  geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
+                  // geometrySphere = new THREE.IcosahedronGeometry(1.0, 1);
+                  // geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
+                  spheres = new THREE.InstancedMesh( geometrySphere, materialSphere, len );
+                //spheres.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+                }
+                i = 0;
+                j = 0;
+                for (var idx in swcObj ) {
+                  var c = swcObj[idx];
+                  var p = swcObj[c.parent];
+                  if (c.parent != -1) {
+                    if (this.settings.neuron3dMode > 3) {
+                      var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+                      if(!p.radius || !c.radius)
+                        var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 6, 1, 0);
+                      else
+                        var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
+                      geometry.translate(0, 0.5*d.length(),0);
+                      geometry.applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+                      geometry.lookAt(d.clone());
+                      geometry.translate(c.x, c.y, c.z);
+
+                      geometryToMerge.push(geometry);
+                      
+                      if (false) { //experimental
+                        matrix.setPosition( c.x, c.y, c.z );
+                        cylinders.setMatrixAt( i, matrix );
+                      }
+                      i += 1;
+                    }
+
+                    if (this.settings.neuron3dMode === 6) {
+                      if (p.parent != -1) {
+                        p2 = swcObj[p.parent];
+                        var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
+                        var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
+                        var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
+
+                        var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+                        geometryToMerge.push(geometry);
+                      }
+                    }
+                  }
 
                   if (this.settings.neuron3dMode === 5 || this.settings.neuron3dMode === 3 ) {
-                    // render spheres for sphere mode or sphere+cylinder mode
-                    if(!c.radius) {
-                      if(c.type == 1) {
-                        scale = this.settings.defaultSomaRadius;
-                        spheres.soma_index = j;
-                      } else {
-                        scale = this.settings.defaultRadius;
-                      }
-                    } else {
-                      scale = c.radius;
-                    }
+                        // render spheres for sphere mode or sphere+cylinder mode
+                        if(!c.radius) {
+                          if(c.type == 1) {
+                            scale = this.settings.defaultSomaRadius;
+                            spheres.soma_index = j;
+                          } else {
+                            scale = this.settings.defaultRadius;
+                          }
+                        } else {
+                          scale = c.radius;
+                        }
 
-                    matrix.makeScale(scale, scale, scale);
-                    matrix.setPosition( c.x, c.y, c.z );
-                    spheres.setMatrixAt( j, matrix );
-                    j += 1;
+                        matrix.makeScale(scale, scale, scale);
+                        matrix.setPosition( c.x, c.y, c.z );
+                        spheres.setMatrixAt( j, matrix );
+                        j += 1;
                   }
-              }
-            
-            if(cylinders)
-              object.add( cylinders );
-            if(spheres)
-              object.add(spheres);
-            if(geometryToMerge.length) {
-              mergedGeometry = BGUtils.mergeBufferGeometries(geometryToMerge, false);
-              for (var n of geometryToMerge) {
-                n.dispose();
-              }
-              delete geometryToMerge;
+                }
+                
+                if(cylinders)
+                  object.add( cylinders );
+                if(spheres)
+                  object.add(spheres);
+                if(geometryToMerge.length) {
+                  mergedGeometry = BGUtils.mergeBufferGeometries(geometryToMerge, false);
+                  for (var n of geometryToMerge) {
+                    n.dispose();
+                  }
+                  delete geometryToMerge;
 
-              var material_merge = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-              var mesh = new THREE.Mesh(mergedGeometry, material_merge);
-              object.add(mesh);
+                  var material_merge = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+                  var mesh = new THREE.Mesh(mergedGeometry, material_merge);
+                  object.add(mesh);
+                }
+                
+              }
+              if (this.settings.neuron3dMode <= 3) {
+                vertices = [];
+                for (var idx in swcObj ) {
+                  var c = swcObj[idx];
+                  if (c.parent != -1) {
+                    var p = swcObj[c.parent];
+                    vertices.push(c.x);
+                    vertices.push(c.y);
+                    vertices.push(c.z);
+                    vertices.push(p.x);
+                    vertices.push(p.y);
+                    vertices.push(p.z);
+                  }
+
+                  if (c.type == 1) { // soma
+                    if(c.radius)
+                      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+                    else
+                      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
+                    sphereGeometry.translate( c.x, c.y, c.z );
+                    var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+                    var soma = new THREE.Mesh( sphereGeometry, sphereMaterial);
+                    soma.soma_index = 0;
+                    object.add(soma);
+                    unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+                  }
+                }
+
+                if (this.settings.neuron3dMode == 2) {
+                  geometry = new THREE.LineSegmentsGeometry()
+                  geometry.setPositions(vertices);
+                  var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
+                  var lines = new THREE.LineSegments2(geometry, material_lines)
+                  lines.computeLineDistances()
+                } else {
+                  geometry = new THREE.BufferGeometry();
+                  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                  var material_lines = new THREE.LineBasicMaterial({ transparent: true, color: color });
+                  var lines = new THREE.LineSegments(geometry, material_lines)
+                }
+                object.add(lines);
+
+              }
             }
-            
-          }
-           if (this.settings.neuron3dMode <= 3) {
-            vertices = [];
-            for (var idx in swcObj ) {
-              var c = swcObj[idx];
-              if (c.parent != -1) {
-                var p = swcObj[c.parent];
-                vertices.push(c.x);
-                vertices.push(c.y);
-                vertices.push(c.z);
-                vertices.push(p.x);
-                vertices.push(p.y);
-                vertices.push(p.z);
-              }
-
-              if (c.type == 1) { // soma
-                if(c.radius)
-                  var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-                else
-                  var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
-                sphereGeometry.translate( c.x, c.y, c.z );
-                var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-                var soma = new THREE.Mesh( sphereGeometry, sphereMaterial);
-                soma.soma_index = 0;
-                object.add(soma);
-                unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-              }
-            }
-
-            if (this.settings.neuron3dMode == 2) {
-              geometry = new THREE.LineSegmentsGeometry()
-              geometry.setPositions(vertices);
-              var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: false, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
-              var lines = new THREE.LineSegments2(geometry, material_lines)
-              lines.computeLineDistances()
-            } else {
-              geometry = new THREE.BufferGeometry();
-              geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-              var material_lines = new THREE.LineBasicMaterial({ transparent: true, color: color });
-              var lines = new THREE.LineSegments(geometry, material_lines)
-            }
-            object.add(lines);
-
-          }
-        }
-         } else { //if (unit['class'] == 'Synapse') {
+          } else { //if (unit['class'] == 'Synapse') {
           var material_synapse = new THREE.MeshLambertMaterial( {color: color, transparent: true});
 
           var matrix = new THREE.Matrix4();
