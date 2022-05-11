@@ -614,7 +614,7 @@ moduleExporter(
            if(unit.background){
              unit.group = this.groups.back;
            } else{
-             if(unit['class' == 'Neuron']){
+             if(unit['class'] === 'Neuron'){
                if( this.settings.neuron3d )
                  unit.group = this.groups.frontCyl;
                else
