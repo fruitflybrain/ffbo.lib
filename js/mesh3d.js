@@ -25,6 +25,7 @@ moduleExporter(
      "simplifymodifier",
      "copyshader",
      "convolutionshader",
+     "gltfloader",
      "fxaashader",
      "ssaoshader",
      "luminosityhighpassshader",
@@ -62,6 +63,10 @@ moduleExporter(
          return false;
      }
 
+     Math.clip = function(number, min_max) {
+	    return Math.max(min_max[0], Math.min(number, min_max[1]));
+	   }
+
      function getAttr(obj, key, val) {
        if (key in obj)
          val = obj[key];
@@ -95,34 +100,42 @@ moduleExporter(
          "maxColorNum": 1747591,
          "allowPin": true,
          "allowHighlight": true,
+         "enablePositionReset": true,
+         "resetPosition": { 'x': 0., 'y': 0., 'z': 0. },
+         "resetUp": {"x": 0., "y": 0., "z": 0},
+         "neu3dSettings": {
+          defaultOpacity: 0.7,
+          synapseOpacity: 1.0,
+          meshOscAmp: 0.0,
+          nonHighlightableOpacity: 0.0,
+          lowOpacity: 0.05,
+          pinOpacity: 0.9,
+          pinLowOpacity: 0.1,
+          highlightedObjectOpacity: 1.0,
+          defaultRadius: 1.0,
+          defaultSomaRadius: 3.0,
+          defaultSynapseRadius: 0.2,
+          RadiusRange: [0.01, 5.0],
+          SomaRadiusRange: [0.1, 5.0],
+          SynapseRadiusRange: [0.1, 1.0],
+          linewidth: 0.8,
+          brightness: 1.0,
+          backgroundOpacity: 0.5,
+          backgroundWireframeOpacity: 0.07,
+          neuron3dMode: 0,
+          synapseMode: 1,   
+          meshWireframe: true,
+          backgroundColor: '#260226',
+          sceneBackgroundColor: '#030305',
+        },
+        "neuron_mesh": {"url": ""}
        }
        if ( metadata !== undefined )
          for ( var key in this._metadata )
            if ( (key in metadata) && (metadata[key] !== undefined) )
-             this._metadata[key] = metadata[key]
+             this._metadata[key] = metadata[key];
 
-       this.settings = new PropertyManager({
-         defaultOpacity: 0.7,
-         synapseOpacity: 1.0,
-         meshOscAmp: 0.0,
-         nonHighlightableOpacity: 0.0,
-         lowOpacity: 0.05,
-         pinOpacity: 0.9,
-         pinLowOpacity: 0.1,
-         highlightedObjectOpacity: 1.0,
-         defaultRadius: 1.0,
-         defaultSomaRadius: 3.0,
-         defaultSynapseRadius: 0.2,
-         linewidth: 0.8,
-         brightness: 1.0,
-         backgroundOpacity: 0.5,
-         backgroundWireframeOpacity: 0.07,
-         neuron3dMode: 0,
-         synapseMode: 1,   
-         meshWireframe: true,
-         backgroundColor: '#260226',
-         sceneBackgroundColor: '#030305',
-       });
+       this.settings = new PropertyManager(this._metadata["neu3dSettings"]);
 
       //  this.settings.toneMappingPass = new PropertyManager({enabled: false, brightness: 0.95});
        this.settings.bloomPass = new PropertyManager({enabled: false, radius: 0.2, strength: 0.2, threshold: 0.3});
@@ -324,25 +337,29 @@ moduleExporter(
 
      FFBOMesh3D.prototype.initCamera = function () {
 
-       var height = this.container.clientHeight;
-       var width = this.container.clientWidth;
+      let height = this.container.clientHeight;
+      let width = this.container.clientWidth;
 
-       this.fov = 20;
-       this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
+      this.fov = 20;
+      this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
 
-       camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
-       camera.position.x = 61.36;
-       camera.position.y = 1304.68;
-       camera.position.z = 205.3;
+      let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 10000000 );
+      camera.position.z = 1800;
 
-       camera.up.x = 0.0132266;
-       camera.up.y = -0.415534;
-       camera.up.z = -0.8719834;
+      if (width < 768 && width / height < 1)
+        camera.position.z = 3800;
+      if (width < 768 && width / height >= 1)
+        camera.position.z = 2600;
 
-       if (width<768 && width/height < 1)
-         camera.position.y = 2000;
-       // if (width<768 && width/height >= 1)
-       //   camera.position.z =2600;
+      if (this._metadata["enablePositionReset"] == true) {
+        camera.position.z = this._metadata["resetPosition"]['z'];
+        camera.position.y = this._metadata["resetPosition"]['y'];
+        camera.position.x = this._metadata["resetPosition"]['x'];
+        camera.up.z = this._metadata["resetUp"]['z'];
+        camera.up.y = this._metadata["resetUp"]['y'];
+        camera.up.x = this._metadata["resetUp"]['x'];
+        // camera.up.y = this._metadata["upSign"];
+      }
        return camera;
      }
 
@@ -354,7 +371,7 @@ moduleExporter(
       //  renderer.toneMapping = THREE.LinearToneMapping;
 			// 	renderer.toneMappingExposure = 1.0;
         renderer.autoClear = false;
-        renderer.outputEncoding = THREE.GammaEncoding;
+        // renderer.outputEncoding = THREE.GammaEncoding;
       //  renderer.gammaOutput = true;
        this.container.appendChild(renderer.domElement);
        return renderer;
@@ -424,6 +441,8 @@ moduleExporter(
        this.composer.addPass( this.effectCopy );
        this.composer.setSize( width*window.devicePixelRatio,
                               height*window.devicePixelRatio);
+      //  this.composer.passes[1].enabled = this.settings.backrenderSSAO.enabled;
+      //  this.composer.passes[3].enabled = this.settings.effectFXAA.enabled;
      }
 
      FFBOMesh3D.prototype.initScenes = function () {
@@ -670,6 +689,8 @@ moduleExporter(
            /* read mesh */
            if ( metadata.type === "morphology_json" ) {
              this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+           } else if (metadata.type === "gltf") {
+            this.loadGLTFCallback(key, unit, metadata.visibility).bind(this)();
            } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
              console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
              continue;
@@ -799,9 +820,9 @@ moduleExporter(
          const vertices = [];
          const indices = []
          for (var j = 0; j < vtx.length / 3; j++) {
-           var x = parseFloat(vtx[3*j+0])*8;
-           var y = parseFloat(vtx[3*j+1])*8;
-           var z = parseFloat(vtx[3*j+2])*8;
+           var x = parseFloat(vtx[3*j+0]);
+           var y = parseFloat(vtx[3*j+1]);
+           var z = parseFloat(vtx[3*j+2]);
            vertices.push(x,y,z);
            this.updateObjectBoundingBox(unit, x, y, z);
            this.updateBoundingBox(x,y,z);
@@ -819,9 +840,6 @@ moduleExporter(
          geometry.computeVertexNormals();
 
         delete vertices
-        //  geometry.mergeVertices();
-        //  geometry.computeFaceNormals();
-        //  geometry.computeVertexNormals();
 
          materials  = [
            //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
@@ -840,6 +858,44 @@ moduleExporter(
 
      };
 
+     FFBOMesh3D.prototype.loadGLTFCallback = function (key, unit, visibility) {
+      var _this = this;
+      return function (jsonString) {
+        var color = unit['color'];
+        var opacity = this.settings.defaultOpacity;
+        var loader = new THREE.GLTFLoader();
+        loader.load(
+          // resource URL
+          this._metadata["neuron_mesh"]["url"] + '/' + unit['referenceId'] + '.obj',
+          // called when the resource is loaded
+          function (gltf) {
+            var mesh;
+            for (var child of gltf.scene.children[0].children){
+              if (child instanceof THREE.Mesh){
+                  mesh = child;
+                  mesh.material.transparent = true;
+                  mesh.material.color = color;
+                  mesh.material.opacity = opacity;
+                  mesh.geometry.scale(0.008, 0.008, 0.008);
+                  mesh.geometry.computeBoundingBox();
+                  var object = new THREE.Object3D();
+                  object.add(mesh);
+                  _this._registerObject(key, unit, object);
+              }
+            }
+          },
+          // called while loading is progressing
+          function (xhr) {
+            // console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+          },
+          function (error) {
+            console.log("Neuron mesh " + unit['referenceId'] + "not found, rendering with mode 0");
+            _this.loadMorphJSONCallBack(key, unit, visibility, 0).bind(_this)();
+          }
+        );
+      };
+    };
+
      FFBOMesh3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
        return function(swcString) {
          /*
@@ -854,12 +910,12 @@ moduleExporter(
            var seg = e.split(' ');
            if (seg.length == 7) {
              swcObj[parseInt(seg[0])] = {
-               'type'   : parseInt  (seg[1]),
-               'x'    : parseFloat(seg[2])*1,
-               'y'    : parseFloat(seg[3])*1,
-               'z'    : parseFloat(seg[4])*1,
-               'radius' : parseFloat(seg[5])*1,
-               'parent' : parseInt  (seg[6]),
+               'type'   : parseInt(seg[1]),
+               'x'    : parseFloat(seg[2]),
+               'y'    : parseFloat(seg[3]),
+               'z'    : parseFloat(seg[4]),
+               'radius' : parseFloat(seg[5]),
+               'parent' : parseInt(seg[6]),
              };
            }
          });
@@ -889,27 +945,29 @@ moduleExporter(
        };
      };
 
-     FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
+     FFBOMesh3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility, mode = undefined) {
         return function() {
           /*
             * process string
             */
+          if (mode === undefined || mode > 7 || mode < 0) {
+            mode = this.settings.neuron3dMode;
+          }
           var swcObj = {};
           var len = unit['sample'].length;
           for (var j = 0; j < len; j++) {
             swcObj[parseInt(unit['sample'][j])] = {
               'type'   : parseInt  (unit['identifier'][j]),
-              'x'    : parseFloat(unit['x'][j])*1,
-              'y'    : parseFloat(unit['y'][j])*1,
-              'z'    : parseFloat(unit['z'][j])*1,
-              'radius' : parseFloat(unit['r'][j])*1,
+              'x'    : parseFloat(unit['x'][j]),
+              'y'    : parseFloat(unit['y'][j]),
+              'z'    : parseFloat(unit['z'][j]),
+              'radius' : parseFloat(unit['r'][j]),
               'parent' : parseInt  (unit['parent'][j]),
             };
           }
 
           var color = new THREE.Color(unit['color']);
           var object = new THREE.Object3D();
-          var pointGeometry = undefined;
           var mergedGeometry = undefined;
           var geometryToMerge = [];
           var geometry = undefined;
@@ -934,7 +992,7 @@ moduleExporter(
           }
 
           if (unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment') {
-            if(this.settings.neuron3dMode === 0){
+            if(mode === 0){
               var matrix = new THREE.Matrix4();
               var materialSphere = new THREE.MeshLambertMaterial( {color: color, transparent: true});
               geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
@@ -962,17 +1020,18 @@ moduleExporter(
                 var c = swcObj[idx];
                 var p = swcObj[c.parent];
                 if(c.type == 1){
-                  if (c.radius == 0){
-                    scale = this.settings.defaultSomaRadius;
+                  if (c.radius <= 0){
+                    scale = Math.clip(this.settings.defaultSomaRadius, this.settings.SomaRadiusRange);
                   } else {
-                    scale = c.radius;
+                    scale = Math.clip(this.settings.defaultRadius * c.radius, this.settings.RadiusRange);
                   }
                   sphere_params.push([c.x, c.y, c.z, scale])
                   n_spheres += 1;
                 }else{
                   if (c.radius) {
-                    if (c.radius > 1.0) {
-                      bin = Math.floor(c.radius)+40;
+                    var scale = Math.clip(this.settings.defaultRadius * c.radius, this.settings.RadiusRange);
+                    if (scale > 1.0) {
+                      bin = Math.floor(scale)+40;
                       
                       if (bin > 48){
                         bin = 49;
@@ -987,10 +1046,11 @@ moduleExporter(
                 if (c.parent != -1) {
                   var p = swcObj[c.parent];
                   if (c.radius) {
-                    if (c.radius <= 1) {
-                      bin = Math.max(Math.ceil(Math.log10(c.radius)/0.05)+40, 1);
+                    var scale = Math.clip(this.settings.defaultRadius * c.radius, this.settings.RadiusRange);
+                    if (scale <= 1) {
+                      bin = Math.max(Math.ceil(Math.log10(scale)/0.05)+40, 1);
                     } else {
-                      bin = Math.floor(c.radius)+40;
+                      bin = Math.floor(scale)+40;
                     }
                     if (bin > 48){
                       bin = 49;
@@ -1006,10 +1066,11 @@ moduleExporter(
                   vertices[bin.toString()].push( (c.z+p.z)/2 );
           
                   if (p.radius) {
-                    if (p.radius <= 1) {
-                        bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
+                    var scale = Math.clip(this.settings.defaultRadius * p.radius, this.settings.RadiusRange);
+                    if (scale <= 1) {
+                        bin = Math.max(Math.ceil(Math.log10(scale)/0.05)+40, 1);
                     } else {
-                        bin = Math.floor(p.radius)+40;
+                        bin = Math.floor(scale)+40;
                     }
                     if (bin > 48){
                         bin = 49;
@@ -1037,7 +1098,7 @@ moduleExporter(
               object.add(spheres)
           
               var width;
-              for (var i = 1; i <= 51; i++){
+              for (var i = 1; i <= 49; i++){
                 if (i <= 40) {
                   width = Math.pow(10, (i-40)*0.05);
                 } else {
@@ -1053,11 +1114,11 @@ moduleExporter(
                 }
               }
             } else {
-              if(this.settings.neuron3dMode > 2){
+              if(mode > 2){
 
                 var matrix = new THREE.Matrix4();
 
-                if (this.settings.neuron3dMode > 3) {
+                if (mode > 3) {
                   if (false) { //experimental 
                     var materialCylinder = new THREE.MeshLambertMaterial( {color: color, transparent: true});
                     geometryCylinder = new THREE.CylinderGeometry( this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
@@ -1078,12 +1139,13 @@ moduleExporter(
                   var c = swcObj[idx];
                   var p = swcObj[c.parent];
                   if (c.parent != -1) {
-                    if (this.settings.neuron3dMode > 3) {
+                    if (mode > 3) {
                       var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
                       if(!p.radius || !c.radius)
-                        var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 6, 1, 0);
+                        var geometry = new THREE.CylinderGeometry(Math.clip(this.settings.defaultRadius, this.settings.RadiusRange),
+                        Math.clip(this.settings.defaultRadius, this.settings.RadiusRange), d.length(), 9, 1, 0);
                       else
-                        var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius*p.radius, this.settings.defaultRadius*c.radius, d.length(), 8, 1, 0);
+                        var geometry = new THREE.CylinderGeometry(Math.clip(this.settings.defaultRadius*p.radius, this.settings.RadiusRange), Math.clip(this.settings.defaultRadius*c.radius, this.settings.RadiusRange), d.length(), 8, 1, 0);
                       geometry.translate(0, 0.5*d.length(),0);
                       geometry.applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
                       geometry.lookAt(d.clone());
@@ -1098,30 +1160,32 @@ moduleExporter(
                       i += 1;
                     }
 
-                    if (this.settings.neuron3dMode === 6) {
+                    if (mode === 6) {
                       if (p.parent != -1) {
                         p2 = swcObj[p.parent];
                         var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
                         var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
                         var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
-
-                        var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+                        if(!p.radius)
+                          var geometry = new THREE.TubeGeometry( curve, 8, Math.clip(this.settings.defaultRadius, this.settings.RadiusRange), 4, false );
+                        else
+                          var geometry = new THREE.TubeGeometry( curve, 8, Math.clip(this.settings.defaultRadius*p.radius, this.settings.RadiusRange), 4, false );
                         geometryToMerge.push(geometry);
                       }
                     }
                   }
 
-                  if (this.settings.neuron3dMode === 5 || this.settings.neuron3dMode === 3 ) {
+                  if (mode === 5 || mode === 3 ) {
                         // render spheres for sphere mode or sphere+cylinder mode
                         if(!c.radius) {
                           if(c.type == 1) {
-                            scale = this.settings.defaultSomaRadius;
+                            scale = Math.clip(this.settings.defaultSomaRadius, this.settings.SomaRadiusRange);
                             spheres.soma_index = j;
                           } else {
-                            scale = this.settings.defaultRadius;
+                            scale = Math.clip(this.settings.defaultRadius, this.settings.RadiusRange);
                           }
                         } else {
-                          scale = c.radius;
+                          scale = Math.clip(this.settings.defaultRadius*c.radius, this.settings.RadiusRange);
                         }
 
                         matrix.makeScale(scale, scale, scale);
@@ -1148,7 +1212,7 @@ moduleExporter(
                 }
                 
               }
-              if (this.settings.neuron3dMode <= 3) {
+              if (mode <= 3) {
                 vertices = [];
                 for (var idx in swcObj ) {
                   var c = swcObj[idx];
@@ -1176,7 +1240,7 @@ moduleExporter(
                   }
                 }
 
-                if (this.settings.neuron3dMode == 2) {
+                if (mode == 2) {
                   geometry = new THREE.LineSegmentsGeometry()
                   geometry.setPositions(vertices);
                   var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
@@ -1212,12 +1276,12 @@ moduleExporter(
           for (var idx in swcObj ) {
             var c = swcObj[idx];
               if(c.radius)
-                scale = c.radius * this.settings.defaultSynapseRadius;
+                scale = Math.clip(c.radius * this.settings.defaultSynapseRadius, this.settings.SynapseRadiusRange);
               else
                 if(c.type == 7)
-                  scale = this.settings.defaultSynapseRadius;
+                  scale = Math.clip(this.settings.defaultSynapseRadius, this.settings.SynapseRadiusRange);
                 else
-                  scale = this.settings.defaultSynapseRadius/2;
+                  scale = Math.clip(this.settings.defaultSynapseRadius, this.settings.SynapseRadiusRange)/2;
               matrix.makeScale(scale, scale, scale);
               matrix.setPosition( c.x, c.y, c.z );
               spheres.setMatrixAt( i, matrix );
@@ -1536,6 +1600,9 @@ moduleExporter(
        delete set.backrenderSSAO;
       //  delete set.toneMappingPass;
        delete set.bloomPass;
+       delete set.RadiusRange;
+	     delete set.SynaspeRadiusRange;
+	     delete set.SomaRadiusRange;
        return set;
      }
 
@@ -1629,10 +1696,10 @@ moduleExporter(
          var color = state_metadata['color'][key];
          for (var j = 0; j < meshobj.children.length; ++j ) {
            meshobj.children[j].material.color.fromArray( color );
-           for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-             meshobj.children[j].geometry.colors[k].fromArray( color );
-           }
-           meshobj.children[j].geometry.colorsNeedUpdate = true;
+          //  for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
+          //    meshobj.children[j].geometry.colors[k].fromArray( color );
+          //  }
+          //  meshobj.children[j].geometry.colorsNeedUpdate = true;
          }
        }
      }
@@ -1959,6 +2026,14 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.resetView = function() {
+       if (this._metadata["enablePositionReset"] == true) {
+        this.camera.position.z = this._metadata["resetPosition"]['z'];
+        this.camera.position.y = this._metadata["resetPosition"]['y'];
+        this.camera.position.x = this._metadata["resetPosition"]['x'];
+        this.camera.up.z = this._metadata["resetUp"]['z'];
+        this.camera.up.y = this._metadata["resetUp"]['y'];
+        this.camera.up.x = this._metadata["resetUp"]['x'];
+       }
        this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
        this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
        this.controls.reset();
@@ -1970,73 +2045,43 @@ moduleExporter(
 
      FFBOMesh3D.prototype.resetVisibleView = function () {
        this.computeVisibleBoundingBox();
-       this.camera_target = new THREE.Vector3();
-       this.camera_target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
-       this.camera_target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
-       this.camera_target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
-       this.original_camera_target = new THREE.Vector3();
-       this.original_camera_target.copy(this.controls.target);
-       this.controls.target.copy(this.camera_target);
-       this.controls.update()
-       this.camera.updateMatrixWorld();
-       positions = [
-         new THREE.Vector3(this.visibleBoundingBox.minX,
-           this.visibleBoundingBox.minY,
-           this.visibleBoundingBox.minZ),
-         new THREE.Vector3(this.visibleBoundingBox.minX,
-           this.visibleBoundingBox.minY,
-           this.visibleBoundingBox.maxZ),
-         new THREE.Vector3(this.visibleBoundingBox.minX,
-           this.visibleBoundingBox.maxY,
-           this.visibleBoundingBox.minZ),
-         new THREE.Vector3(this.visibleBoundingBox.minX,
-           this.visibleBoundingBox.maxY,
-           this.visibleBoundingBox.maxZ),
-         new THREE.Vector3(this.visibleBoundingBox.maxX,
-           this.visibleBoundingBox.minY,
-           this.visibleBoundingBox.minZ),
-         new THREE.Vector3(this.visibleBoundingBox.maxX,
-           this.visibleBoundingBox.minY,
-           this.visibleBoundingBox.maxZ),
-         new THREE.Vector3(this.visibleBoundingBox.maxX,
-           this.visibleBoundingBox.maxY,
-           this.visibleBoundingBox.minZ),
-         new THREE.Vector3(this.visibleBoundingBox.maxX,
-           this.visibleBoundingBox.maxY,
-           this.visibleBoundingBox.maxZ)
-       ]
+       this.controls.target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
+      this.controls.target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
+      this.controls.target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
+      this.camera.updateProjectionMatrix();
+      setTimeout(() => {
+      let positions = [
+          new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
+          new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
+          new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
+          new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ),
+          new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
+          new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
+          new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
+          new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ)
+      ];
 
        // From https://stackoverflow.com/a/11771236
-       targetFov = 0.0;
-       for (var i = 0; i < 8; i++) {
-         proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
-         angle = Math.max(
-           Math.abs(Math.atan(proj2d.x / proj2d.z) / camera.aspect),
-           Math.abs(Math.atan(proj2d.y / proj2d.z))
-         );
-         targetFov = Math.max(targetFov, angle);
-       }
-       currentFov = Math.PI * this.fov / 2 / 180;
-       cam_dir = new THREE.Vector3();
-       cam_dir.subVectors(this.camera.position, this.controls.target);
-       prevDist = cam_dir.length();
-       cam_dir.normalize();
-       this.controls.target.copy(this.original_camera_target);
-
-       dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
-
-       aspect = this.camera.aspect;
-       targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
-       currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
-       dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
-
-       //this.camera.position.copy(this.controls.target);
-       //this.camera.position.addScaledVector(cam_dir, dist);
-       this.final_position = new THREE.Vector3();
-       this.final_position.copy(this.camera_target);
-       this.final_position.addScaledVector(cam_dir, dist);
-       this.camera.updateProjectionMatrix();
-       this.startCameraMove();
+        let targetFov = 0.0;
+        for (let i = 0; i < 8; i++) {
+            let proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+            let angle = Math.max(Math.abs(Math.atan(proj2d.x / proj2d.z) / this.camera.aspect), Math.abs(Math.atan(proj2d.y / proj2d.z)));
+            targetFov = Math.max(targetFov, angle);
+        }
+        let currentFov = Math.PI * this.fov / 2 / 180;
+        let cam_dir = new THREE.Vector3();
+        cam_dir.subVectors(this.camera.position, this.controls.target);
+        let prevDist = cam_dir.length();
+        cam_dir.normalize();
+        let dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+        let aspect = this.camera.aspect;
+        let targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+        let currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
+        dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+        this.camera.position.copy(this.controls.target);
+        this.camera.position.addScaledVector(cam_dir, dist);
+        this.camera.updateProjectionMatrix();
+      }, 400);
      }
 
      FFBOMesh3D.prototype.startCameraMove = function () {
