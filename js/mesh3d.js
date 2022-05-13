@@ -1023,7 +1023,7 @@ moduleExporter(
                   if (c.radius <= 0){
                     scale = Math.clip(this.settings.defaultSomaRadius, this.settings.SomaRadiusRange);
                   } else {
-                    scale = Math.clip(this.settings.defaultRadius * c.radius, this.settings.RadiusRange);
+                    scale = Math.clip(c.radius, this.settings.SomaRadiusRange);
                   }
                   sphere_params.push([c.x, c.y, c.z, scale])
                   n_spheres += 1;
@@ -1228,9 +1228,9 @@ moduleExporter(
 
                   if (c.type == 1) { // soma
                     if(c.radius)
-                      var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+                      var sphereGeometry = new THREE.SphereGeometry(Math.clip(c.radius, this.settings.SomaRadiusRange), 8, 8 );
                     else
-                      var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
+                      var sphereGeometry = new THREE.SphereGeometry(Math.clip(this.settings.defaultSomaRadius, this.settings.SomaRadiusRange), 8, 8 );
                     sphereGeometry.translate( c.x, c.y, c.z );
                     var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
                     var soma = new THREE.Mesh( sphereGeometry, sphereMaterial);
@@ -1243,7 +1243,7 @@ moduleExporter(
                 if (mode == 2) {
                   geometry = new THREE.LineSegmentsGeometry()
                   geometry.setPositions(vertices);
-                  var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
+                  var material_lines = new THREE.LineMaterial({ transparent: true, linewidth: this.settings.linewidth*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: this.settings.defaultOpacity, resolution: this.renderer.getSize(new THREE.Vector2())}); 
                   var lines = new THREE.LineSegments2(geometry, material_lines)
                   lines.computeLineDistances()
                 } else {
@@ -1892,7 +1892,7 @@ moduleExporter(
 
      FFBOMesh3D.prototype.updateLinewidth = function(e) {
       for (const key of Object.keys(this.meshDict)) {
-        if(this.meshDict[key]['class'] === 'Neuron' || uthis.meshDict[key]['class'] === 'NeuronFragment'){
+        if(this.meshDict[key]['class'] === 'Neuron' || this.meshDict[key]['class'] === 'NeuronFragment'){
             for (i in this.meshDict[key].object.children) {
               if (this.meshDict[key].object.children[i].material.type == 'LineMaterial'){
                 this.meshDict[key].object.children[i].material.linewidth = e;
