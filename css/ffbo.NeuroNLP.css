@@ -196,6 +196,7 @@ h1{
 ul {
     font-family:var(--u-font-family);
     font-weight: normal;
+    color: var(--font-color-ul);
 }
 table th{
   font-family: var(--h-font-family);

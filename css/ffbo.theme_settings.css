@@ -20,6 +20,8 @@
   --font-color-brand:  #c5c3c0;
   --font-color-navbar: #9d9d9d;
   --font-color-navbar-hl: #fff;
+  --font-color-ul:     #999;
+  --font-color-ol:     #999;
 
   --btn-color:rgb(157,175,180);
   --btn-color-d:rgba(157,175,180,0.2);
