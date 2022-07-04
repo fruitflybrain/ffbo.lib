@@ -1779,8 +1779,13 @@ moduleExporter(
          return;
        }
 
-       if (typeof(d) === 'string' && (d in this.meshDict))
+       if (typeof(d) === 'string' && (d in this.meshDict)) {
          d = this.meshDict[d];
+       } else {
+         if (d in this._labelToRid) {
+           d = this.meshDict[this._labelToRid[d]];
+         }
+       }
 
        if ((d['highlight']) !== false) {
          this.states.highlight = d['rid'];
