@@ -178,6 +178,12 @@ Info Panel
   margin-left: 10px;
   margin-right: 15px;
 }
+.ffbo-intro > hr {
+    width: 95%;
+    height: 1px;
+    background-color: #666;
+    border: none;
+}
 
 #neu-id {
   margin-top: 5px;
