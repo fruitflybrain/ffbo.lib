@@ -1352,8 +1352,8 @@ moduleExporter(
        if (event !== undefined)
          event.preventDefault();
 
-       if (!this.controls.checkStateIsNone())
-         return;
+      //  if (!this.controls.checkStateIsNone())
+      //    return;
 
        var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
 
@@ -1496,7 +1496,8 @@ moduleExporter(
        /*
         * show label of mesh object when it intersects with cursor
         */
-       if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+      //  if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+       if (this.states.mouseOver) {
          var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
          if (this.uiVars.currentIntersected || intersected) {
            this.uiVars.currentIntersected = intersected;
