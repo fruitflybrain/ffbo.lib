@@ -1784,6 +1784,17 @@ moduleExporter(
        } else {
          if (d in this._labelToRid) {
            d = this.meshDict[this._labelToRid[d]];
+         } else {
+          if (typeof(d) === 'string' && !d.includes('#')) {
+            for (var key in this.meshDict) {
+              if (key.includes('#')) {
+                if (d == this.meshDict[key].referenceId)
+                {
+                  d = this.meshDict[key];
+                }
+              }
+            }
+          }
          }
        }
 
