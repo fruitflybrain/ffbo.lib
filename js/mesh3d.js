@@ -2187,7 +2187,7 @@ moduleExporter(
      }
 
      FFBOMesh3D.prototype.updateInfoPanel = function() {
-       this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum + "<br>Number of Synapses: " + this.uiVars.synNum;
+       this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.neuronNum + "<br>Number of Synapses: " + this.uiVars.synapseNum;
      }
 
      FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip, func){
