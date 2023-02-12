@@ -158,7 +158,8 @@ moduleExporter(
          currentIntersected: undefined,
          cursorPosition: new THREE.Vector2(-100000,-100000),
          meshNum: 0,
-         frontNum: 0,
+         neuronNum: 0,
+         synapseNum: 0,
          backNum: 0,
          tooltip: undefined,
          selected: undefined
@@ -178,11 +179,23 @@ moduleExporter(
        this.container = document.getElementById( div_id );
 
        this.stats = new Stats();
+       this.statsMode = stats;
        if(stats) {
          this.stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-         this.stats.dom.style.position = "relative"
+         this.stats.dom.style.position = "absolute"
+         this.stats.dom.style.bottom = "50px";
+         this.stats.dom.style.left = "5px";
+         this.stats.dom.style.top = "";
+         this.container.appendChild( this.stats.dom );
+       } else {
+         this.stats.showPanel(); // 0: fps, 1: ms, 2: mb, 3+: custom
+         this.stats.dom.style.position = "absolute"
+         this.stats.dom.style.bottom = "50px";
+         this.stats.dom.style.left = "5px";
+         this.stats.dom.style.top = "";
          this.container.appendChild( this.stats.dom );
        }
+
        this.camera = this.initCamera();
 
        this.renderer = this.initRenderer();
@@ -268,7 +281,8 @@ moduleExporter(
          'remove': (function (func) { this.meshDict.on('remove', func); }).bind(this),
          'pinned': (function (func) { this.meshDict.on('change', func, 'pinned'); }).bind(this),
          'visibility': (function (func) { this.meshDict.on('change', func, 'visibility'); }).bind(this),
-         'num': (function (func) { this.uiVars.on('change', func, 'frontNum'); }).bind(this),
+         'num': (function (func) { this.uiVars.on('change', func, 'neuronNum'); }).bind(this),
+         'synapsenum': (function (func) { this.uiVars.on('change', func, 'synapseNum'); }).bind(this),
          'highlight': (function (func) { this.states.on('change', func, 'highlight'); }).bind(this),
          'click': (function (func) { this.uiVars.on('change', func, 'selected'); }).bind(this)
        }
@@ -278,6 +292,7 @@ moduleExporter(
        this.on('pinned', (function (e) { this.updatePinned(e); this.updateOpacity(e); }).bind(this));
        this.on('visibility', (function (e) { this.onUpdateVisibility(e.path[0]) }).bind(this));
        this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
+       this.on('synapsenum', (function () { this.updateInfoPanel(); }).bind(this));
        this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e)  }).bind(this));
        this.settings.on("change", (function(e){
          this.updateOpacity(e)}).bind(this), [
@@ -580,7 +595,8 @@ moduleExporter(
          delete meshobj;
          delete this.meshDict[key];
        }
-       this.uiVars.frontNum = 0
+       this.uiVars.neuronNum = 0;
+       this.uiVars.synapseNum = 0;
        this.states.highlight = false;
        // this.uiVars.pinnedObjects.clear()
        if ( resetBackground ) {
@@ -1729,8 +1745,11 @@ moduleExporter(
 
      FFBOMesh3D.prototype.onAddMesh = function(e) {
        if ( !e.value['background'] ) {
-         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment')
-           ++this.uiVars.frontNum;
+         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment'){
+           ++this.uiVars.neuronNum;
+         } else if(e.value['class'] === 'Synapse') {
+            this.uiVars.synapseNum += e.value['N']
+         }
        } else {
          ++this.uiVars.backNum;
        }
@@ -1753,8 +1772,11 @@ moduleExporter(
        }
 
        if ( !e.value['background'] ) {
-         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment')
-           --this.uiVars.frontNum;
+         if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment') {
+           --this.uiVars.neuronNum;
+        } else if (e.value['class'] === 'Synapse') {
+           this.uiVars.synapseNum -= e.value['N'];
+        }
        } else {
          --this.uiVars.backNum;
        }
@@ -2146,24 +2168,34 @@ moduleExporter(
          this.meshDict[key]['pinned'] = false;
      }
 
+     FFBOMesh3D.prototype.toggleStats = function( d ) {
+       if (this.statsMode) {
+         this.stats.showPanel();
+         this.statsMode = false;
+       } else {
+         this.stats.showPanel(0);
+         this.statsMode = true;
+       }
+     }
+
 
      FFBOMesh3D.prototype.createInfoPanel = function() {
        this.infoDiv = document.createElement('div');
-       this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
+       this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 30px; top: 26px; left: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
        this.container.appendChild(this.infoDiv);
        this.updateInfoPanel();
      }
 
      FFBOMesh3D.prototype.updateInfoPanel = function() {
-       this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
+       this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum + "<br>Number of Synapses: " + this.uiVars.synNum;
      }
 
      FFBOMesh3D.prototype.createUIBtn = function(name, icon, tooltip, func){
        var x = 5 + 20*Object.keys(this.UIBtns).length;
        var btn = document.createElement('a');
        btn.setAttribute("id", "ffboUIbtn-" + name);
-       btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-       btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
+       btn.style.cssText = 'position: absolute; text-align: left; height: 15px; top: 6px; left: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
+       btn.innerHTML = "<i class='fa " + icon + " fa-fw' aria-hidden='true'></i>";
        // this.dispatch[name] = undefined;
        btn.addEventListener("click",
                             (function(){

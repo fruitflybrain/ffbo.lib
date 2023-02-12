@@ -29,15 +29,15 @@
 @media screen and (min-width: 781px) {
     html.mm-right.mm-wrapper_opening .mm-slideout{
         transform: translate3d(-0px,0,0) !important;
-        width: calc( 100% - 270px ) !important;
+        width: calc( 100% - 290px ) !important;
     }
     html.mm-wrapper_opening .mm-slideout{
         transform: translate3d(-0px,0,0) !important;
-        width: calc( 100% - 270px ) !important;
+        width: calc( 100% - 290px ) !important;
     }
     .mm-menu{
-        --mm-max-size: 270px !important;
-        --mm-min-size: 270px !important;
+        --mm-max-size: 290px !important;
+        --mm-min-size: 290px !important;
     }
 }
 @media screen and (min-width: 930px) and (max-width: 1200px) {
@@ -132,6 +132,15 @@
   color: #666;
 }
 
+.mm-blocker {
+    visibility: unset;
+    min-height: 0vh;
+}
+
+.mm-page {
+    min-height: 0vh;
+}
+
 .navbar-collapse > ul > li {
     cursor: pointer;
 }
@@ -215,11 +224,13 @@
 }
 
 .navbar {
-    z-index: 2;
+    z-index: 7;
 }
 
 #ui_menu_nav {
-   z-index: 999;
+    z-index: 6;
+    top: 55px;
+    max-height: calc(100% - 105px);
 }
 
 .btn-single-ob {
@@ -235,4 +246,8 @@
     padding: 0;
     width: 120px;
     float: right;
+}
+
+:root {
+    --mm-iconbar-size: 20px;
 }
