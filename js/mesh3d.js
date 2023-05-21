@@ -217,6 +217,11 @@ moduleExporter(
 
        this.loadingManager = this.initLoadingManager();
 
+       this.mousedown = false;
+       this.container.addEventListener( 'mousedown', this.onDocumentMouseDown.bind(this), false );
+       this.container.addEventListener( 'mouseup', this.onDocumentMouseUp.bind(this), false );
+
+
        this.container.addEventListener( 'click', this.onDocumentMouseClick.bind(this), false );
 
        this.container.addEventListener( 'dblclick', this.onDocumentMouseDBLClick.bind(this), false );
@@ -1364,6 +1369,17 @@ moduleExporter(
        this.meshDict[key] = unit;
      }
 
+     FFBOMesh3D.prototype.onDocumentMouseDown = function(event) {
+       if (event !== undefined)
+         event.preventDefault();
+       this.mousedown = true;
+     }
+     FFBOMesh3D.prototype.onDocumentMouseUp = function(event) {
+       if (event !== undefined)
+         event.preventDefault();
+       this.mousedown = false;
+     }
+
      FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
        if (event !== undefined)
          event.preventDefault();
@@ -1513,7 +1529,7 @@ moduleExporter(
         * show label of mesh object when it intersects with cursor
         */
       //  if (this.controls.checkStateIsNone() && this.states.mouseOver) {
-       if (this.states.mouseOver) {
+       if (this.states.mouseOver && !this.mousedown) {
          var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
          if (this.uiVars.currentIntersected || intersected) {
            this.uiVars.currentIntersected = intersected;
