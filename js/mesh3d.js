@@ -170,7 +170,7 @@ moduleExporter(
        this._labelToRid = {};
 
        this.raycaster = new THREE.Raycaster();
-       this.raycaster.linePrecision = 3;
+       this.raycaster.params.Line.threshold = 0.1;
 
 
        this.sphereGeometry = new THREE.SphereGeometry(1.0, 8, 8 );
