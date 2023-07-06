@@ -481,8 +481,39 @@ moduleExporter(
        scenes.front.add( this.groups.frontCyl );
        scenes.front.add( this.groups.frontSyn );
        scenes.back.add( this.groups.back );
+
+       this.addArrows();
+       for (let i = 0; i < this.arrows.length; i++) {
+         scenes.front.add(this.arrows[i]);
+       }
+
        return scenes;
      }
+
+     FFBOMesh3D.prototype.createArrow = function(dir, color) {
+      dir.normalize();
+
+      var width = this.container.clientWidth;
+      const origin = new THREE.Vector3( 0, 0, 0 );
+      const length = 0.0005*width;
+
+      const arrowHelper = new THREE.ArrowHelper( dir, origin, length, color );
+
+      return arrowHelper;
+    }
+
+    FFBOMesh3D.prototype.addArrows = function() {
+      const colorX = 0xffff00;
+      const colorY = 0x89C7FF;
+      const colorZ = 0xFF0000;
+
+      const arrows = [];
+      arrows[0] = this.createArrow(new THREE.Vector3( 1, 0, 0 ), colorX);
+      arrows[1] = this.createArrow(new THREE.Vector3( 0, 1, 0 ), colorY);
+      arrows[2] = this.createArrow(new THREE.Vector3( 0, 0, 1 ), colorZ);
+
+      this.arrows = arrows;
+    }
 
      FFBOMesh3D.prototype.initLut = function () {
        this.maxColorNum = this._metadata.maxColorNum;
@@ -1545,6 +1576,12 @@ moduleExporter(
            _saveImage(b, "ffbo_screenshot.png")
          })
          this._take_screenshot = false;
+       }
+
+       var localToCameraAxesPlacement = new THREE.Vector3(-1.3*this.camera.aspect,-1,-10);
+       var axesPlacement = this.camera.localToWorld(localToCameraAxesPlacement.clone())
+       for (let i = 0; i < this.arrows.length; i++) {
+         this.arrows[i].position.copy(axesPlacement);
        }
        
      }
