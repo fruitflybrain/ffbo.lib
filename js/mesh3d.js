@@ -467,6 +467,10 @@ moduleExporter(
       //  this.composer.passes[3].enabled = this.settings.effectFXAA.enabled;
      }
 
+     const colorX = 0xffff00;
+     const colorY = 0x89C7FF;
+     const colorZ = 0xFF0000;
+
      FFBOMesh3D.prototype.initScenes = function () {
        scenes = {
          front: new THREE.Scene(),
@@ -485,6 +489,7 @@ moduleExporter(
        scenes.back.add( this.groups.back );
 
        scenes.back.add(this.addCoordinateAxis());
+       scenes.back.add(this.addAxisLabels(colorX, colorY, colorZ));
 
        return scenes;
      }
@@ -502,12 +507,14 @@ moduleExporter(
     FFBOMesh3D.prototype.addAxisLabels = function(colorX, colorY, colorZ) {
       const loader = new THREE.FontLoader();
       let thisObject = this;
+      this.labels = new THREE.Object3D();
       loader.load('lib/fonts/helvetiker_bold.typeface.json', function ( font ) {
           thisObject.textFont = font;
-	  thisObject.axis.add(thisObject.createAxisLabel("right", "x", colorX));
-	  thisObject.axis.add(thisObject.createAxisLabel("front", "y", colorY));
-	  thisObject.axis.add(thisObject.createAxisLabel("bottom", "z", colorZ));
+          thisObject.labels.add(thisObject.createAxisLabel("right", "x", colorX));
+          thisObject.labels.add(thisObject.createAxisLabel("front", "y", colorY));
+          thisObject.labels.add(thisObject.createAxisLabel("bottom", "z", colorZ));
       });
+      return this.labels;
     }
 
     FFBOMesh3D.prototype.createAxisLabel = function(text, axis, color) {
@@ -518,45 +525,30 @@ moduleExporter(
       );
 
       let fontMaterials = [
-          new THREE.MeshPhongMaterial( { color: color, flatShading: true } ),
-          new THREE.MeshPhongMaterial( { color: color } )
+          new THREE.MeshStandardMaterial( { color: color, flatShading: true } ),
+          new THREE.MeshStandardMaterial( { color: color } )
       ];
       let textMesh = new THREE.Mesh( textGeo, fontMaterials );
-      let axisOffset = 0.1 * this.axisArrowLength;
-      let axisShift = 0.5 * this.axisArrowLength;
+      let axisShift = 1.2 * this.axisArrowLength;
 
       if (axis == "x") {
-	  textMesh.position.x = axisShift;
-          textMesh.position.y = axisOffset;
-	  textMesh.position.z = axisOffset;
-	  textMesh.rotation.x = - Math.PI / 2;
-      } else if (axis == "z") {
-	  textMesh.position.x = axisOffset;
-          textMesh.position.y = axisOffset;
-	  textMesh.position.z = axisShift;
-	  textMesh.rotation.y = - Math.PI /2;
+          textMesh.position.set(axisShift, 0, 0);
       } else if (axis == "y") {
-	  textMesh.position.x = axisOffset;
-          textMesh.position.y = axisShift;
-	  textMesh.position.z = axisOffset;
-	  textMesh.rotation.z = Math.PI / 2;
+          textMesh.position.set(0, axisShift, 0);
+      } else if (axis == "z") {
+          textMesh.position.set(0, 0, -axisShift);
       }
 
       return textMesh;
     }
 
     FFBOMesh3D.prototype.addCoordinateAxis = function() {
-      const colorX = 0xffff00;
-      const colorY = 0x89C7FF;
-      const colorZ = 0xFF0000;
-
       this.nearPlaneHeight = Math.tan(Math.PI * this.fov / 2 / 180) * 0.1;
-      this.axisArrowLength = 0.4 * this.nearPlaneHeight;
+      this.axisArrowLength = 0.25 * this.nearPlaneHeight;
       this.axis = new THREE.Object3D();
       this.axis.add(this.createArrow(new THREE.Vector3( 1, 0, 0 ), colorX));
       this.axis.add(this.createArrow(new THREE.Vector3( 0, 1, 0 ), colorY));
-      this.axis.add(this.createArrow(new THREE.Vector3( 0, 0, 1 ), colorZ));
-      this.addAxisLabels(colorX, colorY, colorZ);
+      this.axis.add(this.createArrow(new THREE.Vector3( 0, 0, -1 ), colorZ));
 
       return this.axis;
     }
@@ -1627,6 +1619,10 @@ moduleExporter(
        let localToCameraAxesPlacement = new THREE.Vector3(-1.3*this.camera.aspect*this.nearPlaneHeight,-1*this.nearPlaneHeight,-0.15);
        let worldAxesPlacement = this.camera.localToWorld(localToCameraAxesPlacement.clone())
        this.axis.position.copy(worldAxesPlacement);
+       this.labels.position.copy(worldAxesPlacement);
+       for(l=0; l<this.labels.children.length; l++){
+          this.labels.children[l].quaternion.copy(this.camera.quaternion);
+       }
        
      }
 
