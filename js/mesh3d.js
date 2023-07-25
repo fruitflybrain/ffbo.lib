@@ -120,6 +120,10 @@ moduleExporter(
           RadiusRange: [0.01, 5.0],
           SomaRadiusRange: [0.1, 5.0],
           SynapseRadiusRange: [0.1, 1.0],
+          anteriorAxis: [0, 0, -1],
+          dorsalAxis: [0, -1, 0],
+          rightHemisphereAxis: [-1, 0, 0],
+          axisOrigin: [0, 0, 0],
           linewidth: 0.8,
           brightness: 1.0,
           backgroundOpacity: 0.5,
@@ -132,10 +136,21 @@ moduleExporter(
         },
         "neuron_mesh": {"url": ""}
        }
-       if ( metadata !== undefined )
-         for ( var key in this._metadata )
-           if ( (key in metadata) && (metadata[key] !== undefined) )
-             this._metadata[key] = metadata[key];
+       if ( metadata !== undefined ) {
+         for ( var key in this._metadata ) {
+           if ( (key in metadata) && (metadata[key] !== undefined) ) {
+            if (key === 'neu3dSettings') {
+              for (var key2 in this._metadata['neu3dSettings']) {
+                if (( key2 in metadata['neu3dSettings']) && (metadata['neu3dSettings'][key2] !== undefined)) {
+                  this._metadata['neu3dSettings'][key2] = metadata['neu3dSettings'][key2];
+                }
+              }
+            } else {
+              this._metadata[key] = metadata[key];
+            }
+           }
+         }
+       }
 
        this.settings = new PropertyManager(this._metadata["neu3dSettings"]);
 
@@ -497,9 +512,9 @@ moduleExporter(
      FFBOMesh3D.prototype.createArrow = function(dir, color) {
       dir.normalize();
 
-      var width = this.container.clientWidth;
-      const origin = new THREE.Vector3( 0, 0, 0 );
-      const arrowHelper = new THREE.ArrowHelper( dir, origin, this.axisArrowLength, color );
+      // var width = this.container.clientWidth;
+      const origin = new THREE.Vector3( ...this.settings.axisOrigin );
+      const arrowHelper = new THREE.ArrowHelper( dir, origin, this.axis.arrowLength, color, 0.5*this.axis.arrowLength);
 
       return arrowHelper;
     }
@@ -507,21 +522,21 @@ moduleExporter(
     FFBOMesh3D.prototype.addAxisLabels = function(colorX, colorY, colorZ) {
       const loader = new THREE.FontLoader();
       let thisObject = this;
-      this.labels = new THREE.Object3D();
+      this.axis.labels = new THREE.Object3D();
       loader.load('lib/fonts/helvetiker_bold.typeface.json', function ( font ) {
-          thisObject.textFont = font;
-          thisObject.labels.add(thisObject.createAxisLabel("right", "x", colorX));
-          thisObject.labels.add(thisObject.createAxisLabel("front", "y", colorY));
-          thisObject.labels.add(thisObject.createAxisLabel("bottom", "z", colorZ));
+          thisObject.axis.textFont = font;
+          thisObject.axis.labels.add(thisObject.createAxisLabel("Anterior", "anterior", colorX));
+          thisObject.axis.labels.add(thisObject.createAxisLabel("Dorsal", "dorsal", colorY));
+          thisObject.axis.labels.add(thisObject.createAxisLabel("Right", "rightHemisphere", colorZ));
       });
-      return this.labels;
+      return this.axis.labels;
     }
 
     FFBOMesh3D.prototype.createAxisLabel = function(text, axis, color) {
       textGeo = new THREE.TextGeometry( text, {
-	  font: this.textFont,
-	  size: 0.15 * this.axisArrowLength,
-	  height: 0.05 * this.axisArrowLength}
+	  font: this.axis.textFont,
+	  size: 0.15 * this.axis.arrowLength,
+	  height: 0.05 * this.axis.arrowLength}
       );
 
       let fontMaterials = [
@@ -529,26 +544,33 @@ moduleExporter(
           new THREE.MeshStandardMaterial( { color: color } )
       ];
       let textMesh = new THREE.Mesh( textGeo, fontMaterials );
-      let axisShift = 1.2 * this.axisArrowLength;
+      let axisShift = 1.2 * this.axis.arrowLength;
 
-      if (axis == "x") {
-          textMesh.position.set(axisShift, 0, 0);
-      } else if (axis == "y") {
-          textMesh.position.set(0, axisShift, 0);
-      } else if (axis == "z") {
-          textMesh.position.set(0, 0, -axisShift);
-      }
+      const scaledArray = this.settings[axis+"Axis"].map(item => item * axisShift);
+
+      scaledArray.forEach((item, index) => {
+        scaledArray[index] = item + this.settings.axisOrigin[index];
+      });
+      textMesh.position.set( ...scaledArray); 
+      // if (axis == "anterior") {
+      //     textMesh.position.set( ...(this.settings.anteriorAxis.map(item => item * axisShift)));
+      // } else if (axis == "dorsal") {
+      //     textMesh.position.set(0, axisShift, 0);
+      // } else if (axis == "right") {
+      //     textMesh.position.set(0, 0, -axisShift);
+      // }
 
       return textMesh;
     }
 
     FFBOMesh3D.prototype.addCoordinateAxis = function() {
-      this.nearPlaneHeight = Math.tan(Math.PI * this.fov / 2 / 180) * 0.1;
-      this.axisArrowLength = 0.25 * this.nearPlaneHeight;
       this.axis = new THREE.Object3D();
-      this.axis.add(this.createArrow(new THREE.Vector3( 1, 0, 0 ), colorX));
-      this.axis.add(this.createArrow(new THREE.Vector3( 0, 1, 0 ), colorY));
-      this.axis.add(this.createArrow(new THREE.Vector3( 0, 0, -1 ), colorZ));
+      this.axis.nearPlaneHeight = Math.tan(Math.PI * this.fov / 2 / 180) * 0.1;
+      this.axis.arrowLength = 0.25 * this.axis.nearPlaneHeight;
+      this.axis.add(this.createArrow(new THREE.Vector3( ...this.settings.anteriorAxis), colorX));
+      this.axis.add(this.createArrow(new THREE.Vector3( ...this.settings.dorsalAxis), colorY));
+      this.axis.add(this.createArrow(new THREE.Vector3( ...this.settings.rightHemisphereAxis), colorZ));
+      
 
       return this.axis;
     }
@@ -1616,12 +1638,12 @@ moduleExporter(
          this._take_screenshot = false;
        }
 
-       let localToCameraAxesPlacement = new THREE.Vector3(-1.3*this.camera.aspect*this.nearPlaneHeight,-1*this.nearPlaneHeight,-0.15);
+       let localToCameraAxesPlacement = new THREE.Vector3(-1.3*this.camera.aspect*this.axis.nearPlaneHeight,-1.2*this.axis.nearPlaneHeight,-0.15);
        let worldAxesPlacement = this.camera.localToWorld(localToCameraAxesPlacement.clone())
-       this.axis.position.copy(worldAxesPlacement);
-       this.labels.position.copy(worldAxesPlacement);
-       for(l=0; l<this.labels.children.length; l++){
-          this.labels.children[l].quaternion.copy(this.camera.quaternion);
+       this.axis.position.copy(worldAxesPlacement.addScaledVector(new THREE.Vector3(...this.settings.axisOrigin), -1));
+       this.axis.labels.position.copy(worldAxesPlacement);
+       for(l=0; l<this.axis.labels.children.length; l++){
+          this.axis.labels.children[l].quaternion.copy(this.camera.quaternion);
        }
        
      }
