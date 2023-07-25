@@ -26,6 +26,8 @@ moduleExporter(
      "copyshader",
      "convolutionshader",
      "gltfloader",
+     "fontloader",
+     "textgeometry",
      "fxaashader",
      "ssaoshader",
      "luminosityhighpassshader",
@@ -465,6 +467,10 @@ moduleExporter(
       //  this.composer.passes[3].enabled = this.settings.effectFXAA.enabled;
      }
 
+     const colorX = 0xffff00;
+     const colorY = 0x89C7FF;
+     const colorZ = 0xFF0000;
+
      FFBOMesh3D.prototype.initScenes = function () {
        scenes = {
          front: new THREE.Scene(),
@@ -481,8 +487,71 @@ moduleExporter(
        scenes.front.add( this.groups.frontCyl );
        scenes.front.add( this.groups.frontSyn );
        scenes.back.add( this.groups.back );
+
+       scenes.back.add(this.addCoordinateAxis());
+       scenes.back.add(this.addAxisLabels(colorX, colorY, colorZ));
+
        return scenes;
      }
+
+     FFBOMesh3D.prototype.createArrow = function(dir, color) {
+      dir.normalize();
+
+      var width = this.container.clientWidth;
+      const origin = new THREE.Vector3( 0, 0, 0 );
+      const arrowHelper = new THREE.ArrowHelper( dir, origin, this.axisArrowLength, color );
+
+      return arrowHelper;
+    }
+
+    FFBOMesh3D.prototype.addAxisLabels = function(colorX, colorY, colorZ) {
+      const loader = new THREE.FontLoader();
+      let thisObject = this;
+      this.labels = new THREE.Object3D();
+      loader.load('lib/fonts/helvetiker_bold.typeface.json', function ( font ) {
+          thisObject.textFont = font;
+          thisObject.labels.add(thisObject.createAxisLabel("right", "x", colorX));
+          thisObject.labels.add(thisObject.createAxisLabel("front", "y", colorY));
+          thisObject.labels.add(thisObject.createAxisLabel("bottom", "z", colorZ));
+      });
+      return this.labels;
+    }
+
+    FFBOMesh3D.prototype.createAxisLabel = function(text, axis, color) {
+      textGeo = new THREE.TextGeometry( text, {
+	  font: this.textFont,
+	  size: 0.15 * this.axisArrowLength,
+	  height: 0.05 * this.axisArrowLength}
+      );
+
+      let fontMaterials = [
+          new THREE.MeshStandardMaterial( { color: color, flatShading: true } ),
+          new THREE.MeshStandardMaterial( { color: color } )
+      ];
+      let textMesh = new THREE.Mesh( textGeo, fontMaterials );
+      let axisShift = 1.2 * this.axisArrowLength;
+
+      if (axis == "x") {
+          textMesh.position.set(axisShift, 0, 0);
+      } else if (axis == "y") {
+          textMesh.position.set(0, axisShift, 0);
+      } else if (axis == "z") {
+          textMesh.position.set(0, 0, -axisShift);
+      }
+
+      return textMesh;
+    }
+
+    FFBOMesh3D.prototype.addCoordinateAxis = function() {
+      this.nearPlaneHeight = Math.tan(Math.PI * this.fov / 2 / 180) * 0.1;
+      this.axisArrowLength = 0.25 * this.nearPlaneHeight;
+      this.axis = new THREE.Object3D();
+      this.axis.add(this.createArrow(new THREE.Vector3( 1, 0, 0 ), colorX));
+      this.axis.add(this.createArrow(new THREE.Vector3( 0, 1, 0 ), colorY));
+      this.axis.add(this.createArrow(new THREE.Vector3( 0, 0, -1 ), colorZ));
+
+      return this.axis;
+    }
 
      FFBOMesh3D.prototype.initLut = function () {
        this.maxColorNum = this._metadata.maxColorNum;
@@ -1545,6 +1614,14 @@ moduleExporter(
            _saveImage(b, "ffbo_screenshot.png")
          })
          this._take_screenshot = false;
+       }
+
+       let localToCameraAxesPlacement = new THREE.Vector3(-1.3*this.camera.aspect*this.nearPlaneHeight,-1*this.nearPlaneHeight,-0.15);
+       let worldAxesPlacement = this.camera.localToWorld(localToCameraAxesPlacement.clone())
+       this.axis.position.copy(worldAxesPlacement);
+       this.labels.position.copy(worldAxesPlacement);
+       for(l=0; l<this.labels.children.length; l++){
+          this.labels.children[l].quaternion.copy(this.camera.quaternion);
        }
        
      }
