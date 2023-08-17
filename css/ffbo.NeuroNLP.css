@@ -585,8 +585,8 @@ Logo and Footer
   #neuronlp-switch {
       width: 300px;
       left: calc( 50% - 150px ) !important;
-      height: 300px ;
-      top: calc( 50% - 100px );
+      height: 500px ;
+      top: calc( 50% - 250px );
       border: none;
       background: transparent;
       overflow: hidden;
