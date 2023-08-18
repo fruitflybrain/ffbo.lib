@@ -780,8 +780,9 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'visibility', true);
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
-           setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', key).replace('<', '&lt').replace('>', '&gt'));
+           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', getAttr(unit, 'label', key)));
+           setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', getAttr(unit, 'label', key)).replaceAll('<', '&lt').replaceAll('>', '&gt'));
+
 
            if(unit.background){
              unit.group = this.groups.back;
