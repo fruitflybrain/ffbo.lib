@@ -2004,8 +2004,10 @@ moduleExporter(
               //val.object.children[0].material.depthTest = false;
               //val.object.children[1].material.depthTest = false;
          } else {
+           for (var i in val.object.children) {
              val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
              val.object.children[i].material.depthTest = false;
+           }
          }
        } else if (this.states.highlight) {
          return;
