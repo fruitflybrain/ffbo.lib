@@ -780,7 +780,7 @@ moduleExporter(
            setAttrIfNotDefined(unit, 'visibility', true);
            setAttrIfNotDefined(unit, 'background', false);
            setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', getAttr(unit, 'label', key)));
+           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
            setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', getAttr(unit, 'label', key)).replaceAll('<', '&lt').replaceAll('>', '&gt'));
 
 
@@ -1624,9 +1624,26 @@ moduleExporter(
        if (this.states.mouseOver && !this.mousedown) {
          var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
          if (this.uiVars.currentIntersected || intersected) {
-           this.uiVars.currentIntersected = intersected;
-           this.highlight(intersected);
-         }
+            // make sure when hovering over a neuron transits to hovering on neuropil the highlight state is reset.
+            if (this.uiVars.currentIntersected !== undefined && intersected !== undefined){
+                if (this.uiVars.currentIntersected['rid'] != intersected['rid']) {
+                    this.highlight();
+                }
+            }
+            this.uiVars.currentIntersected = intersected;
+            // The goal here is to make background highlightable only when using the Neuropil menu.
+            // Hovering on neuropil can still show the tooltip, but not highllight it.
+            if (intersected !== undefined) {
+              if (intersected['background']){
+                var pos = this.getNeuronScreenPosition(intersected['rid']);
+                this.uiVars.toolTipPosition.x = pos.x;
+                this.uiVars.toolTipPosition.y = pos.y;
+                this.show3dToolTip(intersected['htmllabel']);
+              } else {
+                this.highlight(intersected);
+              }
+            }
+          }
 
        }
 
@@ -1981,9 +1998,14 @@ moduleExporter(
            }
          }
          var val = this.meshDict[this.states.highlight];
-         for (var i in val.object.children) {
-            val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-            val.object.children[i].material.depthTest = false;
+         if (val['background']) {
+           val.object.children[0].material.opacity = this.settings.backgroundOpacity;
+           val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+              //val.object.children[0].material.depthTest = false;
+              //val.object.children[1].material.depthTest = false;
+         } else {
+             val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+             val.object.children[i].material.depthTest = false;
          }
        } else if (this.states.highlight) {
          return;
