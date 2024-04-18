@@ -3,6 +3,11 @@
 /*
 Info Panel
 */
+/* ul {
+  /* list-style: none; */
+  /* padding-left: -5;
+}  */
+ul { padding-left: 1.2em; }
 
 #presyn-N{
     max-width: 50px;
@@ -336,3 +341,100 @@ Info Panel
 }
 
 */
+
+
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 95%; /* Takes full height of the parent div */
+  width: 100%; /* Takes full width of the parent div */
+}
+
+.chat-history {
+  overflow-y: auto;
+  padding: 10px;
+  flex-grow: 1;
+}
+
+
+.chat-input .auto_height {
+  /* flex-grow: 1;
+   */
+  padding: 8px;
+  border: 1px solid #ccc;
+  /* border-radius: 4px; */
+  width: 100%;
+  resize: none; /* Disables manual resizing */
+  overflow: auto; /* Allows scrolling inside textarea */
+}
+
+
+.chat-input {
+  position: relative; /* Ensures that children can be positioned absolutely relative to this container */
+  display: flex;
+  padding-right: 40px; /* Adds padding to prevent text from going behind the button */
+  align-items: center; /* Centers items vertically */
+  height: auto; /* Adjust as necessary */
+}
+
+.chat-input textarea {
+  flex-grow: 1;
+  border-radius: 4px;
+  padding: 8px; /* Ensure adequate padding */
+  border: 1px solid #ccc;
+  resize: none; /* Disables resizing the textarea */
+}
+
+.chat-input button {
+  position: absolute;
+  bottom: 0px;
+  right: 1px;
+  width: 40px; /* Width and height are the same to make the button square */
+  height: 40px;
+  padding: 0; /* Adjust padding to zero for a perfect square if necessary */
+  background-color: #007bff;
+  color: white;
+  border: 1px solid transparent; /* Adds border to maintain consistent button size */
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #0056b3;
+}
+
+.chat-input i.material-icons-outlined {
+  font-size: 24px; /* Adjust to fit the button, assuming a square button */
+  vertical-align: middle; /* Centers the icon vertically */
+}
+
+
+
+
+
+
+
+
+
+.message {
+  margin-bottom: 12px;
+  line-height: 1.4;
+  border-radius: 5px;
+  padding: 8px;
+  max-width: 100%;
+}
+
+.my-message {
+  /* background-color: #007bff; */
+  color: white;
+  text-align: left;
+  align-self: flex-end;
+}
+
+.bot-message {
+  /* background-color: #f1f0f0; */
+  color: white;
+  text-align: left;
+  align-self: flex-start;
+}
