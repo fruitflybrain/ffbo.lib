@@ -105,6 +105,7 @@ moduleExporter(
          "enablePositionReset": true,
          "resetPosition": { 'x': 0., 'y': 0., 'z': 0. },
          "resetUp": {"x": 0., "y": 0., "z": 0},
+         "cameraTarget": {"x": 0., "y": 0., "z": 0},
          "neu3dSettings": {
           defaultOpacity: 0.7,
           synapseOpacity: 1.0,
@@ -659,10 +660,7 @@ moduleExporter(
      FFBOMesh3D.prototype.initLoadingManager = function() {
        loadingManager = new THREE.LoadingManager();
        loadingManager.onLoad = function() {
-         this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-         this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-         this.controls.target0.z = 0.5*(this.boundingBox.minZ + this.boundingBox.maxZ );
-         this.controls.reset();
+         this.resetView();
          this.groups.frontLine.visible = true;
          this.groups.frontCyl.visible = true;
          this.groups.frontSyn.visible = true;
@@ -1998,6 +1996,7 @@ moduleExporter(
            }
          }
          var val = this.meshDict[this.states.highlight];
+         console.log(val['background'])
          if (val['background']) {
            val.object.children[0].material.opacity = this.settings.backgroundOpacity;
            val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
@@ -2212,10 +2211,14 @@ moduleExporter(
         this.camera.up.z = this._metadata["resetUp"]['z'];
         this.camera.up.y = this._metadata["resetUp"]['y'];
         this.camera.up.x = this._metadata["resetUp"]['x'];
+        this.controls.target.x = this._metadata["cameraTarget"]["x"];
+        this.controls.target.y = this._metadata["cameraTarget"]["y"];
+        this.controls.target.z = this._metadata["cameraTarget"]["z"];
+       } else {
+        this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
+        this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+        this.controls.reset();
        }
-       this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-       this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-       this.controls.reset();
      }
 
      FFBOMesh3D.prototype.setSceneBackgroundColor = function (color) {
