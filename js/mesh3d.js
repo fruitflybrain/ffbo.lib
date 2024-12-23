@@ -1933,55 +1933,113 @@ moduleExporter(
          return;
        }
 
-       if (typeof(d) === 'string' && (d in this.meshDict)) {
-         d = this.meshDict[d];
-       } else {
-         if (d in this._labelToRid) {
-           d = this.meshDict[this._labelToRid[d]];
-         } else {
-          if (typeof(d) === 'string' && !d.includes('#')) {
-            for (var key in this.meshDict) {
-              if (key.includes('#')) {
-                if (d == this.meshDict[key].referenceId)
-                {
-                  d = this.meshDict[key];
+       if (Array.isArray(d)) { // only support an array of rids
+        rids = [];
+        
+        for (const rid of d) {
+          var v = undefined;
+          if (typeof(rid) === 'string' && (rid in this.meshDict)) {
+            v = this.meshDict[rid];
+          } else {
+            if (rid in this._labelToRid) {
+              v = this.meshDict[this._labelToRid[rid]];
+            } else {
+              if (typeof(rid) === 'string' && !d.includes('#')) {
+                for (var key in this.meshDict) {
+                  if (key.includes('#')) {
+                    if (rid === this.meshDict[key].referenceId)
+                    {
+                      v = this.meshDict[key];
+                    }
+                  }
                 }
               }
             }
           }
-         }
+          if (v !== undefined && v['highlight'] !== false) {
+            rids.push(v['rid']);
+          }
+        }
+
+        if (rids.length === 0) {
+          this.states.highlight = false;
+        } else {
+          this.states.highlight = rids;
+        }
+       } else {
+          if (typeof(d) === 'string' && (d in this.meshDict)) {
+            d = this.meshDict[d];
+          } else {
+            if (d in this._labelToRid) {
+              d = this.meshDict[this._labelToRid[d]];
+            } else {
+              if (typeof(d) === 'string' && !d.includes('#')) {
+                for (var key in this.meshDict) {
+                  if (key.includes('#')) {
+                    if (d == this.meshDict[key].referenceId)
+                    {
+                      d = this.meshDict[key];
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          
+          if ((d['highlight']) !== false) {
+            this.states.highlight = d['rid'];
+          } else
+            this.states.highlight = false;
+          
+
+          if (updatePos !== undefined && updatePos === true) {
+            var pos = this.getNeuronScreenPosition(d['rid']);
+            this.uiVars.toolTipPosition.x = pos.x;
+            this.uiVars.toolTipPosition.y = pos.y;
+          }
+          this.show3dToolTip(d['htmllabel']);
        }
-
-       if ((d['highlight']) !== false) {
-         this.states.highlight = d['rid'];
-       } else
-         this.states.highlight = false;
-
-
-       if (updatePos !== undefined && updatePos === true) {
-         var pos = this.getNeuronScreenPosition(d['rid']);
-         this.uiVars.toolTipPosition.x = pos.x;
-         this.uiVars.toolTipPosition.y = pos.y;
-       }
-       this.show3dToolTip(d['htmllabel']);
      }
 
      FFBOMesh3D.prototype.onUpdateHighlight = function(e) {
 
        if (e.old_value)
-         this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
+         if ( Array.isArray(e.old_value) ) {
+           for (const rid of e.old_value ) {
+            this.meshDict[rid]['object']['visible'] = this.meshDict[rid]['visibility'];
+           }
+         } else {
+          this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
+         }
        if (e.value === false) {
          this.renderer.domElement.style.cursor = "auto";
        } else {
          this.renderer.domElement.style.cursor = "pointer";
-         this.meshDict[e.value]['object']['visible'] = true;
+
+         if (Array.isArray(e.value) ) {
+          for (const rid of e.value) {
+            this.meshDict[rid]['object']['visible'] = true;
+          }
+         } else {
+          this.meshDict[e.value]['object']['visible'] = true;
+         }
        }
      }
 
      FFBOMesh3D.prototype.updateOpacity = function(e) {
        // Entering highlight mode or highlighted obj change
        if (e.prop == 'highlight'  && this.states.highlight) {
-         var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+         if ((e !== undefined) && e.old_value) {
+          if (Array.isArray(e.old_value)) {
+            var list = e.old_value;
+          } else {
+            var list = [e.old_value];
+          }
+         } else {
+          var list = Object.keys(this.meshDict);
+         }
+ 
          for (const key of list) {
            var val = this.meshDict[key];
            var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
@@ -1995,18 +2053,27 @@ moduleExporter(
               val.object.children[i].material.depthTest = depthTest;
            }
          }
-         var val = this.meshDict[this.states.highlight];
-         console.log(val['background'])
-         if (val['background']) {
-           val.object.children[0].material.opacity = this.settings.backgroundOpacity;
-           val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-              //val.object.children[0].material.depthTest = false;
-              //val.object.children[1].material.depthTest = false;
+
+         if (Array.isArray(this.states.highlight) ) {
+          var list = this.states.highlight;
          } else {
-           for (var i in val.object.children) {
-             val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-             val.object.children[i].material.depthTest = false;
-           }
+          var list = [this.states.highlight];
+         }
+
+         for (const rid of list){
+           var val = this.meshDict[rid];
+
+            if (val['background']) {
+              val.object.children[0].material.opacity = this.settings.backgroundOpacity;
+              val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+                  //val.object.children[0].material.depthTest = false;
+                  //val.object.children[1].material.depthTest = false;
+            } else {
+              for (var i in val.object.children) {
+                val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+                val.object.children[i].material.depthTest = false;
+              }
+            }
          }
        } else if (this.states.highlight) {
          return;
@@ -2502,3 +2569,4 @@ moduleExporter(
      ]);
      return FFBOMesh3D;
    });
+
