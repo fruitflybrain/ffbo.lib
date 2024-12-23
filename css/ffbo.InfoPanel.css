@@ -286,7 +286,7 @@ ul { padding-left: 1.2em; }
 
 #info-panel-table .info-input{
     width: 100%;
-    max-width: 150px;
+    max-width: 200px;
 }
 
 
@@ -438,3 +438,69 @@ ul { padding-left: 1.2em; }
   text-align: left;
   align-self: flex-start;
 }
+
+
+/* toggle slider for group by type */
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  margin-bottom: -3px;
+  margin-left: 3px;
+  margin-right: 3px;
+}
+
+/* Hide the default checkbox */
+.toggle-switch input.toggle-switch-checkbox {
+  display: none;
+}
+
+/* The track for the toggle */
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;  left: 0;  right: 0;  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+}
+
+.toggle-slider.round {
+    border-radius: 24px;
+}
+
+
+/* The  (the circle) */
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+}
+
+/* Round the knob if .round is used */
+.toggle-slider.round:before {
+  border-radius: 50%;
+}
+
+/* When checkbox is checked, move the knob to the right */
+.toggle-switch-checkbox:checked + .toggle-slider {
+  background-color: #2196F3; /* slider track color when ON */
+}
+.toggle-switch-checkbox:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+
+.expander-arrow {
+cursor: pointer;
+margin-right: 8px; /* a little spacing before the text */
+font-size: 1.1em;  /* size it up slightly */
+}
+
+
