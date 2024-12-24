@@ -2007,7 +2007,9 @@ moduleExporter(
        if (e.old_value)
          if ( Array.isArray(e.old_value) ) {
            for (const rid of e.old_value ) {
-            this.meshDict[rid]['object']['visible'] = this.meshDict[rid]['visibility'];
+            if (rid in this.meshDict){
+              this.meshDict[rid]['object']['visible'] = this.meshDict[rid]['visibility'];
+            }
            }
          } else {
           this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
