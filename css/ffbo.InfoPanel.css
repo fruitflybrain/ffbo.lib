@@ -10,13 +10,25 @@ Info Panel
 ul { padding-left: 1.2em; }
 
 #presyn-N{
-    max-width: 50px;
+    max-width: 30px;
     text-align:center;
 }
 #postsyn-N{
-    max-width: 50px;
+    max-width: 30px;
     text-align: center;
 }
+
+#precount-N{
+    max-width: 30px;
+    text-align: center;
+}
+
+#postcount-N{
+    max-width: 30px;
+    text-align: center;
+}
+
+
 .info-input-span{
     color: #999;
     /*font-size: 1.5vw;*/
@@ -78,18 +90,40 @@ ul { padding-left: 1.2em; }
 }
 
 .table-custom-striped td, .table-custom-striped th {
-    text-align:center;
+  text-align:center;
 }
 
-.table-custom-striped td:first-child, .table-custom-striped th:first-child {
-    text-align:left;
+.table-custom-striped td:nth-child(2), .table-custom-striped th:nth-child(2) {
+  text-align:left;
+  min-width: 200px;
 }
 
 .table-custom-striped td:last-child, .table-custom-striped th:last-child {
-    text-align:right;
-    padding-right: 20px;
+  text-align:center;
+  padding-right: 20px;
 }
 
+.table-custom-striped .expander-arrow {
+  cursor: pointer;
+  margin-right: 0px;
+}
+
+.table-custom-striped th:nth-child(1), .table-custom-striped td:nth-child(1) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.table-custom-striped th:nth-child(3), .table-custom-striped td:nth-child(3) {
+  padding-left: 1 !important;
+  padding-right: 1 !important;
+}
+
+.table-custom-striped th:nth-child(5), .table-custom-striped td:nth-child(5) {
+  min-width: 80px !important;
+}
+.table-custom-striped th:nth-child(6), .table-custom-striped td:nth-child(6) {
+  min-width: 70px !important;
+}
 
 .vis-info {
   background: var(--infobar-background-color);
@@ -278,7 +312,7 @@ ul { padding-left: 1.2em; }
 }
 
 
-#info-panel-conn-table >div:first-child  {
+#info-panel-conn-table >div:first-child {
     display: grid;
     grid-template-columns: 110px 1fr;
     align-items: start;
@@ -498,9 +532,9 @@ ul { padding-left: 1.2em; }
 
 
 .expander-arrow {
-cursor: pointer;
-margin-right: 8px; /* a little spacing before the text */
-font-size: 1.1em;  /* size it up slightly */
+  cursor: pointer;
+  margin-right: 2px; /* a little spacing before the text */
+  font-size: 1.1em;  /* size it up slightly */
 }
 
 
