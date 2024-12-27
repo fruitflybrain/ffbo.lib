@@ -530,7 +530,7 @@ ul { padding-left: 1.2em; }
   transform: translateX(20px);
 }
 
-.table-custom-striped .expander-arrow {
+#info-panel-wrapper .expander-arrow {
   cursor: pointer;
   margin-right: 2px; /* a little spacing before the text */
   font-size: 1.1em;  /* size it up slightly */
