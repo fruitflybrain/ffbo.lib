@@ -236,6 +236,8 @@ moduleExporter(
        this.loadingManager = this.initLoadingManager();
 
        this.mousedown = false;
+       this.isDragging = false;
+       this.mouseDownPosition = undefined;
        this.container.addEventListener( 'mousedown', this.onDocumentMouseDown.bind(this), false );
        this.container.addEventListener( 'mouseup', this.onDocumentMouseUp.bind(this), false );
 
@@ -1463,17 +1465,33 @@ moduleExporter(
        if (event !== undefined)
          event.preventDefault();
        this.mousedown = true;
+       this.mouseDownPosition = { x: event.clientX, y: event.clientY };
+       this.isDragging = false;
      }
      FFBOMesh3D.prototype.onDocumentMouseUp = function(event) {
        if (event !== undefined)
          event.preventDefault();
        this.mousedown = false;
+
+       const mouseUpPosition = { x: event.clientX, y: event.clientY };
+       const distance = Math.sqrt(
+        Math.pow(mouseUpPosition.x - this.mouseDownPosition.x, 2) +
+        Math.pow(mouseUpPosition.y - this.mouseDownPosition.y, 2)
+       );
+
+       const dragThreshold = 1;
+       if (distance > dragThreshold) {
+         this.isDragging = true;
+       }
      }
 
      FFBOMesh3D.prototype.onDocumentMouseClick = function( event ) {
        if (event !== undefined)
          event.preventDefault();
-
+      
+       if (this.isDragging) {
+        return;
+       }
       //  if (!this.controls.checkStateIsNone())
       //    return;
 
