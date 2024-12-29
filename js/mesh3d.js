@@ -1640,6 +1640,8 @@ moduleExporter(
               } else {
                 this.highlight(intersected);
               }
+            } else { // if intersected is undefined and currentIntersected is defined, must be moving out of highlight
+              this.highlight();
             }
           }
 
@@ -1673,15 +1675,19 @@ moduleExporter(
 
        this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
 
+       var quit = false;
        for (const group of groups) {
          var intersects = this.raycaster.intersectObjects( group.children, true);
-         if ( intersects.length > 0 ) {
-           object = intersects[0].object.parent;
-           if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
+
+         for (const ob of intersects) {
+           object = ob.object.parent;
+           if (object.hasOwnProperty('rid') && object.rid in this.meshDict && object.visible) {
              val =  this.meshDict[object.rid];
+             quit = true;
              break;
            }
          }
+         if (quit) break;
        }
        return val;
      }
