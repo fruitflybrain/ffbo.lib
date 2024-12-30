@@ -234,60 +234,7 @@ moduleExporter(
 
       this.loadingManager = this.initLoadingManager();
 
-      this.mousedown = false;
-      this.isDragging = false;
-      this.mouseDownPosition = null;
-      this.clickTimeout = null;
-      this.doubleClickThreshold = 500;
-      this.mouseMoveThreshold = 10;
-      this.lastClickPosition = null;
-      this.container.addEventListener('mousedown', this.onDocumentMouseDown.bind(this), false);
-      this.container.addEventListener('mouseup', this.onDocumentMouseUp.bind(this), false);
-
-      this.container.addEventListener('click', (event) => {
-        // deals with not registering a double click as additional
-        // single click events
-        // and allow the double click to slightly move between clicks
-        const currentClickPosition = { x: event.clientX, y: event.clientY };
-        if (this.clickTimeout) {
-          const distance = Math.sqrt(
-            Math.pow(currentClickPosition.x - this.lastClickPosition.x, 2) +
-            Math.pow(currentClickPosition.y - this.lastClickPosition.y, 2)
-          );
-
-          if (distance <= this.mouseMoveThreshold) {
-            clearTimeout(this.clickTimeout);
-            this.clickTimeout = null; // Reset timeout
-            this.onDocumentMouseDBLClick(event);
-            return;
-          }
-        }
-
-        this.lastClickPosition = currentClickPosition;
-
-        this.clickTimeout = setTimeout(() => {
-          this.onDocumentMouseClick(event);
-          this.clickTimeout = null; // Reset timeout
-        }, this.doubleClickThreshold);
-      }, false);
-
-      //  this.container.addEventListener('dblclick', (event) => {
-      //    if (this.clickTimeout) clearTimeout(this.clickTimeout);
-      //    this.onDocumentMouseDBLClick(event);
-      //  }, false);
-
-      if (isOnMobile) {
-        this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
-        document.body.addEventListener('contextmenu', function () { return false; });
-      }
-
-      this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
-
-      this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
-
-      this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
-
-      this.container.addEventListener('resize', this.onWindowResize.bind(this), false);
+      this.setupClickEvents();
 
       this.animOpacity = {};
 
@@ -1495,6 +1442,73 @@ moduleExporter(
       this.meshDict[key] = unit;
     }
 
+
+    FFBOMesh3D.prototype.setupClickEvents = function () {
+      this.mousedown = false;
+      this.isDragging = false;
+      this.mouseDownPosition = null;
+      this.clickTimeout = null;
+      this.doubleClickThreshold = 500;
+      this.mouseMoveThreshold = 10;
+      this.lastClickPosition = null;
+      this.contextMenu = document.getElementById('contextMenu');
+
+      this.container.addEventListener('mousedown', this.onDocumentMouseDown.bind(this), false);
+      this.container.addEventListener('mouseup', this.onDocumentMouseUp.bind(this), false);
+
+      this.container.addEventListener('click', (event) => {
+        if (this.contextMenu.style.display !== "none"){
+          this.contextMenu.style.display = 'none';
+          return;
+        }
+        // deals with not registering a double click as additional
+        // single click events
+        // and allow the double click to slightly move between clicks
+        const currentClickPosition = { x: event.clientX, y: event.clientY };
+        if (this.clickTimeout) {
+          const distance = Math.sqrt(
+            Math.pow(currentClickPosition.x - this.lastClickPosition.x, 2) +
+            Math.pow(currentClickPosition.y - this.lastClickPosition.y, 2)
+          );
+
+          if (distance <= this.mouseMoveThreshold) {
+            clearTimeout(this.clickTimeout);
+            this.clickTimeout = null; // Reset timeout
+            this.onDocumentMouseDBLClick(event);
+            return;
+          }
+        }
+
+        this.lastClickPosition = currentClickPosition;
+
+        this.clickTimeout = setTimeout(() => {
+          this.onDocumentMouseClick(event);
+          this.clickTimeout = null; // Reset timeout
+        }, this.doubleClickThreshold);
+      }, false);
+
+      // // double click from listener no longer needed
+      //  this.container.addEventListener('dblclick', (event) => {
+      //    if (this.clickTimeout) clearTimeout(this.clickTimeout);
+      //    this.onDocumentMouseDBLClick(event);
+      //  }, false);
+
+      if (isOnMobile) {
+        this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
+        document.body.addEventListener('contextmenu', function () { return false; });
+      }
+
+      this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
+
+      this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
+
+      this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
+
+      this.container.addEventListener('resize', this.onWindowResize.bind(this), false);
+
+      this.container.addEventListener('contextmenu', this.onDocumentMouseRightClick.bind(this), false);
+    }
+
     FFBOMesh3D.prototype.onDocumentMouseDown = function (event) {
       if (event !== undefined)
         event.preventDefault();
@@ -1587,6 +1601,202 @@ moduleExporter(
 
       this.highlight(undefined);
     }
+
+    FFBOMesh3D.prototype.onDocumentMouseRightClick = function (event) {
+      if (event !== undefined)
+        event.preventDefault();
+
+      if (this.isDragging) {
+        return;
+      }
+
+      var intersected = this.getIntersection(
+        [
+          this.groups.frontSyn,
+          this.groups.frontCyl,
+          this.groups.frontLine,
+          this.groups.back
+        ]
+      );
+
+      if (intersected === undefined) { // bring up context menu for blank click
+        this.buildEmptyContextMenu();
+      } else { // find the highlighted object
+        if (intersected['background']) {
+          this.buildNeuropilContextMenu(intersected);
+        } else {
+          if (intersected.class === "Neuron") {
+            this.buildNeuronContextMenu(intersected);
+          } else if (intersected.class === "Synapse") {
+            this.buildSynapseContextMenu(intersected);
+          }
+        }
+      }
+
+      this.contextMenu.style.left = `${event.clientX}px`;
+      this.contextMenu.style.top = `${event.clientY}px`;
+      this.contextMenu.style.display = 'block';
+    }
+
+    FFBOMesh3D.prototype.buildNeuropilContextMenu = function (obj) {
+      this.contextMenu.innerHTML = '<ul></ul>';
+      const menuList = this.contextMenu.querySelector('ul');
+      const rid = obj.rid;
+      const htmllabel = obj.htmllabel;
+      // hide, focus, color
+
+      // pin / unpin
+      var menuItem;
+      // hide
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Hide " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.hide(rid);
+      });
+      menuList.appendChild(menuItem); 
+
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Center view on " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.resetViewOn(rid);
+      });
+      menuList.appendChild(menuItem); 
+    }
+
+    FFBOMesh3D.prototype.buildEmptyContextMenu = function (obj) {
+      // this.contextMenu.innerHTML = '<ul></ul>';
+    }
+
+    FFBOMesh3D.prototype.buildNeuronContextMenu = function (obj) {
+      this.contextMenu.innerHTML = '<ul></ul>';
+      const menuList = this.contextMenu.querySelector('ul');
+      const rid = obj.rid;
+      const htmllabel = obj.htmllabel;
+      const uname = obj.uname; 
+      const pinned = obj.pinned;
+
+      // pin, getinfo, unpin, delete, hide, color?
+
+      // pin / unpin
+      var menuItem;
+      menuItem = document.createElement('li');
+      if (pinned) {
+        menuItem.textContent = "Unpin " + htmllabel;
+        menuItem.addEventListener('click', () => {
+          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.unpin(rid);
+        });
+        menuList.appendChild(menuItem);
+      } else {
+        menuItem.textContent = "Pin " + htmllabel;
+        menuItem.addEventListener('click', () => {
+          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.pin(rid);
+        });
+        menuList.appendChild(menuItem);
+      }
+
+      // getinfo
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Get info for " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.select(rid);
+      });
+      menuList.appendChild(menuItem);
+      
+      // delete
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Remove " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.remove(rid);
+      });
+      menuList.appendChild(menuItem);
+      
+      // hide
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Hide " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.hide(rid);
+      });
+      menuList.appendChild(menuItem); 
+
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Center view on " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.resetViewOn(rid);
+      });
+      menuList.appendChild(menuItem); 
+    }
+
+    FFBOMesh3D.prototype.buildSynapseContextMenu = function (obj) {
+      this.contextMenu.innerHTML = '<ul></ul>';
+      const menuList = this.contextMenu.querySelector('ul');
+      const rid = obj.rid;
+      const htmllabel = obj.htmllabel;
+      const uname = obj.uname; 
+      const pinned = obj.pinned;
+      
+      // pin / unpin
+      var menuItem;
+      menuItem = document.createElement('li');
+      if (pinned) {
+        menuItem.textContent = "Unpin " + htmllabel;
+        menuItem.addEventListener('click', () => {
+          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.unpin(rid);
+        });
+        menuList.appendChild(menuItem);
+      } else {
+        menuItem.textContent = "Pin " + htmllabel;
+        menuItem.addEventListener('click', () => {
+          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.pin(rid);
+        });
+        menuList.appendChild(menuItem);
+      }
+
+      // getinfo
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Get info for " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.select(rid);
+      });
+      menuList.appendChild(menuItem);
+      
+      // delete
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Remove " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.remove(rid);
+      });
+      menuList.appendChild(menuItem);
+      
+      // hide
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Hide " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.hide(rid);
+      });
+      menuList.appendChild(menuItem); 
+
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Center view on " + htmllabel;
+      menuItem.addEventListener('click', () => {
+        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.resetViewOn(rid);
+      });
+      menuList.appendChild(menuItem); 
+    }
+
     //
     FFBOMesh3D.prototype.onWindowResize = function () {
 
@@ -2348,6 +2558,71 @@ moduleExporter(
 
     FFBOMesh3D.prototype.setSceneBackgroundColor = function (color) {
       this.scenes.back.background.set(color);
+    }
+
+    FFBOMesh3D.prototype.resetViewOn = function (rids) {
+      var boundingBox = Object.assign({}, this.defaultBoundingBox);
+      updated = false;
+      if (!Array.isArray(rids)) {
+        rids = [rids];
+      }
+      for (var rid of rids) {
+        if (rid in this.meshDict) {
+          updated = true;
+          if (this.meshDict[rid].boundingBox.minX < boundingBox.minX)
+            boundingBox.minX = this.meshDict[rid].boundingBox.minX;
+          if (this.meshDict[rid].boundingBox.maxX > boundingBox.maxX)
+            boundingBox.maxX = this.meshDict[rid].boundingBox.maxX;
+          if (this.meshDict[rid].boundingBox.minY < boundingBox.minY)
+            boundingBox.minY = this.meshDict[rid].boundingBox.minY;
+          if (this.meshDict[rid].boundingBox.maxY > boundingBox.maxY)
+            boundingBox.maxY = this.meshDict[rid].boundingBox.maxY;
+          if (this.meshDict[rid].boundingBox.maxZ < boundingBox.minZ)
+            boundingBox.minZ = this.meshDict[rid].boundingBox.minZ;
+          if (this.meshDict[rid].boundingBox.maxZ > boundingBox.maxZ)
+            boundingBox.maxZ = this.meshDict[rid].boundingBox.maxZ;
+        }
+      }
+      if (updated) {
+        this.controls.target.x = 0.5 * (boundingBox.minX + boundingBox.maxX);
+        this.controls.target.y = 0.5 * (boundingBox.minY + boundingBox.maxY);
+        this.controls.target.z = 0.5 * (boundingBox.minZ + boundingBox.maxZ);
+        this.camera.updateProjectionMatrix();
+        setTimeout(() => {
+          let positions = [
+            new THREE.Vector3(boundingBox.minX, boundingBox.minY, boundingBox.minZ),
+            new THREE.Vector3(boundingBox.minX, boundingBox.minY, boundingBox.maxZ),
+            new THREE.Vector3(boundingBox.minX, boundingBox.maxY, boundingBox.minZ),
+            new THREE.Vector3(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ),
+            new THREE.Vector3(boundingBox.maxX, boundingBox.minY, boundingBox.minZ),
+            new THREE.Vector3(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ),
+            new THREE.Vector3(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ),
+            new THREE.Vector3(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ)
+          ];
+
+          // From https://stackoverflow.com/a/11771236
+          let targetFov = 0.0;
+          for (let i = 0; i < 8; i++) {
+            let proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+            let angle = Math.max(Math.abs(Math.atan(proj2d.x / proj2d.z) / this.camera.aspect), Math.abs(Math.atan(proj2d.y / proj2d.z)));
+            targetFov = Math.max(targetFov, angle);
+          }
+          let currentFov = Math.PI * this.fov / 2 / 180;
+          let cam_dir = new THREE.Vector3();
+          cam_dir.subVectors(this.camera.position, this.controls.target);
+          let prevDist = cam_dir.length();
+          cam_dir.normalize();
+          let dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+          let aspect = this.camera.aspect;
+          let targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+          let currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
+          dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+          this.camera.position.copy(this.controls.target);
+          this.camera.position.addScaledVector(cam_dir, dist);
+          this.camera.updateProjectionMatrix();
+        }, 400);
+      }
+      
     }
 
     FFBOMesh3D.prototype.resetVisibleView = function () {

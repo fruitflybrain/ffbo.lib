@@ -95,3 +95,28 @@ vis-hf-r {
   height: calc(100% - 120px);
   width: calc(50% - 15px);
 }
+
+.context-menu {
+  background: #222;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  padding: 0;
+}
+
+.context-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: #aaa;
+}
+
+.context-menu ul li {
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.context-menu ul li:hover {
+  background: #000;
+}
