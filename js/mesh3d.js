@@ -237,14 +237,45 @@ moduleExporter(
 
        this.mousedown = false;
        this.isDragging = false;
-       this.mouseDownPosition = undefined;
+       this.mouseDownPosition = null;
+       this.clickTimeout = null;
+       this.doubleClickThreshold = 500;
+       this.mouseMoveThreshold = 10;
+       this.lastClickPosition = null;
        this.container.addEventListener( 'mousedown', this.onDocumentMouseDown.bind(this), false );
        this.container.addEventListener( 'mouseup', this.onDocumentMouseUp.bind(this), false );
 
+       this.container.addEventListener( 'click', (event) => {
+        // deals with not registering a double click as additional
+        // single click events
+        // and allow the double click to slightly move between clicks
+         const currentClickPosition = { x: event.clientX, y: event.clientY };
+         if (this.clickTimeout) {
+           const distance = Math.sqrt(
+            Math.pow(currentClickPosition.x - this.lastClickPosition.x, 2) +
+            Math.pow(currentClickPosition.y - this.lastClickPosition.y, 2)
+           );
+    
+           if (distance <= this.mouseMoveThreshold) {
+             clearTimeout(this.clickTimeout);
+             this.clickTimeout = null; // Reset timeout
+             this.onDocumentMouseDBLClick(event);
+             return;
+           }
+         }
 
-       this.container.addEventListener( 'click', this.onDocumentMouseClick.bind(this), false );
+         this.lastClickPosition = currentClickPosition;
+        
+         this.clickTimeout = setTimeout(() => {
+           this.onDocumentMouseClick(event);
+           this.clickTimeout = null; // Reset timeout
+         }, this.doubleClickThreshold);
+       }, false);
 
-       this.container.addEventListener( 'dblclick', this.onDocumentMouseDBLClick.bind(this), false );
+      //  this.container.addEventListener('dblclick', (event) => {
+      //    if (this.clickTimeout) clearTimeout(this.clickTimeout);
+      //    this.onDocumentMouseDBLClick(event);
+      //  }, false);
 
        if (isOnMobile) {
          this.container.addEventListener( 'taphold', this.onDocumentMouseDBLClickMobile.bind(this));
@@ -2057,13 +2088,13 @@ moduleExporter(
        // Entering highlight mode or highlighted obj change
        if (e.prop == 'highlight'  && this.states.highlight) {
          if ((e !== undefined) && e.old_value) {
-          if (Array.isArray(e.old_value)) {
-            var list = e.old_value;
-          } else {
-            var list = [e.old_value];
-          }
+           if (Array.isArray(e.old_value)) {
+             var list = e.old_value;
+           } else {
+             var list = [e.old_value];
+           }
          } else {
-          var list = Object.keys(this.meshDict);
+           var list = Object.keys(this.meshDict);
          }
  
          for (const key of list) {
@@ -2081,9 +2112,9 @@ moduleExporter(
          }
 
          if (Array.isArray(this.states.highlight) ) {
-          var list = this.states.highlight;
+           var list = this.states.highlight;
          } else {
-          var list = [this.states.highlight];
+           var list = [this.states.highlight];
          }
 
          for (const rid of list){
