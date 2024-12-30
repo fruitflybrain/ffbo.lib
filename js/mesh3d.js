@@ -1631,11 +1631,11 @@ moduleExporter(
             this.buildSynapseContextMenu(intersected);
           }
         }
-      }
+        this.contextMenu.style.left = `${event.clientX}px`;
+        this.contextMenu.style.top = `${event.clientY}px`;
+        this.contextMenu.style.display = 'block';
 
-      this.contextMenu.style.left = `${event.clientX}px`;
-      this.contextMenu.style.top = `${event.clientY}px`;
-      this.contextMenu.style.display = 'block';
+      }
     }
 
     FFBOMesh3D.prototype.buildNeuropilContextMenu = function (obj) {
