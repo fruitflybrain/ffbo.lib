@@ -1607,6 +1607,9 @@ moduleExporter(
         event.preventDefault();
 
       if (this.isDragging) {
+        if (this.contextMenu.style.display !== "none"){
+          this.contextMenu.style.display = 'none';
+        }
         return;
       }
 
@@ -1621,6 +1624,9 @@ moduleExporter(
 
       if (intersected === undefined) { // bring up context menu for blank click
         this.buildEmptyContextMenu();
+        if (this.contextMenu.style.display !== "none"){
+          this.contextMenu.style.display = 'none';
+        }
       } else { // find the highlighted object
         if (intersected['background']) {
           this.buildNeuropilContextMenu(intersected);
@@ -1651,7 +1657,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Hide " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.hide(rid);
       });
       menuList.appendChild(menuItem); 
@@ -1659,7 +1666,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.resetViewOn(rid);
       });
       menuList.appendChild(menuItem); 
@@ -1685,14 +1693,16 @@ moduleExporter(
       if (pinned) {
         menuItem.textContent = "Unpin " + htmllabel;
         menuItem.addEventListener('click', () => {
-          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.contextMenu.style.display = 'none';
+          this.contextMenu.innerHTML = '<ul></ul>';
           this.unpin(rid);
         });
         menuList.appendChild(menuItem);
       } else {
         menuItem.textContent = "Pin " + htmllabel;
         menuItem.addEventListener('click', () => {
-          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.contextMenu.style.display = 'none';
+          this.contextMenu.innerHTML = '<ul></ul>';
           this.pin(rid);
         });
         menuList.appendChild(menuItem);
@@ -1702,7 +1712,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Get info for " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.select(rid);
       });
       menuList.appendChild(menuItem);
@@ -1711,7 +1722,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Remove " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.remove(rid);
       });
       menuList.appendChild(menuItem);
@@ -1720,7 +1732,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Hide " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.hide(rid);
       });
       menuList.appendChild(menuItem); 
@@ -1728,7 +1741,8 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
         this.resetViewOn(rid);
       });
       menuList.appendChild(menuItem); 
@@ -1748,14 +1762,14 @@ moduleExporter(
       if (pinned) {
         menuItem.textContent = "Unpin " + htmllabel;
         menuItem.addEventListener('click', () => {
-          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.contextMenu.style.display = 'none'; // Hide the menu after selection
           this.unpin(rid);
         });
         menuList.appendChild(menuItem);
       } else {
         menuItem.textContent = "Pin " + htmllabel;
         menuItem.addEventListener('click', () => {
-          contextMenu.style.display = 'none'; // Hide the menu after selection
+          this.contextMenu.style.display = 'none'; // Hide the menu after selection
           this.pin(rid);
         });
         menuList.appendChild(menuItem);
@@ -1765,7 +1779,7 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Get info for " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.select(rid);
       });
       menuList.appendChild(menuItem);
@@ -1774,7 +1788,7 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Remove " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.remove(rid);
       });
       menuList.appendChild(menuItem);
@@ -1783,7 +1797,7 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Hide " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.hide(rid);
       });
       menuList.appendChild(menuItem); 
@@ -1791,7 +1805,7 @@ moduleExporter(
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
       menuItem.addEventListener('click', () => {
-        contextMenu.style.display = 'none'; // Hide the menu after selection
+        this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.resetViewOn(rid);
       });
       menuList.appendChild(menuItem); 
