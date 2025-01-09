@@ -97,8 +97,8 @@ moduleExporter(
 
       /* default metadata */
       this._metadata = {
-        "colormap": "rainbow_gist",
-        "maxColorNum": 1747591,
+        "colormap": "noPurpleExpanded",
+        "maxColorNum": 40000,
         "allowPin": true,
         "allowHighlight": true,
         "enablePositionReset": true,
@@ -231,6 +231,7 @@ moduleExporter(
       this.lightsHelper = this.initLights();
 
       this.lut = this.initLut();
+      this.synapseLut = this.initSynapseLut();
 
       this.loadingManager = this.initLoadingManager();
 
@@ -567,6 +568,13 @@ moduleExporter(
       return lut;
     }
 
+    FFBOMesh3D.prototype.initSynapseLut = function () {
+      lut = new THREE.Lut("rainbow_gist", 256);
+      lut.setMin(0);
+      lut.setMax(1);
+      return lut;
+    }
+
     FFBOMesh3D.prototype.initLights = function () {
       lightsHelper = new FFBOLightsHelper(this.camera, this.controls, this.scenes.front);
 
@@ -713,7 +721,7 @@ moduleExporter(
           "type": undefined,
           "visibility": true,
           "colormap": this._metadata.colormap,
-          "colororder": "sequence",
+          "colororder": "random",
           "showAfterLoadAll": false,
         }
         for (var key in metadata)
@@ -760,7 +768,7 @@ moduleExporter(
           setAttrIfNotDefined(unit, 'highlight', true);
           setAttrIfNotDefined(unit, 'visibility', true);
           setAttrIfNotDefined(unit, 'background', false);
-          setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
+          setAttrIfNotDefined(unit, 'color', unit['class'] === 'Synapse' ? this.synapseLut.getColor(id2float(i)) : lut.getColor(id2float(i)));
           setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
           setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', getAttr(unit, 'label', key)).replaceAll('<', '&lt').replaceAll('>', '&gt'));
 
@@ -1457,7 +1465,7 @@ moduleExporter(
       this.container.addEventListener('mouseup', this.onDocumentMouseUp.bind(this), false);
 
       this.container.addEventListener('click', (event) => {
-        if (this.contextMenu.style.display !== "none"){
+        if (this.contextMenu.style.display !== "none") {
           this.contextMenu.style.display = 'none';
           return;
         }
@@ -1607,7 +1615,7 @@ moduleExporter(
         event.preventDefault();
 
       if (this.isDragging) {
-        if (this.contextMenu.style.display !== "none"){
+        if (this.contextMenu.style.display !== "none") {
           this.contextMenu.style.display = 'none';
         }
         return;
@@ -1624,7 +1632,7 @@ moduleExporter(
 
       if (intersected === undefined) { // bring up context menu for blank click
         this.buildEmptyContextMenu();
-        if (this.contextMenu.style.display !== "none"){
+        if (this.contextMenu.style.display !== "none") {
           this.contextMenu.style.display = 'none';
         }
       } else { // find the highlighted object
@@ -1661,7 +1669,7 @@ moduleExporter(
         this.contextMenu.innerHTML = '<ul></ul>';
         this.hide(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
 
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
@@ -1670,7 +1678,7 @@ moduleExporter(
         this.contextMenu.innerHTML = '<ul></ul>';
         this.resetViewOn(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
     }
 
     FFBOMesh3D.prototype.buildEmptyContextMenu = function (obj) {
@@ -1682,7 +1690,7 @@ moduleExporter(
       const menuList = this.contextMenu.querySelector('ul');
       const rid = obj.rid;
       const htmllabel = obj.htmllabel;
-      const uname = obj.uname; 
+      const uname = obj.uname;
       const pinned = obj.pinned;
 
       // pin, getinfo, unpin, delete, hide, color?
@@ -1717,7 +1725,7 @@ moduleExporter(
         this.select(rid);
       });
       menuList.appendChild(menuItem);
-      
+
       // delete
       menuItem = document.createElement('li');
       menuItem.textContent = "Remove " + htmllabel;
@@ -1727,7 +1735,7 @@ moduleExporter(
         this.remove(rid);
       });
       menuList.appendChild(menuItem);
-      
+
       // hide
       menuItem = document.createElement('li');
       menuItem.textContent = "Hide " + htmllabel;
@@ -1736,7 +1744,7 @@ moduleExporter(
         this.contextMenu.innerHTML = '<ul></ul>';
         this.hide(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
 
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
@@ -1745,7 +1753,7 @@ moduleExporter(
         this.contextMenu.innerHTML = '<ul></ul>';
         this.resetViewOn(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
     }
 
     FFBOMesh3D.prototype.buildSynapseContextMenu = function (obj) {
@@ -1753,9 +1761,9 @@ moduleExporter(
       const menuList = this.contextMenu.querySelector('ul');
       const rid = obj.rid;
       const htmllabel = obj.htmllabel;
-      const uname = obj.uname; 
+      const uname = obj.uname;
       const pinned = obj.pinned;
-      
+
       // pin / unpin
       var menuItem;
       menuItem = document.createElement('li');
@@ -1783,7 +1791,7 @@ moduleExporter(
         this.select(rid);
       });
       menuList.appendChild(menuItem);
-      
+
       // delete
       menuItem = document.createElement('li');
       menuItem.textContent = "Remove " + htmllabel;
@@ -1792,7 +1800,7 @@ moduleExporter(
         this.remove(rid);
       });
       menuList.appendChild(menuItem);
-      
+
       // hide
       menuItem = document.createElement('li');
       menuItem.textContent = "Hide " + htmllabel;
@@ -1800,7 +1808,7 @@ moduleExporter(
         this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.hide(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
 
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
@@ -1808,7 +1816,7 @@ moduleExporter(
         this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.resetViewOn(rid);
       });
-      menuList.appendChild(menuItem); 
+      menuList.appendChild(menuItem);
     }
 
     //
@@ -2636,7 +2644,7 @@ moduleExporter(
           this.camera.updateProjectionMatrix();
         }, 400);
       }
-      
+
     }
 
     FFBOMesh3D.prototype.resetVisibleView = function () {
@@ -2914,6 +2922,105 @@ moduleExporter(
       [0.982456, 0x006AFF],
       [1.000000, 0x005EFF],
     ]);
+
+    THREE.Lut.prototype.addColorMap('no_purple_expanded', [
+      [0.0000, 0xFF4000],
+      [0.0120, 0x994C00],
+      [0.0175, 0xFF4D00],
+      [0.0225, 0x996600],
+      [0.0351, 0xFF5900],
+      [0.0400, 0xCC5900],
+      [0.0526, 0xFF6600],
+      [0.0600, 0xCC6600],
+      [0.0702, 0xFF7300],
+      [0.0877, 0xFF8000],
+      [0.1053, 0xFF8C00],
+      [0.1228, 0xFF9900],
+      [0.1404, 0xFFA600],
+      [0.1579, 0xFFB300],
+      [0.1754, 0xFFBF00],
+      [0.1930, 0xFFCC00],
+      [0.2105, 0xFFD900],
+      [0.2281, 0xFFE500],
+      [0.2350, 0xCCCE00],
+      [0.2400, 0x999900],
+      [0.2456, 0xFFF200],
+      [0.2632, 0xFFFF00],
+      [0.2807, 0xF2FF00],
+      [0.2982, 0xE6FF00],
+      [0.3158, 0xD9FF00],
+      [0.3333, 0xCCFF00],
+      [0.3509, 0xBFFF00],
+      [0.3684, 0xB3FF00],
+      [0.3860, 0xAAFF00],
+      [0.4035, 0x8CFF00],
+      [0.4211, 0x6EFF00],
+      [0.4386, 0x51FF00],
+      [0.4561, 0x33FF00],
+      [0.4737, 0x15FF00],
+      [0.4912, 0x00FF08],
+      [0.5088, 0x00FF26],
+      [0.5263, 0x00FF44],
+      [0.5439, 0x00FF55],
+      [0.5614, 0x00FF62],
+      [0.5789, 0x00FF6F],
+      [0.5965, 0x00FF7B],
+      [0.6140, 0x00FF88],
+      [0.6316, 0x00FF95],
+      [0.6491, 0x00FFA2],
+      [0.6667, 0x00FFAE],
+      [0.6842, 0x00FFBB],
+      [0.7018, 0x00FFC8],
+      [0.7193, 0x00FFD4],
+      [0.7368, 0x00FFE1],
+      [0.7544, 0x00FFEE],
+      [0.7719, 0x00FFFB],
+      [0.7800, 0x00CCB3],
+      [0.7850, 0x00B399],
+      [0.7895, 0x00F7FF],
+      [0.8070, 0x00EAFF],
+      [0.8246, 0x00DDFF],
+      [0.8421, 0x00D0FF],
+      [0.8596, 0x00C3FF],
+      [0.8772, 0x00B7FF],
+      [0.8947, 0x00AAFF],
+      [0.9123, 0x009DFF],
+      [0.9298, 0x0091FF],
+      [0.9474, 0x0084FF],
+      [0.9649, 0x0077FF],
+      [0.9825, 0x006AFF],
+      [1.0000, 0x005EFF],
+    ]);
+
+    function getNoPurpleColor(step = 16) {
+      const mapArray = [];
+
+      const temp = [];
+
+      for (let R = 0; R <= 255; R += step) {
+        for (let G = 0; G <= 255; G += step) {
+          for (let B = 0; B <= 255; B += step) {
+            if (R > 127 || G > 127 || B > 127) {
+              if (R === 0 || B === 0) {
+                const hex = (R << 16) | (G << 8) | B;
+                temp.push(hex);
+              }
+            }
+          }
+        }
+      }
+
+      const total = temp.length;
+      for (let i = 0; i < total; i++) {
+        const t = total > 1 ? i / (total - 1) : 0;
+        mapArray.push([t, temp[i]]);
+      }
+
+      return mapArray;
+    }
+
+    THREE.Lut.prototype.addColorMap('noPurpleExpanded', getNoPurpleColor());
+
     return FFBOMesh3D;
   });
 
