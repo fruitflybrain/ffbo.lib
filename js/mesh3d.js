@@ -26,6 +26,7 @@ moduleExporter(
     "copyshader",
     "convolutionshader",
     "gltfloader",
+    "dracoloader",
     "fontloader",
     "textgeometry",
     "fxaashader",
@@ -252,6 +253,13 @@ moduleExporter(
 
       this.initPostProcessing();
 
+      if (this._metadata["neuron_mesh"] === undefined || this._metadata["neuron_mesh"]["url"] === undefined || this._metadata["neuron_mesh"]["url"] !== "") {
+        this.gltfLoader = new THREE.GLTFLoader();
+        this.dracoLoader = new THREE.DRACOLoader();
+        this.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        this.gltfLoader.setDRACOLoader(this.dracoLoader);
+      }
+      
       //this.composer.addPass( this.gammaCorrectionPass );
       this.UIBtns = {}
 
@@ -965,19 +973,22 @@ moduleExporter(
         var color = unit['color'];
         var opacity = this.settings.defaultOpacity;
         var loader = new THREE.GLTFLoader();
-        loader.load(
+        _this.gltfLoader.load(
           // resource URL
-          this._metadata["neuron_mesh"]["url"] + '/' + unit['referenceId'] + '.obj',
+          this._metadata["neuron_mesh"]["url"] + '/' + unit['referenceId'] + '.glb',
           // called when the resource is loaded
           function (gltf) {
             var mesh;
             for (var child of gltf.scene.children[0].children) {
               if (child instanceof THREE.Mesh) {
                 mesh = child;
+                var prevMaterial = child.material;
+                mesh.material = new THREE.MeshLambertMaterial();
+                THREE.MeshBasicMaterial.prototype.copy.call(mesh.material, prevMaterial);
                 mesh.material.transparent = true;
                 mesh.material.color = color;
                 mesh.material.opacity = opacity;
-                mesh.geometry.scale(0.008, 0.008, 0.008);
+                //mesh.geometry.scale(0.008, 0.008, 0.008);
                 mesh.geometry.computeBoundingBox();
                 var object = new THREE.Object3D();
                 object.add(mesh);
