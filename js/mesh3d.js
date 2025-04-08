@@ -990,6 +990,19 @@ moduleExporter(
                 mesh.material.opacity = opacity;
                 //mesh.geometry.scale(0.008, 0.008, 0.008);
                 mesh.geometry.computeBoundingBox();
+                _this.updateObjectBoundingBox(unit, mesh.geometry.boundingBox.max.x, 
+                                                    mesh.geometry.boundingBox.max.y,
+                                                    mesh.geometry.boundingBox.max.z);
+                _this.updateObjectBoundingBox(unit, mesh.geometry.boundingBox.min.x, 
+                                                    mesh.geometry.boundingBox.min.y,
+                                                    mesh.geometry.boundingBox.min.z);
+                
+                _this.updateBoundingBox(mesh.geometry.boundingBox.max.x, 
+                                        mesh.geometry.boundingBox.max.y,
+                                        mesh.geometry.boundingBox.max.z);
+                _this.updateBoundingBox(mesh.geometry.boundingBox.min.x, 
+                                        mesh.geometry.boundingBox.min.y,
+                                        mesh.geometry.boundingBox.min.z);
                 var object = new THREE.Object3D();
                 object.add(mesh);
                 _this._registerObject(key, unit, object);
@@ -1562,7 +1575,7 @@ moduleExporter(
       //  if (!this.controls.checkStateIsNone())
       //    return;
 
-      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
+      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine])[0];
 
       if (intersected != undefined && intersected['highlight']) {
         this.select(intersected.rid);
@@ -1573,7 +1586,7 @@ moduleExporter(
       if (event !== undefined)
         event.preventDefault();
 
-      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
+      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine])[0];
 
       if (intersected != undefined) {
         if (!intersected['highlight'])
@@ -1585,7 +1598,7 @@ moduleExporter(
     FFBOMesh3D.prototype.onDocumentMouseDBLClickMobile = function (event) {
       if (event !== undefined)
         event.preventDefault();
-      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine]);
+      var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine])[0];
 
       if (intersected != undefined) {
         if (!intersected['highlight'])
@@ -1641,18 +1654,18 @@ moduleExporter(
         ]
       );
 
-      if (intersected === undefined) { // bring up context menu for blank click
+      if (intersected[0] === undefined) { // bring up context menu for blank click
         this.buildEmptyContextMenu();
         if (this.contextMenu.style.display !== "none") {
           this.contextMenu.style.display = 'none';
         }
       } else { // find the highlighted object
-        if (intersected['background']) {
-          this.buildNeuropilContextMenu(intersected);
+        if (intersected[0]['background']) {
+          this.buildNeuropilContextMenu(intersected[0]);
         } else {
-          if (intersected.class === "Neuron") {
+          if (intersected[0].class === "Neuron") {
             this.buildNeuronContextMenu(intersected);
-          } else if (intersected.class === "Synapse") {
+          } else if (intersected[0].class === "Synapse") {
             this.buildSynapseContextMenu(intersected);
           }
         }
@@ -1699,10 +1712,10 @@ moduleExporter(
     FFBOMesh3D.prototype.buildNeuronContextMenu = function (obj) {
       this.contextMenu.innerHTML = '<ul></ul>';
       const menuList = this.contextMenu.querySelector('ul');
-      const rid = obj.rid;
-      const htmllabel = obj.htmllabel;
-      const uname = obj.uname;
-      const pinned = obj.pinned;
+      const rid = obj[0].rid;
+      const htmllabel = obj[0].htmllabel;
+      const uname = obj[0].uname;
+      const pinned = obj[0].pinned;
 
       // pin, getinfo, unpin, delete, hide, color?
 
@@ -1757,6 +1770,7 @@ moduleExporter(
       });
       menuList.appendChild(menuItem);
 
+      // center view
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
       menuItem.addEventListener('click', () => {
@@ -1765,15 +1779,25 @@ moduleExporter(
         this.resetViewOn(rid);
       });
       menuList.appendChild(menuItem);
+
+      // display position
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Copy click position to clipboard";
+      menuItem.addEventListener('click', () => {
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
+        navigator.clipboard.writeText(obj[1].x.toString() + ', ' + obj[1].y.toString() + ', ' + obj[1].z.toString());
+      });
+      menuList.appendChild(menuItem);
     }
 
     FFBOMesh3D.prototype.buildSynapseContextMenu = function (obj) {
       this.contextMenu.innerHTML = '<ul></ul>';
       const menuList = this.contextMenu.querySelector('ul');
-      const rid = obj.rid;
-      const htmllabel = obj.htmllabel;
-      const uname = obj.uname;
-      const pinned = obj.pinned;
+      const rid = obj[0].rid;
+      const htmllabel = obj[0].htmllabel;
+      const uname = obj[0].uname;
+      const pinned = obj[0].pinned;
 
       // pin / unpin
       var menuItem;
@@ -1821,11 +1845,22 @@ moduleExporter(
       });
       menuList.appendChild(menuItem);
 
+      // center view
       menuItem = document.createElement('li');
       menuItem.textContent = "Center view on " + htmllabel;
       menuItem.addEventListener('click', () => {
         this.contextMenu.style.display = 'none'; // Hide the menu after selection
         this.resetViewOn(rid);
+      });
+      menuList.appendChild(menuItem);
+
+      // display position
+      menuItem = document.createElement('li');
+      menuItem.textContent = "Copy click position to clipboard";
+      menuItem.addEventListener('click', () => {
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = '<ul></ul>';
+        navigator.clipboard.writeText(obj[1].x.toString() + ', ' + obj[1].y.toString() + ', ' + obj[1].z.toString());
       });
       menuList.appendChild(menuItem);
     }
@@ -1915,7 +1950,7 @@ moduleExporter(
        */
       //  if (this.controls.checkStateIsNone() && this.states.mouseOver) {
       if (this.states.mouseOver && !this.mousedown) {
-        var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back]);
+        var intersected = this.getIntersection([this.groups.frontSyn, this.groups.frontCyl, this.groups.frontLine, this.groups.back])[0];
         if (this.uiVars.currentIntersected || intersected) {
           // make sure when hovering over a neuron transits to hovering on neuropil the highlight state is reset.
           if (this.uiVars.currentIntersected !== undefined && intersected !== undefined) {
@@ -1967,6 +2002,7 @@ moduleExporter(
 
       var val = undefined;
       var object = undefined;
+      var point = undefined;
 
       this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
 
@@ -1978,13 +2014,14 @@ moduleExporter(
           object = ob.object.parent;
           if (object.hasOwnProperty('rid') && object.rid in this.meshDict && object.visible) {
             val = this.meshDict[object.rid];
+            point = ob.point;
             quit = true;
             break;
           }
         }
         if (quit) break;
       }
-      return val;
+      return [val, point];
     }
 
     FFBOMesh3D.prototype.showFrontAll = function () {
