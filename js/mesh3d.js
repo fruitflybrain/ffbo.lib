@@ -135,7 +135,7 @@ moduleExporter(
           backgroundColor: '#260226',
           sceneBackgroundColor: '#030305',
         },
-        "neuron_mesh": { "url": "" }
+        "neuron_mesh": {}
       }
       if (metadata !== undefined) {
         for (var key in this._metadata) {
@@ -975,7 +975,7 @@ moduleExporter(
         var loader = new THREE.GLTFLoader();
         _this.gltfLoader.load(
           // resource URL
-          this._metadata["neuron_mesh"]["url"] + '/' + unit['referenceId'] + '.glb',
+          this._metadata["neuron_mesh"][$('label[for="rd' + _this.settings.neuron3dMode + '"]').text()] + '/' + unit['referenceId'] + '.glb',
           // called when the resource is loaded
           function (gltf) {
             var mesh;
