@@ -989,7 +989,7 @@ moduleExporter(
                 mesh.material.color = color;
                 mesh.material.opacity = opacity;
                 //mesh.geometry.scale(0.008, 0.008, 0.008);
-                if (mesh.geometry.attribute.normal === undefined) {
+                if (mesh.geometry.attributes.normal === undefined) {
                   mesh.geometry.computeVertexNormals();
                 } 
                 mesh.geometry.computeBoundingBox();
