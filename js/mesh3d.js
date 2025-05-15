@@ -107,12 +107,12 @@ moduleExporter(
         "resetUp": { "x": 0., "y": 0., "z": 0 },
         "cameraTarget": { "x": 0., "y": 0., "z": 0 },
         "neu3dSettings": {
-          defaultOpacity: 0.7,
+          defaultOpacity: 1.0,
           synapseOpacity: 1.0,
           meshOscAmp: 0.0,
           nonHighlightableOpacity: 0.0,
           lowOpacity: 0.05,
-          pinOpacity: 0.9,
+          pinOpacity: 1.0,
           pinLowOpacity: 0.1,
           highlightedObjectOpacity: 1.0,
           defaultRadius: 1.0,
@@ -127,7 +127,7 @@ moduleExporter(
           axisOrigin: [0, 0, 0],
           linewidth: 0.8,
           brightness: 1.0,
-          backgroundOpacity: 0.5,
+          backgroundOpacity: 1.0,
           backgroundWireframeOpacity: 0.07,
           neuron3dMode: 0,
           synapseMode: 1,
@@ -592,7 +592,7 @@ moduleExporter(
       });
 
       lightsHelper.addAmbientLight({
-        intensity: 0.4,
+        intensity: 0.2,
         scene: this.scenes.back,
         key: 'backAmbient'
       });
@@ -604,7 +604,7 @@ moduleExporter(
       });
 
       lightsHelper.addDirectionalLight({
-        intensity: 0.55,
+        intensity: 0.2,
         position: new THREE.Vector3(0, 5000, 0),
         scene: this.scenes.back,
         key: 'backDirectional_1'
@@ -617,7 +617,7 @@ moduleExporter(
       });
 
       lightsHelper.addDirectionalLight({
-        intensity: 0.55,
+        intensity: 0.2,
         position: new THREE.Vector3(0, -5000, 0),
         scene: this.scenes.back,
         key: 'backDirectional_2'
@@ -626,29 +626,29 @@ moduleExporter(
       lightsHelper.addSpotLight({
         posAngle1: 0,
         posAngle2: 0,
-        intensity: 2.0,
+        intensity: 1.5,
         key: 'frontSpot_1'
       });
 
       lightsHelper.addSpotLight({
-        posAngle1: 80,
-        posAngle2: 80,
-        intensity: 5.5,
+        posAngle1: 67,
+        posAngle2: 67,
+        intensity: 3.0,
         scene: this.scenes.back,
         key: 'backSpot_1'
       });
 
       lightsHelper.addSpotLight({
-        posAngle1: 0,
-        posAngle2: 0,
-        intensity: 0.0,
+        posAngle1: 90,
+        posAngle2: 90,
+        intensity: 0.5,
         key: 'frontSpot_2'
       });
 
       lightsHelper.addSpotLight({
-        posAngle1: -80,
-        posAngle2: 80,
-        intensity: 5.5,
+        posAngle1: -67,
+        posAngle2: 0,
+        intensity: 3.0,
         scene: this.scenes.back,
         key: 'backSpot_2'
       });
@@ -952,7 +952,7 @@ moduleExporter(
 
         materials = [
           //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-          new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2 }),//, flatShading: true} ),
+          new THREE.MeshStandardMaterial({ color: color, transparent: true, side: 2, roughness: 1.0, metalness: 0.0 }),//, flatShading: true} ),
           new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
         ];
 
@@ -972,7 +972,7 @@ moduleExporter(
       return function (jsonString) {
         var color = unit['color'];
         var opacity = this.settings.defaultOpacity;
-        var loader = new THREE.GLTFLoader();
+        
         _this.gltfLoader.load(
           // resource URL
           this._metadata["neuron_mesh"][$('label[for="rd' + _this.settings.neuron3dMode + '"]').text()] + '/' + unit['referenceId'] + '.glb',
@@ -983,7 +983,7 @@ moduleExporter(
               if (child instanceof THREE.Mesh) {
                 mesh = child;
                 var prevMaterial = child.material;
-                mesh.material = new THREE.MeshLambertMaterial();
+                mesh.material = new THREE.MeshStandardMaterial({roughness: 1.0, metalness: 0.0});
                 THREE.MeshBasicMaterial.prototype.copy.call(mesh.material, prevMaterial);
                 mesh.material.transparent = true;
                 mesh.material.color = color;
@@ -991,21 +991,23 @@ moduleExporter(
                 //mesh.geometry.scale(0.008, 0.008, 0.008);
                 if (mesh.geometry.attributes.normal === undefined) {
                   mesh.geometry.computeVertexNormals();
-                } 
+                }
                 mesh.geometry.computeBoundingBox();
-                _this.updateObjectBoundingBox(unit, mesh.geometry.boundingBox.max.x, 
-                                                    mesh.geometry.boundingBox.max.y,
-                                                    mesh.geometry.boundingBox.max.z);
-                _this.updateObjectBoundingBox(unit, mesh.geometry.boundingBox.min.x, 
-                                                    mesh.geometry.boundingBox.min.y,
-                                                    mesh.geometry.boundingBox.min.z);
-                
+                _this.updateObjectBoundingBox(unit, 
+                                              mesh.geometry.boundingBox.max.x, 
+                                              mesh.geometry.boundingBox.max.y,
+                                              mesh.geometry.boundingBox.max.z);
+                _this.updateObjectBoundingBox(unit,
+                                              mesh.geometry.boundingBox.min.x, 
+                                              mesh.geometry.boundingBox.min.y,
+                                              mesh.geometry.boundingBox.min.z);
                 _this.updateBoundingBox(mesh.geometry.boundingBox.max.x, 
                                         mesh.geometry.boundingBox.max.y,
                                         mesh.geometry.boundingBox.max.z);
                 _this.updateBoundingBox(mesh.geometry.boundingBox.min.x, 
                                         mesh.geometry.boundingBox.min.y,
                                         mesh.geometry.boundingBox.min.z);
+                mesh.renderOrder = 1;
                 var object = new THREE.Object3D();
                 object.add(mesh);
                 _this._registerObject(key, unit, object);
@@ -1068,6 +1070,9 @@ moduleExporter(
         object.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
         object.visible = visibility;
 
+        for (var i in object.children) {
+          object.children[i].renderOrder = 1;
+        }
         this._registerObject(key, unit, object);
 
       };
@@ -1122,7 +1127,7 @@ moduleExporter(
         if (unit['class'] === 'Neuron' || unit['class'] === 'NeuronFragment') {
           if (mode === 0) {
             var matrix = new THREE.Matrix4();
-            var materialSphere = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+            var materialSphere = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
             geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
 
             var sphere_params = [];
@@ -1249,13 +1254,13 @@ moduleExporter(
 
               if (mode > 3) {
                 if (false) { //experimental 
-                  var materialCylinder = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+                  var materialCylinder = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
                   geometryCylinder = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, 1.0, 8, 1, 0);
                   cylinders = new THREE.InstancedMesh(geometryCylinder, materialCylinder, total_seg);
                 }
               }
               if (this.settings.neuron3dMode == 5 || this.settings.neuron3dMode == 3) {
-                var materialSphere = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+                var materialSphere = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
                 geometrySphere = new THREE.SphereGeometry(1.0, 8, 8);
                 // geometrySphere = new THREE.IcosahedronGeometry(1.0, 1);
                 // geometrySphere = new THREE.OctahedronGeometry(1.0, 2)
@@ -1335,7 +1340,7 @@ moduleExporter(
                 }
                 delete geometryToMerge;
 
-                var material_merge = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+                var material_merge = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
                 var mesh = new THREE.Mesh(mergedGeometry, material_merge);
                 object.add(mesh);
               }
@@ -1361,7 +1366,7 @@ moduleExporter(
                   else
                     var sphereGeometry = new THREE.SphereGeometry(Math.clip(this.settings.defaultSomaRadius, this.settings.SomaRadiusRange), 8, 8);
                   sphereGeometry.translate(c.x, c.y, c.z);
-                  var sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+                  var sphereMaterial = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
                   var soma = new THREE.Mesh(sphereGeometry, sphereMaterial);
                   soma.soma_index = 0;
                   object.add(soma);
@@ -1386,7 +1391,7 @@ moduleExporter(
             }
           }
         } else { //if (unit['class'] == 'Synapse') {
-          var material_synapse = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+          var material_synapse = new THREE.MeshStandardMaterial({ color: color, transparent: true, roughness: 1.0, metalness: 0.0 });
 
           var matrix = new THREE.Matrix4();
 
@@ -1431,6 +1436,9 @@ moduleExporter(
         }
 
         object.visible = visibility;
+        for (var i in object.children) {
+          object.children[i].renderOrder = 1;
+        }
         this._registerObject(key, unit, object);
 
         /* delete morpology data */
@@ -2381,20 +2389,20 @@ moduleExporter(
           var list = Object.keys(this.meshDict);
         }
 
+        // first remove all the previous highlighted nonhighlight
         for (const key of list) {
-          var val = this.meshDict[key];
-          var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-          var depthTest = true;
-          if (val['pinned']) {
-            opacity = this.settings.pinOpacity;
-            depthTest = true;
-          }
-          for (var i in val.object.children) {
-            val.object.children[i].material.opacity = opacity;
-            val.object.children[i].material.depthTest = depthTest;
+          const val = this.meshDict[key];
+          const opacity = val['pinned'] ? this.settings.pinOpacity : (val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity);
+          const depthTest = opacity > 0;
+          const renderOrder = val['pinned'] ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity ? +(opacity == 0) : 2 - (opacity == 0) ) : 1;
+          for (const child of val.object.children) {
+            child.material.opacity = opacity;
+            child.material.depthTest = depthTest;
+            child.renderOrder = renderOrder;
           }
         }
 
+        // Then get all the highlighted and set their opacity
         if (Array.isArray(this.states.highlight)) {
           var list = this.states.highlight;
         } else {
@@ -2402,17 +2410,23 @@ moduleExporter(
         }
 
         for (const rid of list) {
-          var val = this.meshDict[rid];
+          const val = this.meshDict[rid];
 
           if (val['background']) {
             val.object.children[0].material.opacity = this.settings.backgroundOpacity;
             val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+            val.object.children[0].renderOrder = 0;
+            val.object.children[1].renderOrder = 0;
             //val.object.children[0].material.depthTest = false;
             //val.object.children[1].material.depthTest = false;
           } else {
-            for (var i in val.object.children) {
-              val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-              val.object.children[i].material.depthTest = false;
+            const opacity = this.settings.highlightedObjectOpacity;
+            const depthTest = opacity > 0;
+            const renderOrder = this.settings.highlightedObjectOpacity + 0.1 > this.settings.lowOpacity ? +(opacity == 0) : 2 - (opacity == 0);
+            for (const child of val.object.children) {
+              child.material.opacity = opacity;
+              child.material.depthTest = depthTest;
+              child.renderOrder = renderOrder;
             }
           }
         }
@@ -2423,13 +2437,15 @@ moduleExporter(
         (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
         (((e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) && this.states.pinned)) {
         for (const key of Object.keys(this.meshDict)) {
-          var val = this.meshDict[key];
+          const val = this.meshDict[key];
           if (!val['background']) {
-            var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-            var depthTest = !this.meshDict[key]['pinned'];
-            for (var i in val.object.children) {
-              val.object.children[i].material.opacity = opacity;
-              val.object.children[i].material.depthTest = depthTest;
+            const opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+            const depthTest = opacity > 0;
+            const renderOrder = this.meshDict[key]['pinned'] ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity ? +(opacity==0) : 2 - (opacity == 0)) : 1;
+            for (const child of val.object.children) {
+              child.material.opacity = opacity;
+              child.material.depthTest = depthTest;
+              child.renderOrder = renderOrder;
             }
           } else {
             val.object.children[0].material.opacity = this.settings.backgroundOpacity;
@@ -2440,9 +2456,11 @@ moduleExporter(
       }
       // New object being pinned while already in pinned mode
       else if (e.prop == 'pinned' && this.states.pinned) {
-        for (var i in e.obj.object.children) {
-          e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-          e.obj.object.children[i].material.depthTest = !e.value;
+        const opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+        for (const child of e.obj.object.children) {
+          child.material.opacity = opacity;
+          child.material.depthTest = opacity > 0; // !e.value;
+          child.renderOrder = e.value ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity ? +(opacity == 0) : 2 - (opacity==0)) : 1;
         }
       }
       // Default opacity value change in upinned mode or exiting highlight mode
@@ -2452,19 +2470,19 @@ moduleExporter(
     }
 
     FFBOMesh3D.prototype.resetOpacity = function () {
-      var val = this.settings.defaultOpacity;
       for (const key of Object.keys(this.meshDict)) {
         if (!this.meshDict[key]['background']) {
           if (this.meshDict[key]['class'] === 'Neuron' || this.meshDict[key]['class'] === 'NeuronFragment') {
-            for (i in this.meshDict[key].object.children) {
-              this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
-
+            for (const child of this.meshDict[key].object.children) {
+              child.material.opacity = this.settings.defaultOpacity;
+              child.material.depthTest = child.material.opacity > 0;
+              child.renderOrder = 1;
             }
           } else {
-            for (i in this.meshDict[key].object.children) {
-              this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
+            for (const child of this.meshDict[key].object.children) {
+              child.material.opacity = this.settings.synapseOpacity;
+              child.material.depthTest = child.material.opacity > 0;
+              child.renderOrder = 1;
             }
           }
         } else {
