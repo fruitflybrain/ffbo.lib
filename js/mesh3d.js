@@ -253,7 +253,7 @@ moduleExporter(
 
       this.initPostProcessing();
 
-      if (this._metadata["neuron_mesh"] === undefined || this._metadata["neuron_mesh"]["url"] === undefined || this._metadata["neuron_mesh"]["url"] !== "") {
+      if (this._metadata["neuron_mesh"] !== undefined && Object.keys(this._metadata["neuron_mesh"]).length !== 0) {
         this.gltfLoader = new THREE.GLTFLoader();
         this.dracoLoader = new THREE.DRACOLoader();
         this.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
@@ -972,10 +972,11 @@ moduleExporter(
       return function (jsonString) {
         var color = unit['color'];
         var opacity = this.settings.defaultOpacity;
-        
+        var doubleside = this._metadata["neuron_mesh"][$('label[for="rd' + _this.settings.neuron3dMode + '"]').text()]["doubleside"];
+
         _this.gltfLoader.load(
           // resource URL
-          this._metadata["neuron_mesh"][$('label[for="rd' + _this.settings.neuron3dMode + '"]').text()] + '/' + unit['referenceId'] + '.glb',
+          this._metadata["neuron_mesh"][$('label[for="rd' + _this.settings.neuron3dMode + '"]').text()]["base"] + '/' + unit['referenceId'] + '.glb',
           // called when the resource is loaded
           function (gltf) {
             var mesh;
@@ -988,7 +989,11 @@ moduleExporter(
                 mesh.material.transparent = true;
                 mesh.material.color = color;
                 mesh.material.opacity = opacity;
-                //mesh.geometry.scale(0.008, 0.008, 0.008);
+                
+                if (doubleside) {
+                  mesh.material.side = THREE.DoubleSide;
+                }
+
                 if (mesh.geometry.attributes.normal === undefined) {
                   mesh.geometry.computeVertexNormals();
                 }
