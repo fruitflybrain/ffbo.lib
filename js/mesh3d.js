@@ -985,7 +985,7 @@ moduleExporter(
                 mesh = child;
                 var prevMaterial = child.material;
                 mesh.material = new THREE.MeshStandardMaterial({roughness: 1.0, metalness: 0.0});
-                THREE.MeshStandardMaterial.prototype.copy.call(mesh.material, prevMaterial);
+                THREE.MeshBasicMaterial.prototype.copy.call(mesh.material, prevMaterial);
                 mesh.material.transparent = true;
                 mesh.material.color = color;
                 mesh.material.opacity = opacity;
