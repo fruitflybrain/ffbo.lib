@@ -1935,12 +1935,20 @@ moduleExporter(
     FFBOMesh3D.prototype.render = function () {
 
       if (this.states.animate) {
+        var x = new Date().getTime();
         for (var key in this.meshDict) {
           if (this.meshDict[key].object === undefined)
             continue;
-          var x = this.meshDict[key].object.children;
-          for (var i in x)
-            x[i].material.opacity = this.animOpacity[key] || 0;
+          if (this.meshDict[key]['background']) {
+            var obj = this.meshDict[key].object.children;
+            obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
+            obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+          } else {
+            var obj = this.meshDict[key].object.children;
+            for (var i in obj) {
+              obj[i].material.opacity = this.animOpacity[key] || 0;
+            }
+          }
         }
       } else if (this.states.highlight) {
 
